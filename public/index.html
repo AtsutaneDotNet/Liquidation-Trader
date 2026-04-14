@@ -1,45 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Blazar Status & Setup</title>
+    <title>Liquidation Trader Control Panel</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <header style="height: 60px; background-color: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 24px; position: relative; z-index: 10;">
-        <button id="sidebar-toggle" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; margin-right: 16px; transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    <header
+        style="height: 60px; background-color: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 24px; position: relative; z-index: 10;">
+        <button id="sidebar-toggle"
+            style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; margin-right: 16px; transition: color 0.2s;"
+            onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                </path>
+            </svg>
         </button>
-        <h1 class="logo" style="margin-bottom: 0; font-size: 20px;">Liquidation <span class="highlight">Trader</span></h1>
+        <h1 class="logo" style="margin-bottom: 0; font-size: 20px;">Liquidation <span class="highlight">Trader</span>
+        </h1>
     </header>
     <div class="app-container" style="height: calc(100vh - 60px);">
         <!-- Sidebar Navigation -->
         <aside class="sidebar" id="sidebar">
             <nav>
                 <button class="nav-btn active" data-target="dashboard">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                        </path>
+                    </svg>
                     <span class="nav-text">Dashboard</span>
                 </button>
                 <button class="nav-btn" data-target="positions">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
                     <span class="nav-text">Positions</span>
                 </button>
                 <button class="nav-btn" data-target="account">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
                     <span class="nav-text">Account</span>
                 </button>
                 <button class="nav-btn" data-target="liquidations-page">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
                     <span class="nav-text">Liquidations</span>
                 </button>
                 <button class="nav-btn" data-target="logs-page">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
                     <span class="nav-text">System Logs</span>
                 </button>
                 <button class="nav-btn" data-target="settings">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
                     <span class="nav-text">Settings</span>
                 </button>
             </nav>
@@ -52,7 +85,7 @@
                 <header>
                     <h2>Bot Overview</h2>
                 </header>
-                
+
                 <div class="status-grid">
                     <div class="card stat-card">
                         <h3>Bot Status</h3>
@@ -61,7 +94,7 @@
                             <span class="text" id="bot-status-text">Stopped</span>
                         </div>
                     </div>
-                    
+
                     <div class="card stat-card">
                         <h3>Trading Engine</h3>
                         <div class="status-indicator" id="trade-status-indicator">
@@ -69,7 +102,7 @@
                             <span class="text" id="trade-status-text">Idle</span>
                         </div>
                     </div>
-                    
+
                     <div class="card stat-card">
                         <h3>Loaded Pairs</h3>
                         <div class="stat-value" id="pairs-count">0</div>
@@ -101,7 +134,10 @@
                             </tr>
                         </thead>
                         <tbody id="dashboard-liquidations-tbody">
-                            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for liquidations &mdash;</td></tr>
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting
+                                    for liquidations &mdash;</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -144,7 +180,8 @@
                         <div class="form-group row">
                             <div class="col" style="flex: 1;">
                                 <label for="TRADE_EXCHANGE">Trading Exchange</label>
-                                <select id="TRADE_EXCHANGE" name="TRADE_EXCHANGE" style="width: 100%; padding: 0.75rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; margin-top: 0.5rem; outline: none;">
+                                <select id="TRADE_EXCHANGE" name="TRADE_EXCHANGE"
+                                    style="width: 100%; padding: 0.75rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; margin-top: 0.5rem; outline: none;">
                                     <option value="bybit">Bybit</option>
                                     <option value="binance">Binance</option>
                                 </select>
@@ -152,8 +189,10 @@
                             <div class="col" style="flex: 1;">
                                 <label>Liquidation Stream</label>
                                 <div class="checkbox-group" style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="bybit"> Bybit</label>
-                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="binance"> Binance</label>
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox"
+                                            class="liq-exchange-cb" value="bybit"> Bybit</label>
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox"
+                                            class="liq-exchange-cb" value="binance"> Binance</label>
                                 </div>
                                 <input type="hidden" id="LIQUIDATION_EXCHANGES" name="LIQUIDATION_EXCHANGES">
                             </div>
@@ -162,7 +201,8 @@
                         <div class="form-group row">
                             <div class="col">
                                 <label for="LIQUIDATION_VALUE_THRESHOLD">Min Liquidation Value ($)</label>
-                                <input type="number" id="LIQUIDATION_VALUE_THRESHOLD" name="LIQUIDATION_VALUE_THRESHOLD" step="0.01">
+                                <input type="number" id="LIQUIDATION_VALUE_THRESHOLD" name="LIQUIDATION_VALUE_THRESHOLD"
+                                    step="0.01">
                             </div>
                             <div class="col">
                                 <label for="OFFSET_PERCENTAGE">VWAP Offset (%)</label>
@@ -173,7 +213,8 @@
                         <div class="form-group row">
                             <div class="col">
                                 <label for="TAKE_PROFIT_PERCENTAGE">Take Profit (%)</label>
-                                <input type="number" id="TAKE_PROFIT_PERCENTAGE" name="TAKE_PROFIT_PERCENTAGE" step="0.01">
+                                <input type="number" id="TAKE_PROFIT_PERCENTAGE" name="TAKE_PROFIT_PERCENTAGE"
+                                    step="0.01">
                             </div>
                             <div class="col">
                                 <label for="STOP_LOSS_PERCENTAGE">Stop Loss (%)</label>
@@ -188,7 +229,8 @@
                             </div>
                             <div class="col">
                                 <label for="TRADE_AMOUNT_PERCENTAGE">Trade Sizing (% of Wallet)</label>
-                                <input type="number" id="TRADE_AMOUNT_PERCENTAGE" name="TRADE_AMOUNT_PERCENTAGE" step="0.01">
+                                <input type="number" id="TRADE_AMOUNT_PERCENTAGE" name="TRADE_AMOUNT_PERCENTAGE"
+                                    step="0.01">
                             </div>
                         </div>
 
@@ -213,7 +255,8 @@
             <section id="account" class="page">
                 <header>
                     <h2>Account Performance</h2>
-                    <p class="subtitle">Live wallet overview and aggregated trade metrics dynamically saved over SQLite.</p>
+                    <p class="subtitle">Live wallet overview and aggregated trade metrics dynamically saved over SQLite.
+                    </p>
                 </header>
                 <div class="status-grid">
                     <div class="card stat-card">
@@ -271,7 +314,10 @@
                             </tr>
                         </thead>
                         <tbody id="positions-tbody">
-                            <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; No active positions tracked yet &mdash;</td></tr>
+                            <tr>
+                                <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; No active
+                                    positions tracked yet &mdash;</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -297,7 +343,10 @@
                             </tr>
                         </thead>
                         <tbody id="liquidations-tbody">
-                            <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for liquidations &mdash;</td></tr>
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting
+                                    for liquidations &mdash;</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -306,4 +355,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>

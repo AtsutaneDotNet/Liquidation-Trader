@@ -101,7 +101,7 @@ nav {
 }
 
 .nav-btn:hover {
-    background-color: rgba(255,255,255,0.03);
+    background-color: rgba(255, 255, 255, 0.03);
     color: var(--text-main);
 }
 
@@ -128,12 +128,19 @@ nav {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 header {
-    margin-bottom: 30px;
+    margin-bottom: 1px;
 }
 
 header h2 {
@@ -154,7 +161,7 @@ header h2 {
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 24px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .status-grid {
@@ -321,6 +328,7 @@ input:focus {
 .terminal-panel {
     margin-top: 30px;
 }
+
 .terminal {
     background-color: #080a0f;
     border: 1px solid var(--border-color);
@@ -333,15 +341,20 @@ input:focus {
     line-height: 1.5;
     color: var(--text-muted);
 }
+
 .terminal .log-row {
     margin-bottom: 4px;
     word-break: break-all;
 }
+
 .terminal .log-time {
     color: #555c6b;
     margin-right: 8px;
 }
-.terminal .log-error { color: var(--danger); }
+
+.terminal .log-error {
+    color: var(--danger);
+}
 
 /* Data Tables */
 .table-responsive {
@@ -356,7 +369,8 @@ input:focus {
     white-space: nowrap;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
     padding: 16px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
@@ -371,12 +385,13 @@ input:focus {
 }
 
 .data-table tbody tr:hover {
-    background-color: rgba(255,255,255,0.02);
+    background-color: rgba(255, 255, 255, 0.02);
 }
 
 .liq-highlight {
     background-color: rgba(0, 230, 118, 0.05) !important;
 }
+
 .liq-highlight td:first-child {
     border-left: 3px solid var(--accent);
 }
