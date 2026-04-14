@@ -46,6 +46,10 @@ class TradingBot {
         this.errorCount = 0;
         clearTimeout(this.errorTimer);
         logger.info('Starting Trading Bot Engine...');
+        
+        // Purge old liquidation history to keep DB size minimum
+        logger.info('Purging outdated liquidation history from database...');
+        db.purgeLiquidations();
 
         try {
             const cfg = this.config.get();

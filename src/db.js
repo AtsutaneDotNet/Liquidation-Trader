@@ -164,6 +164,11 @@ function pruneLiquidations(max = 500) {
     `).run(max);
 }
 
+function purgeLiquidations() {
+    db.prepare('DELETE FROM liquidations').run();
+    db.exec('VACUUM'); // Reclaim space
+}
+
 module.exports = {
     db,
     getConfig,
@@ -178,5 +183,6 @@ module.exports = {
     getPositions,
     addLiquidation,
     getLiquidations,
-    pruneLiquidations
+    pruneLiquidations,
+    purgeLiquidations
 };

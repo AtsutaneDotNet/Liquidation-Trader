@@ -117,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchStatus();
 
     // Controls
+    let controlMsgTimeout;
+
     btnStart.addEventListener('click', () => {
         fetch('/api/bot/start', { method: 'POST' })
             .then(res => res.json())
@@ -124,6 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 controlMsg.textContent = data.message;
                 controlMsg.style.color = data.success ? 'var(--accent)' : 'var(--danger)';
                 fetchStatus();
+
+                if (data.success) {
+                    if (controlMsgTimeout) clearTimeout(controlMsgTimeout);
+                    controlMsgTimeout = setTimeout(() => {
+                        controlMsg.textContent = '';
+                    }, 10000);
+                }
             });
     });
 
@@ -134,6 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 controlMsg.textContent = data.message;
                 controlMsg.style.color = data.success ? 'var(--accent)' : 'var(--danger)';
                 fetchStatus();
+
+                if (data.success) {
+                    if (controlMsgTimeout) clearTimeout(controlMsgTimeout);
+                    controlMsgTimeout = setTimeout(() => {
+                        controlMsg.textContent = '';
+                    }, 10000);
+                }
             });
     });
 
@@ -240,9 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Liquidations Live Stream
     const tbodyLiquidations = document.getElementById('liquidations-tbody');
+    const tbodyDashboardLiquidations = document.getElementById('dashboard-liquidations-tbody');
 
     function fetchLiquidations() {
-        if (!document.getElementById('liquidations-page').classList.contains('active')) return;
+        const liqPageActive = document.getElementById('liquidations-page').classList.contains('active');
+        const dashPageActive = document.getElementById('dashboard').classList.contains('active');
+        if (!liqPageActive && !dashPageActive) return;
 
         fetch('/api/liquidations')
             .then(res => res.json())
@@ -250,28 +269,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 const thresholdInput = document.getElementById('LIQUIDATION_VALUE_THRESHOLD');
                 const threshold = parseFloat(thresholdInput ? thresholdInput.value : 0) || 0;
 
-                if (!data || data.length === 0) {
-                    tbodyLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No liquidations tracked yet &mdash;</td></tr>';
-                } else {
-                    tbodyLiquidations.innerHTML = data.map(liq => {
-                        const sideStr = (liq.side || '').toLowerCase();
-                        const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
-                        const timeStr = new Date(liq.timestamp).toLocaleTimeString();
-                        
-                        const liqValue = parseFloat(liq.value || 0);
-                        const isHighValue = liqValue >= threshold;
-                        const highlightClass = isHighValue ? 'liq-highlight' : '';
+                if (tbodyLiquidations) {
+                    if (!data || data.length === 0) {
+                        tbodyLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No liquidations tracked yet &mdash;</td></tr>';
+                    } else {
+                        tbodyLiquidations.innerHTML = data.map(liq => {
+                            const sideStr = (liq.side || '').toLowerCase();
+                            const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
+                            const timeStr = new Date(liq.timestamp).toLocaleTimeString();
+                            
+                            const liqValue = parseFloat(liq.value || 0);
+                            const isHighValue = liqValue >= threshold;
+                            const highlightClass = isHighValue ? 'liq-highlight' : '';
 
-                        return `<tr class="${highlightClass}">
-                            <td style="color: var(--text-muted);">${timeStr}</td>
-                            <td style="text-transform: capitalize;">${liq.exchange}</td>
-                            <td><strong>${liq.symbol}</strong></td>
-                            <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
-                            <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
-                            <td>${liq.amount}</td>
-                            <td>$${parseFloat(liq.value || 0).toFixed(2)}</td>
-                        </tr>`;
-                    }).join('');
+                            return `<tr class="${highlightClass}">
+                                <td style="color: var(--text-muted);">${timeStr}</td>
+                                <td style="text-transform: capitalize;">${liq.exchange}</td>
+                                <td><strong>${liq.symbol}</strong></td>
+                                <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
+                                <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
+                                <td>${liq.amount}</td>
+                                <td>$${parseFloat(liq.value || 0).toFixed(2)}</td>
+                            </tr>`;
+                        }).join('');
+                    }
+                }
+
+                if (tbodyDashboardLiquidations && dashPageActive) {
+                    const highValueLiqs = data.filter(liq => parseFloat(liq.value || 0) >= threshold).slice(0, 10);
+                    if (highValueLiqs.length === 0) {
+                        tbodyDashboardLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No recent high value liquidations &mdash;</td></tr>';
+                    } else {
+                        tbodyDashboardLiquidations.innerHTML = highValueLiqs.map(liq => {
+                            const sideStr = (liq.side || '').toLowerCase();
+                            const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
+                            const timeStr = new Date(liq.timestamp).toLocaleTimeString();
+                            return `<tr class="liq-highlight">
+                                <td style="color: var(--text-muted);">${timeStr}</td>
+                                <td style="text-transform: capitalize;">${liq.exchange}</td>
+                                <td><strong>${liq.symbol}</strong></td>
+                                <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
+                                <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
+                                <td>${liq.amount}</td>
+                                <td>$${parseFloat(liq.value || 0).toFixed(2)}</td>
+                            </tr>`;
+                        }).join('');
+                    }
                 }
             }).catch(console.error);
     }
