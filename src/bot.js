@@ -19,6 +19,9 @@ class TradingBot {
 
         this.pnlInterval = null;
         this.cleanupInterval = null;
+
+        // In-memory store for recent order notifications (max 50)
+        this.orderEvents = [];
     }
 
     async handleError(errMessage) {
@@ -456,6 +459,22 @@ class TradingBot {
             );
 
             logger.info(`Trade successfully executed! Order ID: ${order.id}`);
+
+            // Push order notification for the web UI toast system
+            const orderEvent = {
+                id: order.id || `local-${Date.now()}`,
+                symbol,
+                side: side.toUpperCase(),
+                type: 'MARKET',
+                amount: amountInToken,
+                price: order.average || order.price || entryPrice,
+                leverage: cfg.TRADE_LEVERAGE,
+                value: (order.average || entryPrice) * amountInToken,
+                timestamp: Date.now(),
+                seen: false
+            };
+            this.orderEvents.unshift(orderEvent);
+            if (this.orderEvents.length > 50) this.orderEvents.pop();
 
             // Removed TP/SL setting from here since we can't get accurate entry price immediately.
             // TP/SL is now handled in onPositionUpdate.

@@ -101,6 +101,7 @@ class BybitExchange extends BaseExchange {
                 if (!isRunningCheck()) break;
 
                 if (balance && balance.USDT) {
+                    logger.debug(balance);
                     const total = balance.USDT.total || 0;
                     let free = balance.USDT.free || 0;
 

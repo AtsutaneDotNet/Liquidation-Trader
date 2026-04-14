@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Form Loading and Saving
     const form = document.getElementById('config-form');
-    
+
     function loadConfig() {
         fetch('/api/config')
             .then(res => res.json())
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(form);
-        
+
         // Populate hidden input for liquidation exchanges before sending
         const checkedLiqs = Array.from(document.querySelectorAll('.liq-exchange-cb:checked')).map(cb => cb.value);
         formData.set('LIQUIDATION_EXCHANGES', checkedLiqs.join(','));
@@ -65,14 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-        .then(res => res.json())
-        .then(result => {
-            const msg = document.getElementById('save-status');
-            msg.textContent = result.message;
-            msg.classList.add('show');
-            setTimeout(() => msg.classList.remove('show'), 3000);
-            loadConfig(); // fresh reload to mask api keys again safely
-        });
+            .then(res => res.json())
+            .then(result => {
+                const msg = document.getElementById('save-status');
+                msg.textContent = result.message;
+                msg.classList.add('show');
+                setTimeout(() => msg.classList.remove('show'), 3000);
+                loadConfig(); // fresh reload to mask api keys again safely
+            });
     });
 
     // Status Polling
@@ -167,11 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Determine if we need to update DOM
                 if (logs.length !== lastLogCount || logs.length >= 500) {
                     const isBottom = logTerminal.scrollHeight - logTerminal.clientHeight <= logTerminal.scrollTop + 50;
-                    
+
                     logTerminal.innerHTML = logs.map(l => {
                         return `<div class="log-row"><span class="log-time">[${l.time}]</span><span class="log-${l.type}">${l.msg}</span></div>`;
                     }).join('');
-                    
+
                     // Auto-scroll to adhere to UX if user hasn't explicitly scrolled up
                     if (isBottom || lastLogCount === 0) {
                         logTerminal.scrollTop = logTerminal.scrollHeight;
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatUsd(val) {
         return '$' + parseFloat(val || 0).toFixed(2);
     }
-    
+
     function formatPnl(val) {
         const num = parseFloat(val || 0);
         const sign = num > 0 ? '+' : '';
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function fetchAccountData() {
         // Optimize polling: only render if standard tabs correspond.
-        if (!document.getElementById('account').classList.contains('active') && 
+        if (!document.getElementById('account').classList.contains('active') &&
             !document.getElementById('positions').classList.contains('active')) return;
 
         fetch('/api/account')
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const sideStr = (liq.side || '').toLowerCase();
                             const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
                             const timeStr = new Date(liq.timestamp).toLocaleTimeString();
-                            
+
                             const liqValue = parseFloat(liq.value || 0);
                             const isHighValue = liqValue >= threshold;
                             const highlightClass = isHighValue ? 'liq-highlight' : '';
@@ -321,4 +321,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setInterval(fetchLiquidations, 1500); // slightly faster polling for live feeling
     fetchLiquidations();
+
+    // ── Toast Notification System ───────────────────────────────
+    const toastContainer = document.getElementById('toast-container');
+
+    function showOrderToast(order) {
+        const isSell = order.side === 'SELL';
+        const sideLabel = isSell ? 'SHORT Executed' : 'LONG Executed';
+        const sideClass = isSell ? 'toast-sell' : '';
+        const price = parseFloat(order.price || 0);
+        const amount = parseFloat(order.amount || 0);
+        const value = parseFloat(order.value || price * amount);
+        const timeStr = new Date(order.timestamp).toLocaleTimeString();
+        const shortId = order.id ? String(order.id).slice(-8) : 'N/A';
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${sideClass}`;
+        toast.innerHTML = `
+            <div class="toast-header">
+                <div class="toast-title">
+                    ${sideLabel}
+                </div>
+                <button class="toast-close" title="Dismiss">✕</button>
+            </div>
+            <div class="toast-symbol">${order.symbol}</div>
+            <div class="toast-details">
+                <div class="toast-detail-row"><span>Type</span><span>${order.type || 'MARKET'}</span></div>
+                <div class="toast-detail-row"><span>Side</span><span>${order.side}</span></div>
+                <div class="toast-detail-row"><span>Price</span><span>$${price.toFixed(4)}</span></div>
+                <div class="toast-detail-row"><span>Amount</span><span>${amount}</span></div>
+                <div class="toast-detail-row"><span>Leverage</span><span>${order.leverage}×</span></div>
+                <div class="toast-detail-row"><span>Value</span><span>$${value.toFixed(2)}</span></div>
+            </div>
+            <div class="toast-time">Order ID: …${shortId} · ${timeStr}</div>
+            <div class="toast-progress"></div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Manual close
+        toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
+
+        // Auto-dismiss after 6s (matches progress bar animation)
+        const timer = setTimeout(() => dismissToast(toast), 6000);
+        toast._dismissTimer = timer;
+    }
+
+    function dismissToast(toast) {
+        clearTimeout(toast._dismissTimer);
+        toast.classList.add('toast-hiding');
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    }
+
+    function fetchOrderNotifications() {
+        fetch('/api/orders/recent')
+            .then(res => res.json())
+            .then(orders => {
+                orders.forEach(order => showOrderToast(order));
+            })
+            .catch(() => { }); // Silently fail if bot is offline
+    }
+
+    setInterval(fetchOrderNotifications, 3000);
+    fetchOrderNotifications();
 });

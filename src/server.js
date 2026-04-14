@@ -99,6 +99,14 @@ class WebServer {
             }
         });
 
+        // Recent orders (for toast notifications in the UI)
+        this.app.get('/api/orders/recent', (req, res) => {
+            const unseen = this.bot.orderEvents.filter(e => !e.seen);
+            // Mark them seen so they only notify once
+            unseen.forEach(e => { e.seen = true; });
+            res.json(unseen);
+        });
+
         this.app.post('/api/bot/stop', async (req, res) => {
             if (!this.bot.isRunning) {
                 return res.json({ success: false, message: 'Bot is not running.' });
