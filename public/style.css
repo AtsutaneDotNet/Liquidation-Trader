@@ -556,3 +556,62 @@ input:focus {
     from { width: 100%; }
     to   { width: 0%; }
 }
+
+/* ── Login Page ─────────────────────────────── */
+.login-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: var(--bg-color); /* Matches webui exactly */
+}
+.login-wrapper {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    z-index: 10;
+}
+.login-card {
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 230, 118, 0.05);
+    border: 1px solid var(--border-color);
+}
+.login-card .logo {
+    margin-bottom: 32px;
+    font-size: 26px;
+    display: inline-block;
+}
+.login-card .form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+.login-card input {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: #12141a;
+    border: 1px solid #2b303d;
+    transition: all 0.2s ease;
+}
+.login-card input:focus {
+    background-color: #15181f;
+}
+.login-error {
+    color: var(--danger);
+    margin-top: 1rem;
+    display: none;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(255, 59, 59, 0.1);
+    padding: 10px;
+    border-radius: var(--radius);
+}
+.btn-login {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}

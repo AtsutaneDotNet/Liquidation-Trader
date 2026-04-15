@@ -56,7 +56,7 @@ try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } ca
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 
 
-const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET'];
+const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD'];
 
 function getConfig() {
     const rows = db.prepare('SELECT * FROM config').all();
@@ -82,6 +82,9 @@ function setConfig(key, value) {
 
 // Load default configs to the DB if empty
 const defaults = {
+    WEBUI_AUTH_ENABLED: 'false',
+    WEBUI_USERNAME: 'admin',
+    WEBUI_PASSWORD: 'admin',
     LIQUIDATION_VALUE_THRESHOLD: '1000',
     OFFSET_PERCENTAGE: '0.5',
     TAKE_PROFIT_PERCENTAGE: '1.0',

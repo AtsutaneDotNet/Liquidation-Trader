@@ -8,12 +8,80 @@ class WebServer {
     constructor(bot) {
         this.app = express();
         this.bot = bot;
-        
+        this.activeSessions = new Set();
+
         this.app.use(cors());
         this.app.use(express.json());
+
+        // Simple cookie parser
+        this.app.use((req, res, next) => {
+            req.cookies = {};
+            if (req.headers.cookie) {
+                req.headers.cookie.split(';').forEach(cookie => {
+                    const parts = cookie.split('=');
+                    req.cookies[parts[0].trim()] = (parts[1] || '').trim();
+                });
+            }
+            next();
+        });
+
+        this.setupAuthRoutes();
+        this.setupAuthMiddleware();
+
         this.app.use(express.static(path.join(__dirname, '../public')));
-        
+
         this.setupRoutes();
+    }
+
+    setupAuthRoutes() {
+        this.app.post('/api/auth/login', (req, res) => {
+            const { username, password } = req.body;
+            const currentConfig = config.get();
+            if (username === currentConfig.WEBUI_USERNAME && password === currentConfig.WEBUI_PASSWORD) {
+                const token = require('crypto').randomBytes(32).toString('hex');
+                this.activeSessions.add(token);
+                res.cookie('auth_token', token, { httpOnly: true });
+                return res.json({ success: true, message: 'Logged in successfully' });
+            }
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        });
+
+        this.app.post('/api/auth/logout', (req, res) => {
+            if (req.cookies.auth_token) {
+                this.activeSessions.delete(req.cookies.auth_token);
+            }
+            res.clearCookie('auth_token');
+            res.json({ success: true, message: 'Logged out successfully' });
+        });
+
+        this.app.get('/api/auth/status', (req, res) => {
+            const enabled = config.get().WEBUI_AUTH_ENABLED;
+            const authenticated = this.activeSessions.has(req.cookies.auth_token);
+            res.json({ enabled, authenticated });
+        });
+    }
+
+    setupAuthMiddleware() {
+        this.app.use((req, res, next) => {
+            const currentConfig = config.get();
+            if (!currentConfig.WEBUI_AUTH_ENABLED) {
+                return next();
+            }
+
+            if (req.path === '/login.html' || req.path === '/style.css' || req.path === '/script.js') {
+                return next();
+            }
+
+            if (this.activeSessions.has(req.cookies.auth_token)) {
+                return next();
+            }
+
+            if (req.path.startsWith('/api/')) {
+                return res.status(401).json({ success: false, message: 'Unauthorized' });
+            } else {
+                return res.redirect('/login.html');
+            }
+        });
     }
 
     setupRoutes() {
@@ -24,6 +92,8 @@ class WebServer {
             const responseConfig = { ...currentConfig };
             if (responseConfig.API_KEY) responseConfig.API_KEY = responseConfig.API_KEY.replace(/.(?=.{4})/g, '*');
             if (responseConfig.API_SECRET) responseConfig.API_SECRET = '********';
+            if (responseConfig.WEBUI_USERNAME) responseConfig.WEBUI_USERNAME = responseConfig.WEBUI_USERNAME.replace(/.(?=.{4})/g, '*');
+            if (responseConfig.WEBUI_PASSWORD) responseConfig.WEBUI_PASSWORD = '********';
             res.json(responseConfig);
         });
 
@@ -33,7 +103,7 @@ class WebServer {
                 const updates = req.body;
                 for (const [key, value] of Object.entries(updates)) {
                     // Prevent overwriting API key with mask
-                    const isMaskedKey = ['API_KEY', 'API_SECRET'].includes(key);
+                    const isMaskedKey = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD'].includes(key);
                     if (isMaskedKey && typeof value === 'string' && value.includes('*')) {
                         continue;
                     }
@@ -123,8 +193,9 @@ class WebServer {
 
     start() {
         const port = config.get().WEB_PORT;
-        this.app.listen(port, () => {
-            logger.info(`Web dashboard server running on http://localhost:${port}`);
+        const host = config.get().WEB_HOST;
+        this.app.listen(port, host, () => {
+            logger.info(`Web dashboard server running on http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
         });
     }
 }

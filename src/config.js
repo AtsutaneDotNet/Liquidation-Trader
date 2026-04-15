@@ -4,6 +4,9 @@ const db = require('./db');
 function getConfig() {
     const dbConfig = db.getConfig();
     return {
+        WEBUI_AUTH_ENABLED: dbConfig.WEBUI_AUTH_ENABLED === 'true',
+        WEBUI_USERNAME: dbConfig.WEBUI_USERNAME || 'admin',
+        WEBUI_PASSWORD: dbConfig.WEBUI_PASSWORD || 'admin',
         API_KEY: dbConfig.API_KEY || '',
         API_SECRET: dbConfig.API_SECRET || '',
         TRADE_EXCHANGE: dbConfig.TRADE_EXCHANGE || 'bybit',
@@ -16,7 +19,8 @@ function getConfig() {
         TRADE_AMOUNT_PERCENTAGE: parseFloat(dbConfig.TRADE_AMOUNT_PERCENTAGE) || 5,
         MAX_OPEN_POSITIONS: parseInt(dbConfig.MAX_OPEN_POSITIONS) || 3,
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-        WEB_PORT: parseInt(process.env.WEB_PORT) || 3000
+        WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,
+        WEB_HOST: process.env.WEB_HOST || 'localhost'
     };
 }
 

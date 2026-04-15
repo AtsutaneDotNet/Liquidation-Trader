@@ -30,8 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
+                    if (key === 'WEBUI_AUTH_ENABLED') {
+                        const el = document.getElementById(key);
+                        if (el) el.checked = data[key] === true || data[key] === 'true';
+                        continue;
+                    }
                     const el = document.getElementById(key);
-                    if (el) {
+                    if (el && el.type !== 'checkbox') {
                         el.value = data[key] || '';
                     }
 
@@ -57,6 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate hidden input for liquidation exchanges before sending
         const checkedLiqs = Array.from(document.querySelectorAll('.liq-exchange-cb:checked')).map(cb => cb.value);
         formData.set('LIQUIDATION_EXCHANGES', checkedLiqs.join(','));
+
+        // Handle auth checkbox specifically
+        const authCb = document.getElementById('WEBUI_AUTH_ENABLED');
+        if (authCb) {
+            formData.set('WEBUI_AUTH_ENABLED', authCb.checked ? 'true' : 'false');
+        }
 
         const data = Object.fromEntries(formData.entries());
 
@@ -384,4 +395,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setInterval(fetchOrderNotifications, 3000);
     fetchOrderNotifications();
+
+    // ── Authentication Status ────────────────────────────────────
+    function checkAuthStatus() {
+        fetch('/api/auth/status')
+            .then(res => res.json())
+            .then(data => {
+                const btnLogout = document.getElementById('btn-logout');
+                if (data.enabled && data.authenticated) {
+                    if (btnLogout) btnLogout.style.display = 'flex';
+                } else {
+                    if (btnLogout) btnLogout.style.display = 'none';
+                }
+            })
+            .catch(console.error);
+    }
+    checkAuthStatus();
+
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            fetch('/api/auth/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/login.html';
+                })
+                .catch(console.error);
+        });
+    }
+
+    // ── Login Form ────────────────────────────────────────────────
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            const errorEl = document.getElementById('login-error');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Authenticating...';
+            submitBtn.disabled = true;
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    window.location.href = '/';
+                } else {
+                    errorEl.textContent = result.message || 'Invalid credentials';
+                    errorEl.style.display = 'block';
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.style.display = 'block';
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
 });

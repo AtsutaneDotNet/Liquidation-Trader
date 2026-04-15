@@ -75,6 +75,13 @@
                     </svg>
                     <span class="nav-text">Settings</span>
                 </button>
+                <div style="flex-grow: 1;"></div>
+                <button id="btn-logout" class="nav-btn" style="display: none; margin-top: 20px;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span class="nav-text">Logout</span>
+                </button>
             </nav>
         </aside>
 
@@ -176,6 +183,29 @@
                                 <input type="password" id="API_SECRET" name="API_SECRET" placeholder="Wait...">
                             </div>
                         </div>
+
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">WebUI Security</h3>
+                        
+                        <div class="form-group row">
+                            <div class="col" style="flex: 1;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="WEBUI_AUTH_ENABLED" name="WEBUI_AUTH_ENABLED" value="true" style="width: auto; margin: 0;"> Enable WebUI Authentication
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="WEBUI_USERNAME">WebUI Username</label>
+                                <input type="text" id="WEBUI_USERNAME" name="WEBUI_USERNAME" placeholder="admin">
+                            </div>
+                            <div class="col">
+                                <label for="WEBUI_PASSWORD">WebUI Password (Encrypted)</label>
+                                <input type="password" id="WEBUI_PASSWORD" name="WEBUI_PASSWORD" placeholder="Wait...">
+                            </div>
+                        </div>
+
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Trading Configuration</h3>
 
                         <div class="form-group row">
                             <div class="col" style="flex: 1;">
