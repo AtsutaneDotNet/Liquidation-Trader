@@ -1,4 +1,44 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ── Login Form ────────────────────────────────────────────────
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            const errorEl = document.getElementById('login-error');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Authenticating...';
+            submitBtn.disabled = true;
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    window.location.href = '/';
+                } else {
+                    errorEl.textContent = result.message || 'Invalid credentials';
+                    errorEl.style.display = 'block';
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.style.display = 'block';
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+        return; // Stop further execution on login page
+    }
+
     // Sidebar Toggle
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -423,42 +463,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Login Form ────────────────────────────────────────────────
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData.entries());
-            const errorEl = document.getElementById('login-error');
-            const submitBtn = this.querySelector('button[type="submit"]');
-            
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Authenticating...';
-            submitBtn.disabled = true;
-
-            fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    window.location.href = '/';
-                } else {
-                    errorEl.textContent = result.message || 'Invalid credentials';
-                    errorEl.style.display = 'block';
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                }
-            })
-            .catch(err => {
-                errorEl.textContent = 'Network error. Please try again.';
-                errorEl.style.display = 'block';
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            });
-        });
-    }
 });
