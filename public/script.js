@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (key === 'WEBUI_AUTH_ENABLED') {
+                    if (key === 'WEBUI_AUTH_ENABLED' || key === 'CMC_FILTER_ENABLED') {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -107,6 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const authCb = document.getElementById('WEBUI_AUTH_ENABLED');
         if (authCb) {
             formData.set('WEBUI_AUTH_ENABLED', authCb.checked ? 'true' : 'false');
+        }
+
+        const cmcFilterCb = document.getElementById('CMC_FILTER_ENABLED');
+        if (cmcFilterCb) {
+            formData.set('CMC_FILTER_ENABLED', cmcFilterCb.checked ? 'true' : 'false');
         }
 
         const data = Object.fromEntries(formData.entries());

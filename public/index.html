@@ -205,6 +205,27 @@
                             </div>
                         </div>
 
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">CMC Ranking Filter</h3>
+
+                        <div class="form-group row">
+                            <div class="col" style="flex: 1;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="CMC_FILTER_ENABLED" name="CMC_FILTER_ENABLED" value="true" style="width: auto; margin: 0;"> Enable CMC Rank Filter
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="CMC_API_KEY">CoinMarketCap API Key</label>
+                                <input type="password" id="CMC_API_KEY" name="CMC_API_KEY" placeholder="Paste your CMC Pro API Key here">
+                            </div>
+                            <div class="col">
+                                <label for="CMC_RANK_LIMIT">CMC Rank Limit (e.g. 100)</label>
+                                <input type="number" id="CMC_RANK_LIMIT" name="CMC_RANK_LIMIT" min="1" step="1">
+                            </div>
+                        </div>
+
                         <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Trading Configuration</h3>
 
                         <div class="form-group row">

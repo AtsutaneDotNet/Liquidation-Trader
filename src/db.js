@@ -56,7 +56,7 @@ try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } ca
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 
 
-const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD'];
+const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY'];
 
 function getConfig() {
     const rows = db.prepare('SELECT * FROM config').all();
@@ -93,7 +93,10 @@ const defaults = {
     TRADE_AMOUNT_PERCENTAGE: '5',
     TRADE_EXCHANGE: 'bybit',
     LIQUIDATION_EXCHANGES: 'bybit',
-    MAX_OPEN_POSITIONS: '3'
+    MAX_OPEN_POSITIONS: '3',
+    CMC_API_KEY: '',
+    CMC_RANK_LIMIT: '100',
+    CMC_FILTER_ENABLED: 'false'
 };
 
 const currentConfig = getConfig();

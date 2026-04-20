@@ -3,6 +3,7 @@ const BybitExchange = require('./exchanges/bybit');
 const BinanceExchange = require('./exchanges/binance');
 const logger = require('./logger');
 const db = require('./db');
+const cmc = require('./cmc');
 
 class TradingBot {
     constructor() {
@@ -19,6 +20,7 @@ class TradingBot {
 
         this.pnlInterval = null;
         this.cleanupInterval = null;
+        this.cmcInterval = null;
 
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
@@ -57,6 +59,16 @@ class TradingBot {
         try {
             const cfg = this.config.get();
 
+            // CMC Filter Initialization
+            if (cfg.CMC_FILTER_ENABLED) {
+                try {
+                    await this.refreshCmcRankings();
+                } catch (cmcError) {
+                    logger.error(`CRITICAL: CMC ranking list failed on startup. Bot will not start.`);
+                    throw new Error(`CMC Filter Error: ${cmcError.message}`);
+                }
+            }
+
             // Setup Trading Exchange
             if (cfg.TRADE_EXCHANGE === 'binance') {
                 this.tradeExchange = new BinanceExchange(this.config);
@@ -67,8 +79,21 @@ class TradingBot {
 
             // Load pairs strictly from the chosen trading exchange
             logger.info('Fetching linear market instruments...');
-            this.symbols = await this.tradeExchange.getLinearSymbols();
-            logger.info(`Loaded ${this.symbols.length} active USDT pairs from ${cfg.TRADE_EXCHANGE.toUpperCase()}.`);
+            let allSymbols = await this.tradeExchange.getLinearSymbols();
+            
+            if (cfg.CMC_FILTER_ENABLED) {
+                const originalCount = allSymbols.length;
+                this.symbols = allSymbols.filter(s => cmc.isSymbolInTop(s));
+                logger.info(`CMC Filter active: ${this.symbols.length}/${originalCount} pairs matched the Top ${cfg.CMC_RANK_LIMIT} ranking list.`);
+                
+                // Set refresh interval
+                this.cmcInterval = setInterval(() => {
+                    this.refreshCmcRankings().catch(e => logger.warn(`Periodic CMC refresh failed: ${e.message}`));
+                }, 3600000); // 1 hour
+            } else {
+                this.symbols = allSymbols;
+                logger.info(`Loaded ${this.symbols.length} active USDT pairs from ${cfg.TRADE_EXCHANGE.toUpperCase()}.`);
+            }
 
             // Setup Liquidation Exchanges
             this.liqExchanges = {};
@@ -156,6 +181,13 @@ class TradingBot {
         clearTimeout(this.errorTimer);
         clearInterval(this.pnlInterval);
         clearInterval(this.cleanupInterval);
+        clearInterval(this.cmcInterval);
+    }
+
+    async refreshCmcRankings() {
+        const cfg = this.config.get();
+        if (!cfg.CMC_FILTER_ENABLED) return;
+        await cmc.getTopSymbols(cfg.CMC_API_KEY, cfg.CMC_RANK_LIMIT);
     }
 
     async checkAndRemoveStalePositions() {
