@@ -59,6 +59,12 @@ class TradingBot {
         try {
             const cfg = this.config.get();
 
+            // Strategy Validation
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP or RSI strategy in Settings.');
+                throw new Error('No technical strategy enabled. Please enable at least one strategy.');
+            }
+
             // CMC Filter Initialization
             if (cfg.CMC_FILTER_ENABLED) {
                 try {
@@ -407,38 +413,113 @@ class TradingBot {
         }
     }
 
+    calculateRSI(closes, period = 14) {
+        if (!closes || closes.length < period + 1) return null;
+        let gains = 0;
+        let losses = 0;
+        for (let i = 1; i <= period; i++) {
+            const diff = closes[i] - closes[i - 1];
+            if (diff >= 0) gains += diff;
+            else losses -= diff;
+        }
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+
+        for (let i = period + 1; i < closes.length; i++) {
+            const diff = closes[i] - closes[i - 1];
+            const gain = diff >= 0 ? diff : 0;
+            const loss = diff < 0 ? -diff : 0;
+            avgGain = (avgGain * (period - 1) + gain) / period;
+            avgLoss = (avgLoss * (period - 1) + loss) / period;
+        }
+
+        if (avgLoss === 0) return 100;
+        const rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    }
+
     async evaluateTrade(symbol, currentPrice) {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
 
         try {
-            const ticker = await this.tradeExchange.fetchTicker(symbol);
+            let vwapSide = null;
+            let rsiSide = null;
 
-            if (!ticker || !ticker.vwap) {
-                logger.info(`No VWAP data available from ticker for ${symbol}.`);
-                return;
+            // --- 1. VWAP Strategy ---
+            if (cfg.ENABLE_VWAP_STRATEGY) {
+                const ticker = await this.tradeExchange.fetchTicker(symbol);
+                if (ticker && ticker.vwap) {
+                    const vwap = ticker.vwap;
+                    logger.info(`VWAP: ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
+                    const offsetMultiplier = cfg.OFFSET_PERCENTAGE / 100;
+                    const upperOffsetValue = vwap * (1 + offsetMultiplier);
+                    const lowerOffsetValue = vwap * (1 - offsetMultiplier);
+
+                    logger.info(`Upper Offset (+${cfg.OFFSET_PERCENTAGE}%): ${upperOffsetValue.toFixed(4)}`);
+                    logger.info(`Lower Offset (-${cfg.OFFSET_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
+
+                    if (currentPrice > upperOffsetValue) {
+                        vwapSide = 'sell';
+                        logger.info(`VWAP Condition met: Price ${currentPrice} > Upper VWAP ${upperOffsetValue.toFixed(4)}. Signal: SHORT.`);
+                    } else if (currentPrice < lowerOffsetValue) {
+                        vwapSide = 'buy';
+                        logger.info(`VWAP Condition met: Price ${currentPrice} < Lower VWAP ${lowerOffsetValue.toFixed(4)}. Signal: LONG.`);
+                    } else {
+                        logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
+                    }
+                } else {
+                    logger.info(`No VWAP data available from ticker for ${symbol}.`);
+                }
             }
 
-            const vwap = ticker.vwap;
-            logger.info(`VWAP: ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
+            // --- 2. RSI Strategy ---
+            if (cfg.ENABLE_RSI_STRATEGY) {
+                if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.has['fetchOHLCV']) {
+                    const period = parseInt(cfg.RSI_PERIOD) || 14;
+                    // fetch more candles to get a stable RSI smoothing
+                    const klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.RSI_TIMEFRAME, undefined, period + 100);
+                    if (klines && klines.length > period) {
+                        const closes = klines.map(k => k[4]); // Close price is index 4
+                        const rsi = this.calculateRSI(closes, period);
+                        if (rsi !== null) {
+                            logger.info(`RSI (${period}, ${cfg.RSI_TIMEFRAME}): ${rsi.toFixed(2)}`);
+                            if (rsi <= cfg.RSI_OVERSOLD) {
+                                rsiSide = 'buy';
+                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} <= Oversold (${cfg.RSI_OVERSOLD}). Signal: LONG.`);
+                            } else if (rsi >= cfg.RSI_OVERBOUGHT) {
+                                rsiSide = 'sell';
+                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} >= Overbought (${cfg.RSI_OVERBOUGHT}). Signal: SHORT.`);
+                            } else {
+                                logger.info(`RSI Condition: Value is neutral. No trade signal.`);
+                            }
+                        }
+                    } else {
+                        logger.info(`Not enough klines fetched for RSI calculation for ${symbol}.`);
+                    }
+                } else {
+                    logger.info(`Exchange does not support fetchOHLCV for RSI.`);
+                }
+            }
 
-            const offsetMultiplier = cfg.OFFSET_PERCENTAGE / 100;
-            const upperOffsetValue = vwap * (1 + offsetMultiplier);
-            const lowerOffsetValue = vwap * (1 - offsetMultiplier);
+            // --- 3. Confluence Logic (AND) ---
+            let finalSide = null;
 
-            logger.info(`Upper Offset (+${cfg.OFFSET_PERCENTAGE}%): ${upperOffsetValue.toFixed(4)}`);
-            logger.info(`Lower Offset (-${cfg.OFFSET_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
+            if (cfg.ENABLE_VWAP_STRATEGY && cfg.ENABLE_RSI_STRATEGY) {
+                if (vwapSide && rsiSide && vwapSide === rsiSide) {
+                    finalSide = vwapSide;
+                    logger.info(`Confluence matched! Both VWAP and RSI signal: ${finalSide.toUpperCase()}`);
+                } else {
+                    logger.info(`Confluence missed or conflicting signals. VWAP: ${vwapSide || 'none'}, RSI: ${rsiSide || 'none'}. No trade.`);
+                    return;
+                }
+            } else if (cfg.ENABLE_VWAP_STRATEGY) {
+                finalSide = vwapSide;
+            } else if (cfg.ENABLE_RSI_STRATEGY) {
+                finalSide = rsiSide;
+            }
 
-            let side = null;
-
-            if (currentPrice > upperOffsetValue) {
-                side = 'sell';
-                logger.info(`Condition met: Price ${currentPrice} > Upper VWAP ${upperOffsetValue.toFixed(4)}. Signal: SHORT.`);
-            } else if (currentPrice < lowerOffsetValue) {
-                side = 'buy';
-                logger.info(`Condition met: Price ${currentPrice} < Lower VWAP ${lowerOffsetValue.toFixed(4)}. Signal: LONG.`);
-            } else {
-                logger.info(`Price is within offset bounds. No trade signal.`);
+            if (!finalSide) {
                 return;
             }
 
@@ -450,7 +531,7 @@ class TradingBot {
                 return;
             }
 
-            await this.executeTrade(symbol, side, currentPrice, cfg);
+            await this.executeTrade(symbol, finalSide, currentPrice, cfg);
 
         } catch (error) {
             this.handleError(`Error in evaluateTrade for ${symbol}: ${error.message}`);

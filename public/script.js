@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (key === 'WEBUI_AUTH_ENABLED' || key === 'CMC_FILTER_ENABLED') {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -112,6 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const cmcFilterCb = document.getElementById('CMC_FILTER_ENABLED');
         if (cmcFilterCb) {
             formData.set('CMC_FILTER_ENABLED', cmcFilterCb.checked ? 'true' : 'false');
+        }
+
+        const vwapCb = document.getElementById('ENABLE_VWAP_STRATEGY');
+        if (vwapCb) formData.set('ENABLE_VWAP_STRATEGY', vwapCb.checked ? 'true' : 'false');
+
+        const rsiCb = document.getElementById('ENABLE_RSI_STRATEGY');
+        if (rsiCb) formData.set('ENABLE_RSI_STRATEGY', rsiCb.checked ? 'true' : 'false');
+
+        if (vwapCb && rsiCb && !vwapCb.checked && !rsiCb.checked) {
+            const msg = document.getElementById('save-status');
+            msg.textContent = 'Error: At least one strategy must be enabled.';
+            msg.style.color = 'var(--danger)';
+            msg.classList.add('show');
+            setTimeout(() => { msg.classList.remove('show'); msg.style.color = ''; }, 3000);
+            return;
         }
 
         const data = Object.fromEntries(formData.entries());
