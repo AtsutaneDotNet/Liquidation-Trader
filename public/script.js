@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_TRAILING_PROFIT'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rsiCb = document.getElementById('ENABLE_RSI_STRATEGY');
         if (rsiCb) formData.set('ENABLE_RSI_STRATEGY', rsiCb.checked ? 'true' : 'false');
+
+        const trailingCb = document.getElementById('ENABLE_TRAILING_PROFIT');
+        if (trailingCb) formData.set('ENABLE_TRAILING_PROFIT', trailingCb.checked ? 'true' : 'false');
 
         if (vwapCb && rsiCb && !vwapCb.checked && !rsiCb.checked) {
             const msg = document.getElementById('save-status');

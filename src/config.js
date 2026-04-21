@@ -21,6 +21,8 @@ function getConfig() {
         OFFSET_PERCENTAGE: parseFloat(dbConfig.OFFSET_PERCENTAGE) || 0.5,
         TAKE_PROFIT_PERCENTAGE: parseFloat(dbConfig.TAKE_PROFIT_PERCENTAGE) || 1.0,
         STOP_LOSS_PERCENTAGE: parseFloat(dbConfig.STOP_LOSS_PERCENTAGE) || 0.5,
+        ENABLE_TRAILING_PROFIT: dbConfig.ENABLE_TRAILING_PROFIT === 'true',
+        TRAILING_PROFIT_PERCENTAGE: parseFloat(dbConfig.TRAILING_PROFIT_PERCENTAGE) || 0.2,
         TRADE_LEVERAGE: parseInt(dbConfig.TRADE_LEVERAGE) || 10,
         TRADE_AMOUNT_PERCENTAGE: parseFloat(dbConfig.TRADE_AMOUNT_PERCENTAGE) || 5,
         MAX_OPEN_POSITIONS: parseInt(dbConfig.MAX_OPEN_POSITIONS) || 3,

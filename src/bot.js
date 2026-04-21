@@ -337,9 +337,27 @@ class TradingBot {
         const isTpMatch = !isNaN(currentTp) && currentTp > 0 && Math.abs(currentTp - formattedTp) / formattedTp < 0.005;
         const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.005;
 
+        const trailingPercent = cfg.ENABLE_TRAILING_PROFIT ? cfg.TRAILING_PROFIT_PERCENTAGE : 0;
+        let shouldUpdate = false;
+
+        if (trailingPercent > 0) {
+            // Native trailing stop active. We track it in memory to avoid infinite loops if WS doesn't reflect the dynamic stop
+            this._nativeTrailingSet = this._nativeTrailingSet || {};
+            const trailingKey = `${symbol}_${orderSide}_${entryPrice}`; // Tie to this specific entry
+            if (!this._nativeTrailingSet[trailingKey]) {
+                shouldUpdate = true;
+                this._nativeTrailingSet[trailingKey] = true;
+            } else if (!isTpMatch) {
+                // Only update again if TP is missing, to avoid creating duplicate trailing stops
+                shouldUpdate = true;
+            }
+        } else {
+            shouldUpdate = !isTpMatch || !isSlMatch;
+        }
+
         // If Binance, we might not get TP/SL in position info via CCXT natively in some versions. Add basic throttle/cache if needed,
         // but normally CCXT watchPositions handles it. We'll proceed if there's no match.
-        if (!isTpMatch || !isSlMatch) {
+        if (shouldUpdate) {
             // Anti-spam threshold
             this._lastTpSlSet = this._lastTpSlSet || {};
             const key = `${symbol}_${orderSide}`;
@@ -347,8 +365,8 @@ class TradingBot {
             if (Date.now() - lastTime < 10000) return; // Prevent updating faster than 10s
             this._lastTpSlSet[key] = Date.now();
 
-            logger.info(`Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Current TP: ${currentTp}, SL: ${currentSl} -> Target TP: ${formattedTp}, SL: ${formattedSl}`);
-            await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl);
+            logger.info(`Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Current TP: ${currentTp}, SL: ${currentSl} -> Target TP: ${formattedTp}, Target SL: ${formattedSl} (Trailing: ${trailingPercent > 0 ? 'Yes (' + trailingPercent + '%)' : 'No'})`);
+            await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent);
         }
     }
 

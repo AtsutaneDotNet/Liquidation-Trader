@@ -3,14 +3,14 @@ const WebServer = require('./server');
 const logger = require('./logger');
 
 async function main() {
-    logger.info('--- Deep-Blazar Trading Bot Runtime ---');
+    logger.info('--- Liquidation-Trader Bot Runtime ---');
     try {
         const bot = new TradingBot();
         const server = new WebServer(bot);
-        
+
         server.start();
         logger.info('Web interface is running. Please configure the bot via the dashboard if unconfigured.');
-        
+
         const state = require('./config').get().BOT_RUNNING_STATE;
         if (state === 'true') {
             logger.info('Restoring previous running state: Starting bot automatically.');

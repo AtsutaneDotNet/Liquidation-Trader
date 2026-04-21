@@ -201,19 +201,27 @@ class BybitExchange extends BaseExchange {
         }
     }
 
-    async setTpSl(symbol, side, size, takeProfit, stopLoss) {
+    async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0) {
         try {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
 
-            await this.exchange.privatePostV5PositionTradingStop({
+            const params = {
                 category: 'linear',
                 symbol: symbol.replace('/', '').split(':')[0],
                 takeProfit: tpStr,
                 stopLoss: slStr,
                 tpslMode: 'Full',
                 positionIdx: 0
-            });
+            };
+
+            if (trailingPercent > 0 && entryPrice > 0) {
+                const distance = entryPrice * (trailingPercent / 100);
+                params.trailingStop = this.exchange.priceToPrecision(symbol, distance);
+                logger.info(`[Bybit] Configuring native Trailing Stop with distance ${params.trailingStop} (${trailingPercent}%)`);
+            }
+
+            await this.exchange.privatePostV5PositionTradingStop(params);
             logger.info(`[Bybit] Conditional limits securely attached onto ${symbol} position.`);
         } catch (e) {
             logger.error(`[Bybit] Post-fill conditional logic failure for ${symbol}: ${e.message}`);
