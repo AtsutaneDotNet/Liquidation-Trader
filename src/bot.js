@@ -21,6 +21,8 @@ class TradingBot {
         this.pnlInterval = null;
         this.cleanupInterval = null;
         this.cmcInterval = null;
+        this.btcInterval = null;
+        this.btcUsdPrice = null;
 
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
@@ -162,7 +164,10 @@ class TradingBot {
 
             // Kickoff Periodic REST PnL Tracker and Position Pruner
             this.updatePnL(); // Fetch once initially
+            this.updateBtcPrice(); // Fetch once initially
+
             this.pnlInterval = setInterval(() => this.updatePnL(), 600000); // Every 10 mins
+            this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
@@ -188,6 +193,7 @@ class TradingBot {
         clearInterval(this.pnlInterval);
         clearInterval(this.cleanupInterval);
         clearInterval(this.cmcInterval);
+        clearInterval(this.btcInterval);
     }
 
     async refreshCmcRankings() {
@@ -383,6 +389,24 @@ class TradingBot {
         }
     }
 
+    async updateBtcPrice() {
+        if (!this.isRunning) return;
+        try {
+            if (this.tradeExchange && this.tradeExchange.exchange) {
+                // If CCXT provides fetchTicker, use it for BTC/USDT to get the current conversion rate
+                if (this.tradeExchange.exchange.has['fetchTicker']) {
+                    const ticker = await this.tradeExchange.exchange.fetchTicker('BTC/USDT');
+                    if (ticker && ticker.last) {
+                        this.btcUsdPrice = ticker.last;
+                        logger.debug(`BTC conversion price updated: $${this.btcUsdPrice}`);
+                    }
+                }
+            }
+        } catch (e) {
+            logger.warn(`Failed to update BTC conversion price: ${e.message}`);
+        }
+    }
+
 
 
     async onLiquidation(liquidation, exName) {
@@ -411,9 +435,22 @@ class TradingBot {
                 timestamp: liquidation.timestamp || Date.now()
             });
 
-            if (value >= cfg.LIQUIDATION_VALUE_THRESHOLD) {
+            let thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD;
+            if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
+                if (!this.btcUsdPrice) {
+                    // Do not log warning on every liquidation as it could spam, just silently return until we have a price
+                    return;
+                }
+                thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD * this.btcUsdPrice;
+            }
+
+            if (value >= thresholdInUsd) {
                 logger.info(`--- Large Liquidation Detected ---`);
-                logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)}`);
+                if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
+                    logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)} (>= ${cfg.LIQUIDATION_VALUE_THRESHOLD} BTC ≈ $${thresholdInUsd.toFixed(2)})`);
+                } else {
+                    logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)}`);
+                }
 
                 this.isTrading = true;
                 await this.evaluateTrade(symbol, price);

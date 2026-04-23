@@ -17,6 +17,7 @@ function getConfig() {
         RSI_OVERSOLD: parseFloat(dbConfig.RSI_OVERSOLD) || 30,
         TRADE_EXCHANGE: dbConfig.TRADE_EXCHANGE || 'bybit',
         LIQUIDATION_EXCHANGES: dbConfig.LIQUIDATION_EXCHANGES || 'bybit',
+        LIQUIDATION_VALUE_CURRENCY: dbConfig.LIQUIDATION_VALUE_CURRENCY || 'USD',
         LIQUIDATION_VALUE_THRESHOLD: parseFloat(dbConfig.LIQUIDATION_VALUE_THRESHOLD) || 1000,
         OFFSET_PERCENTAGE: parseFloat(dbConfig.OFFSET_PERCENTAGE) || 0.5,
         TAKE_PROFIT_PERCENTAGE: parseFloat(dbConfig.TAKE_PROFIT_PERCENTAGE) || 1.0,
