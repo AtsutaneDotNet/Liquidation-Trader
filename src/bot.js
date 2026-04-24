@@ -1,6 +1,9 @@
 const config = require('./config');
 const BybitExchange = require('./exchanges/bybit');
 const BinanceExchange = require('./exchanges/binance');
+const BitmexExchange = require('./exchanges/bitmex');
+const LighterExchange = require('./exchanges/lighter');
+const OkxExchange = require('./exchanges/okx');
 const logger = require('./logger');
 const db = require('./db');
 const cmc = require('./cmc');
@@ -80,6 +83,12 @@ class TradingBot {
             // Setup Trading Exchange
             if (cfg.TRADE_EXCHANGE === 'binance') {
                 this.tradeExchange = new BinanceExchange(this.config);
+            } else if (cfg.TRADE_EXCHANGE === 'bitmex') {
+                this.tradeExchange = new BitmexExchange(this.config);
+            } else if (cfg.TRADE_EXCHANGE === 'lighter') {
+                this.tradeExchange = new LighterExchange(this.config);
+            } else if (cfg.TRADE_EXCHANGE === 'okx') {
+                this.tradeExchange = new OkxExchange(this.config);
             } else {
                 this.tradeExchange = new BybitExchange(this.config);
             }
@@ -113,6 +122,12 @@ class TradingBot {
                 } else {
                     if (exName === 'binance') {
                         this.liqExchanges[exName] = new BinanceExchange(this.config);
+                    } else if (exName === 'bitmex') {
+                        this.liqExchanges[exName] = new BitmexExchange(this.config);
+                    } else if (exName === 'lighter') {
+                        this.liqExchanges[exName] = new LighterExchange(this.config);
+                    } else if (exName === 'okx') {
+                        this.liqExchanges[exName] = new OkxExchange(this.config);
                     } else {
                         this.liqExchanges[exName] = new BybitExchange(this.config);
                     }

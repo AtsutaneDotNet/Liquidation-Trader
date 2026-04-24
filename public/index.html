@@ -288,15 +288,19 @@
                                     style="width: 100%; padding: 0.75rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; margin-top: 0.5rem; outline: none;">
                                     <option value="bybit">Bybit</option>
                                     <option value="binance">Binance</option>
+                                    <option value="bitmex">BitMEX</option>
+                                    <option value="lighter">Lighter</option>
+                                    <option value="okx">OKX</option>
                                 </select>
                             </div>
                             <div class="col" style="flex: 1;">
                                 <label>Liquidation Stream</label>
-                                <div class="checkbox-group" style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox"
-                                            class="liq-exchange-cb" value="bybit"> Bybit</label>
-                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox"
-                                            class="liq-exchange-cb" value="binance"> Binance</label>
+                                <div class="checkbox-group" style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="bybit"> Bybit</label>
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="binance"> Binance</label>
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="bitmex"> BitMEX</label>
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="lighter"> Lighter</label>
+                                    <label style="font-weight: normal; margin-bottom: 0;"><input type="checkbox" class="liq-exchange-cb" value="okx"> OKX</label>
                                 </div>
                                 <input type="hidden" id="LIQUIDATION_EXCHANGES" name="LIQUIDATION_EXCHANGES">
                             </div>
