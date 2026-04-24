@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tradeStatusText = document.getElementById('trade-status-text');
     const pairsCount = document.getElementById('pairs-count');
     const controlMsg = document.getElementById('control-msg');
+    let currentBtcPrice = 0;
 
     function fetchStatus() {
         fetch('/api/status')
@@ -184,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 pairsCount.textContent = data.pairsLoaded;
+                currentBtcPrice = data.btcUsdPrice || 0;
             });
     }
 
@@ -341,7 +343,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 const thresholdInput = document.getElementById('LIQUIDATION_VALUE_THRESHOLD');
+                const currencyInput = document.getElementById('LIQUIDATION_VALUE_CURRENCY');
+                
                 const threshold = parseFloat(thresholdInput ? thresholdInput.value : 0) || 0;
+                const currency = currencyInput ? currencyInput.value : 'USD';
+                
+                let effectiveThreshold = threshold;
+                if (currency === 'BTC' && currentBtcPrice > 0) {
+                    effectiveThreshold = threshold * currentBtcPrice;
+                }
 
                 if (tbodyLiquidations) {
                     if (!data || data.length === 0) {
@@ -353,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const timeStr = new Date(liq.timestamp).toLocaleTimeString();
 
                             const liqValue = parseFloat(liq.value || 0);
-                            const isHighValue = liqValue >= threshold;
+                            const isHighValue = liqValue >= effectiveThreshold;
                             const highlightClass = isHighValue ? 'liq-highlight' : '';
 
                             return `<tr class="${highlightClass}">
@@ -370,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (tbodyDashboardLiquidations && dashPageActive) {
-                    const highValueLiqs = data.filter(liq => parseFloat(liq.value || 0) >= threshold).slice(0, 10);
+                    const highValueLiqs = data.filter(liq => parseFloat(liq.value || 0) >= effectiveThreshold).slice(0, 10);
                     if (highValueLiqs.length === 0) {
                         tbodyDashboardLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No recent high value liquidations &mdash;</td></tr>';
                     } else {

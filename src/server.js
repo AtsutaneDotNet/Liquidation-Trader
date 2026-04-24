@@ -123,7 +123,8 @@ class WebServer {
             res.json({
                 isRunning: this.bot.isRunning,
                 isTrading: this.bot.isTrading,
-                pairsLoaded: Array.isArray(this.bot.symbols) ? this.bot.symbols.length : 0
+                pairsLoaded: Array.isArray(this.bot.symbols) ? this.bot.symbols.length : 0,
+                btcUsdPrice: this.bot.btcUsdPrice
             });
         });
 
