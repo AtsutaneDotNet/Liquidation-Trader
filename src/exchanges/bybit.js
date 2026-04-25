@@ -201,7 +201,7 @@ class BybitExchange extends BaseExchange {
         }
     }
 
-    async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0) {
+    async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0, trailingActivationPrice = 0) {
         try {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
@@ -218,7 +218,10 @@ class BybitExchange extends BaseExchange {
             if (trailingPercent > 0 && entryPrice > 0) {
                 const distance = entryPrice * (trailingPercent / 100);
                 params.trailingStop = this.exchange.priceToPrecision(symbol, distance);
-                logger.info(`[Bybit] Configuring native Trailing Stop with distance ${params.trailingStop} (${trailingPercent}%)`);
+                if (trailingActivationPrice > 0) {
+                    params.activePrice = this.exchange.priceToPrecision(symbol, trailingActivationPrice);
+                }
+                logger.info(`[Bybit] Configuring native Trailing Stop with distance ${params.trailingStop} (${trailingPercent}%)${trailingActivationPrice > 0 ? ' and active price ' + params.activePrice : ''}`);
             }
 
             await this.exchange.privatePostV5PositionTradingStop(params);
