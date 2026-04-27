@@ -48,6 +48,13 @@ class BaseExchange {
     async placeOrderWithTpSl(symbol, side, amount, price, tpPrice, slPrice) {
         throw new Error('placeOrderWithTpSl() must be implemented');
     }
+
+    /**
+     * Set Take Profit and Stop Loss for a position
+     */
+    async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0, trailingActivationPrice = 0) {
+        throw new Error('setTpSl() must be implemented');
+    }
 }
 
 module.exports = BaseExchange;

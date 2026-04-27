@@ -201,7 +201,7 @@ class BinanceExchange extends BaseExchange {
         }
     }
 
-    async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0) {
+    async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0, trailingActivationPrice = 0) {
         try {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
@@ -214,11 +214,15 @@ class BinanceExchange extends BaseExchange {
 
             if (trailingPercent > 0) {
                 let clampedPercent = Math.max(0.1, Math.min(5.0, trailingPercent));
-                logger.info(`[Binance] Configuring native Trailing Stop with callbackRate ${clampedPercent}%`);
-                await this.exchange.createOrder(symbol, 'TRAILING_STOP_MARKET', oppositeSide, size, undefined, {
+                const trailingParams = {
                     callbackRate: clampedPercent,
                     reduceOnly: true
-                });
+                };
+                if (trailingActivationPrice > 0) {
+                    trailingParams.activationPrice = this.exchange.priceToPrecision(symbol, trailingActivationPrice);
+                }
+                logger.info(`[Binance] Configuring native Trailing Stop with callbackRate ${clampedPercent}%${trailingActivationPrice > 0 ? ' and activationPrice ' + trailingParams.activationPrice : ''}`);
+                await this.exchange.createOrder(symbol, 'TRAILING_STOP_MARKET', oppositeSide, size, undefined, trailingParams);
             } else {
                 await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
                     stopPrice: slStr,

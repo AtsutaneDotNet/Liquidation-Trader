@@ -359,6 +359,17 @@ class TradingBot {
         const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.005;
 
         const trailingPercent = cfg.ENABLE_TRAILING_PROFIT ? cfg.TRAILING_PROFIT_PERCENTAGE : 0;
+        
+        let targetTrailingActivationPrice = 0;
+        if (trailingPercent > 0 && cfg.TRAILING_ACTIVATION_PERCENTAGE > 0) {
+            const activationMultiplier = cfg.TRAILING_ACTIVATION_PERCENTAGE / 100;
+            if (orderSide === 'buy') {
+                targetTrailingActivationPrice = entryPrice * (1 + activationMultiplier);
+            } else {
+                targetTrailingActivationPrice = entryPrice * (1 - activationMultiplier);
+            }
+        }
+
         let shouldUpdate = false;
 
         if (trailingPercent > 0) {
@@ -386,8 +397,14 @@ class TradingBot {
             if (Date.now() - lastTime < 10000) return; // Prevent updating faster than 10s
             this._lastTpSlSet[key] = Date.now();
 
-            logger.info(`Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Current TP: ${currentTp}, SL: ${currentSl} -> Target TP: ${formattedTp}, Target SL: ${formattedSl} (Trailing: ${trailingPercent > 0 ? 'Yes (' + trailingPercent + '%)' : 'No'})`);
-            await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent);
+            let logMsg = `Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Current TP: ${currentTp}, SL: ${currentSl} -> Target TP: ${formattedTp}, Target SL: ${formattedSl}`;
+            if (trailingPercent > 0) {
+                logMsg += ` (Trailing: Yes, ${trailingPercent}%, Active Price: ${targetTrailingActivationPrice > 0 ? targetTrailingActivationPrice.toFixed(4) : 'Immediate'})`;
+            } else {
+                logMsg += ` (Trailing: No)`;
+            }
+            logger.info(logMsg);
+            await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
         }
     }
 
