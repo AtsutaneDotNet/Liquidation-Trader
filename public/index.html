@@ -12,20 +12,12 @@
 <body>
     <header
         style="height: 60px; background-color: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 24px; position: relative; z-index: 10;">
-        <button id="sidebar-toggle"
-            style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; margin-right: 16px; transition: color 0.2s;"
-            onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
-                </path>
-            </svg>
-        </button>
         <h1 class="logo" style="margin-bottom: 0; font-size: 20px;">Liquidation <span class="highlight">Trader</span>
         </h1>
     </header>
     <div class="app-container" style="height: calc(100vh - 60px);">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar collapsed" id="sidebar">
             <nav>
                 <button class="nav-btn active" data-target="dashboard">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
