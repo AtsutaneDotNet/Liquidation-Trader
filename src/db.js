@@ -56,7 +56,7 @@ try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } ca
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 
 
-const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY'];
+const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'LIQUIDATIONREPORT_KEY'];
 
 function getConfig() {
     const rows = db.prepare('SELECT * FROM config').all();
@@ -107,7 +107,9 @@ const defaults = {
     CMC_API_KEY: '',
     CMC_RANK_LIMIT: '100',
     CMC_FILTER_ENABLED: 'false',
-    ENABLE_DCA_MARTINGALE: 'false'
+    ENABLE_DCA_MARTINGALE: 'false',
+    ENABLE_DYNAMIC_THRESHOLDS: 'false',
+    LIQUIDATIONREPORT_KEY: ''
 };
 
 const currentConfig = getConfig();

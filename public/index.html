@@ -35,6 +35,12 @@
                     </svg>
                     <span class="nav-text">Positions</span>
                 </button>
+                <button class="nav-btn" data-target="dynamic-thresholds-page">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    <span class="nav-text">Dynamic Thresholds</span>
+                </button>
                 <button class="nav-btn" data-target="account">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -370,6 +376,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="page-subsection" style="margin-top: 1rem;">
+                                <h4>Liquidation.report API (Dynamic Thresholds)</h4>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_DYNAMIC_THRESHOLDS" name="ENABLE_DYNAMIC_THRESHOLDS" value="true" style="width: auto; margin: 0;"> Enable Dynamic Thresholds
+                                        </label>
+                                    </div>
+                                    <div class="col">
+                                        <label for="LIQUIDATIONREPORT_KEY">RapidAPI Key</label>
+                                        <input type="password" id="LIQUIDATIONREPORT_KEY" name="LIQUIDATIONREPORT_KEY" placeholder="Paste your RapidAPI Key here">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Risk Management Section -->
@@ -572,6 +592,38 @@
                                 <tr>
                                     <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting
                                         for liquidations &mdash;</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dynamic Thresholds Page -->
+            <section id="dynamic-thresholds-page" class="page">
+                <header>
+                    <h2>Dynamic Thresholds</h2>
+                </header>
+                <div class="page-section">
+                    <h3>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        API Values Mapping
+                    </h3>
+                    <p class="subtitle" style="margin-bottom: 1.5rem;">Displays the active trading pairs and their dynamic liquidation thresholds loaded from the API.</p>
+                    <div class="card form-container table-responsive" style="max-width: 100%;">
+                        <table class="data-table" id="dynamic-thresholds-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Dynamic Threshold (USD)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dynamic-thresholds-tbody">
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for data &mdash;</td>
                                 </tr>
                             </tbody>
                         </table>

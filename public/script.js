@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dcaCb = document.getElementById('ENABLE_DCA_MARTINGALE');
         if (dcaCb) formData.set('ENABLE_DCA_MARTINGALE', dcaCb.checked ? 'true' : 'false');
+
+        const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
+        if (dynamicCb) formData.set('ENABLE_DYNAMIC_THRESHOLDS', dynamicCb.checked ? 'true' : 'false');
 
         if (vwapCb && rsiCb && !vwapCb.checked && !rsiCb.checked) {
             const msg = document.getElementById('save-status');
@@ -341,6 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 const thresholdInput = document.getElementById('LIQUIDATION_VALUE_THRESHOLD');
                 const currencyInput = document.getElementById('LIQUIDATION_VALUE_CURRENCY');
+                const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
+                const useDynamic = dynamicCb ? dynamicCb.checked : false;
                 
                 const threshold = parseFloat(thresholdInput ? thresholdInput.value : 0) || 0;
                 const currency = currencyInput ? currencyInput.value : 'USD';
@@ -349,6 +354,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currency === 'BTC' && currentBtcPrice > 0) {
                     effectiveThreshold = threshold * currentBtcPrice;
                 }
+
+                const bases = Object.keys(globalDynamicThresholds).sort((a, b) => b.length - a.length);
+
+                const getThresholdForLiq = (liq) => {
+                    let currentThreshold = effectiveThreshold;
+                    if (useDynamic) {
+                        const symUpper = (liq.symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        for (const base of bases) {
+                            if (symUpper.startsWith(base)) {
+                                currentThreshold = globalDynamicThresholds[base];
+                                break;
+                            }
+                        }
+                    }
+                    return currentThreshold;
+                };
 
                 if (tbodyLiquidations) {
                     if (!data || data.length === 0) {
@@ -360,7 +381,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             const timeStr = new Date(liq.timestamp).toLocaleTimeString();
 
                             const liqValue = parseFloat(liq.value || 0);
-                            const isHighValue = liqValue >= effectiveThreshold;
+                            const currentThreshold = getThresholdForLiq(liq);
+                            const isHighValue = liqValue >= currentThreshold;
                             const highlightClass = isHighValue ? 'liq-highlight' : '';
 
                             return `<tr class="${highlightClass}">
@@ -377,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (tbodyDashboardLiquidations && dashPageActive) {
-                    const highValueLiqs = data.filter(liq => parseFloat(liq.value || 0) >= effectiveThreshold).slice(0, 10);
+                    const highValueLiqs = data.filter(liq => parseFloat(liq.value || 0) >= getThresholdForLiq(liq)).slice(0, 10);
                     if (highValueLiqs.length === 0) {
                         tbodyDashboardLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No recent high value liquidations &mdash;</td></tr>';
                     } else {
@@ -402,6 +424,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setInterval(fetchLiquidations, 1500); // slightly faster polling for live feeling
     fetchLiquidations();
+
+    // Dynamic Thresholds Live Stream
+    const tbodyDynamicThresholds = document.getElementById('dynamic-thresholds-tbody');
+    let globalDynamicThresholds = {};
+
+    function fetchDynamicThresholdTable() {
+        const pageActive = document.getElementById('dynamic-thresholds-page').classList.contains('active');
+
+        fetch('/api/dynamic-thresholds')
+            .then(res => res.json())
+            .then(data => {
+                const mapped = data.mapped || [];
+                globalDynamicThresholds = data.rawMap || {};
+                
+                if (pageActive && tbodyDynamicThresholds) {
+                    if (mapped.length === 0) {
+                        tbodyDynamicThresholds.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash; Bot is stopped or no pairs loaded &mdash;</td></tr>';
+                    } else {
+                        tbodyDynamicThresholds.innerHTML = mapped.map(item => {
+                            const isDynamic = item.status === 'Dynamic (API)';
+                            const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
+                            return `<tr>
+                                <td><strong>${item.symbol}</strong></td>
+                                <td>$${parseFloat(item.threshold || 0).toFixed(2)}</td>
+                                <td><span style="color: ${statusColor}">${item.status}</span></td>
+                            </tr>`;
+                        }).join('');
+                    }
+                }
+            }).catch(console.error);
+    }
+
+    setInterval(fetchDynamicThresholdTable, 5000);
+    fetchDynamicThresholdTable();
 
     // ── Toast Notification System ───────────────────────────────
     const toastContainer = document.getElementById('toast-container');

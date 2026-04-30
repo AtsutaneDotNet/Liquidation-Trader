@@ -27,6 +27,9 @@ class TradingBot {
         this.btcInterval = null;
         this.btcUsdPrice = null;
 
+        this.dynamicThresholds = {};
+        this.dynamicInterval = null;
+
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
     }
@@ -180,9 +183,11 @@ class TradingBot {
             // Kickoff Periodic REST PnL Tracker and Position Pruner
             this.updatePnL(); // Fetch once initially
             this.updateBtcPrice(); // Fetch once initially
+            this.fetchDynamicThresholds(); // Fetch once initially
 
             this.pnlInterval = setInterval(() => this.updatePnL(), 600000); // Every 10 mins
             this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
+            this.dynamicInterval = setInterval(() => this.fetchDynamicThresholds(), 3600000); // Every hour
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
@@ -209,6 +214,7 @@ class TradingBot {
         clearInterval(this.cleanupInterval);
         clearInterval(this.cmcInterval);
         clearInterval(this.btcInterval);
+        clearInterval(this.dynamicInterval);
     }
 
     async refreshCmcRankings() {
@@ -439,6 +445,42 @@ class TradingBot {
         }
     }
 
+    async fetchDynamicThresholds() {
+        if (!this.isRunning) return;
+        const cfg = this.config.get();
+        if (!cfg.ENABLE_DYNAMIC_THRESHOLDS || !cfg.LIQUIDATIONREPORT_KEY) {
+            return;
+        }
+
+        try {
+            logger.info('Fetching dynamic liquidation thresholds from liquidation.report...');
+            const response = await fetch('https://liquidation-report.p.rapidapi.com/data', {
+                headers: {
+                    'X-RapidAPI-Key': cfg.LIQUIDATIONREPORT_KEY,
+                    'X-RapidAPI-Host': 'liquidation-report.p.rapidapi.com'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API returned status ${response.status}`);
+            }
+
+            const json = await response.json();
+            if (json && json.data && Array.isArray(json.data)) {
+                const newThresholds = {};
+                for (const item of json.data) {
+                    if (item.name && item.mean_value) {
+                        newThresholds[item.name.toUpperCase()] = parseFloat(item.mean_value);
+                    }
+                }
+                this.dynamicThresholds = newThresholds;
+                logger.info(`Successfully updated dynamic thresholds for ${Object.keys(newThresholds).length} base assets.`);
+            }
+        } catch (e) {
+            logger.warn(`Failed to fetch dynamic thresholds: ${e.message}`);
+        }
+    }
+
 
 
     async onLiquidation(liquidation, exName) {
@@ -476,9 +518,25 @@ class TradingBot {
                 thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD * this.btcUsdPrice;
             }
 
+            let usingDynamic = false;
+            if (cfg.ENABLE_DYNAMIC_THRESHOLDS) {
+                const bases = Object.keys(this.dynamicThresholds).sort((a, b) => b.length - a.length);
+                const symUpper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                
+                for (const base of bases) {
+                    if (symUpper.startsWith(base)) {
+                        thresholdInUsd = this.dynamicThresholds[base];
+                        usingDynamic = true;
+                        break;
+                    }
+                }
+            }
+
             if (value >= thresholdInUsd) {
                 logger.info(`--- Large Liquidation Detected ---`);
-                if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
+                if (usingDynamic) {
+                    logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)} (Dynamic Threshold: $${thresholdInUsd.toFixed(2)})`);
+                } else if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
                     logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)} (>= ${cfg.LIQUIDATION_VALUE_THRESHOLD} BTC ≈ $${thresholdInUsd.toFixed(2)})`);
                 } else {
                     logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)}`);

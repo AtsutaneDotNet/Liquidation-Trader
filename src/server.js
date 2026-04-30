@@ -94,6 +94,7 @@ class WebServer {
             if (responseConfig.API_SECRET) responseConfig.API_SECRET = '********';
             if (responseConfig.WEBUI_USERNAME) responseConfig.WEBUI_USERNAME = responseConfig.WEBUI_USERNAME.replace(/.(?=.{4})/g, '*');
             if (responseConfig.WEBUI_PASSWORD) responseConfig.WEBUI_PASSWORD = '********';
+            if (responseConfig.LIQUIDATIONREPORT_KEY) responseConfig.LIQUIDATIONREPORT_KEY = responseConfig.LIQUIDATIONREPORT_KEY.replace(/.(?=.{4})/g, '*');
             res.json(responseConfig);
         });
 
@@ -103,7 +104,7 @@ class WebServer {
                 const updates = req.body;
                 for (const [key, value] of Object.entries(updates)) {
                     // Prevent overwriting API key with mask
-                    const isMaskedKey = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD'].includes(key);
+                    const isMaskedKey = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'LIQUIDATIONREPORT_KEY'].includes(key);
                     if (isMaskedKey && typeof value === 'string' && value.includes('*')) {
                         continue;
                     }
@@ -142,6 +143,44 @@ class WebServer {
         this.app.get('/api/liquidations', (req, res) => {
             const db = require('./db');
             res.json(db.getLiquidations(200) || []); // Fetch up to 200 liquidations for the UI
+        });
+
+        // Dynamic Thresholds
+        this.app.get('/api/dynamic-thresholds', (req, res) => {
+            const currentConfig = config.get();
+            const result = [];
+            const symbols = Array.isArray(this.bot.symbols) ? this.bot.symbols : [];
+            const isDynamicEnabled = currentConfig.ENABLE_DYNAMIC_THRESHOLDS;
+            const btcPrice = this.bot.btcUsdPrice || 1;
+            const staticUsd = currentConfig.LIQUIDATION_VALUE_CURRENCY === 'BTC' ? currentConfig.LIQUIDATION_VALUE_THRESHOLD * btcPrice : currentConfig.LIQUIDATION_VALUE_THRESHOLD;
+            const dynamicMap = this.bot.dynamicThresholds || {};
+            const bases = Object.keys(dynamicMap).sort((a, b) => b.length - a.length);
+
+            for (const sym of symbols) {
+                let threshold = staticUsd;
+                let status = 'Static (Config)';
+                
+                if (isDynamicEnabled) {
+                    const symUpper = sym.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    for (const base of bases) {
+                        if (symUpper.startsWith(base)) {
+                            threshold = dynamicMap[base];
+                            status = 'Dynamic (API)';
+                            break;
+                        }
+                    }
+                }
+                
+                result.push({
+                    symbol: sym,
+                    threshold: threshold,
+                    status: status
+                });
+            }
+            res.json({
+                mapped: result,
+                rawMap: dynamicMap
+            });
         });
 
         // Logs
