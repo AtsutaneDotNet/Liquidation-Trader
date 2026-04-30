@@ -11,36 +11,39 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 ## ✨ Key Features
 
 -   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter**.
+-   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) [Liquidation Report](https://liquidation.report) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events for every specific asset.
 -   **Advanced Strategies**:
     -   **VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
     -   **Confluence Mode**: Require both VWAP and RSI signals to match before executing a trade for higher precision.
+    -   **DCA Martingale**: Position-based order sizing that scales based on unrealized PnL percentages.
 -   **Intelligent Filtering**:
     -   **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
-    -   **Value Threshold**: Filter liquidations by USD or BTC value to focus on high-impact market moves.
+    -   **Value Threshold**: Filter liquidations by USD or BTC value.
 -   **Robust Risk Management**:
     -   Dynamic **Take Profit** and **Stop Loss** placement.
-    -   Support for **Trailing Profit** to lock in gains during strong trends.
+    -   Support for **Native Trailing Stop** to lock in gains during strong trends.
     -   Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
     -   **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
 -   **Premium Web UI**:
-    -   Real-time dashboard with live liquidation feeds and active positions.
-    -   Integrated PnL tracking and account balance updates.
-    -   On-the-fly configuration management with a sleek, responsive interface.
+    -   **Glassmorphism Design**: A modern, sleek, and responsive interface.
+    -   **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
+    -   **Toast Notifications**: Instant visual feedback for order executions.
+    -   **Live Logs**: View bot terminal output directly in the browser.
 -   **Reliability**:
-    -   SQLite-backed persistence for positions and historical data.
-    -   Automatic error tracking and safety shutdown mechanism.
-    -   Graceful state restoration on restart.
+    -   **SQLite-backed persistence**: Positions and historical data are stored safely.
+    -   **Stale Position Sync**: Automatically checks and recovers positions from the exchange if the WebSocket stream is interrupted.
+    -   **AES-256-GCM Encryption**: Sensitive API keys are encrypted at rest in the database.
 
 ---
 
 ## 🛠️ Technical Stack
 
 -   **Backend**: Node.js & Express.
--   **Database**: SQLite (via `better-sqlite3`).
+-   **Database**: SQLite (via `better-sqlite3`) with encryption.
 -   **API Integration**: [CCXT Pro](https://ccxt.pro/) for unified exchange WebSocket and REST connectivity.
--   **Frontend**: Vanilla HTML/JS with a premium CSS design system.
--   **Logging**: Custom logger with rotation and console/file output.
+-   **Frontend**: Vanilla HTML/JS with a premium CSS design system (Glassmorphism).
+-   **Indicator Source**: [RapidAPI Liquidation Report](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) for dynamic thresholds.
 
 ---
 
@@ -51,6 +54,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   [Node.js](https://nodejs.org/) (v18 or higher recommended)
 -   API Keys for your preferred exchanges.
 -   (Optional) [CoinMarketCap API Key](https://coinmarketcap.com/api/) for symbol filtering.
+-   (Optional) [RapidAPI Key](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) for Dynamic Thresholds (**Pro Plan and above recommended**).
 
 ### Installation
 
@@ -72,7 +76,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     ```
 
     > [!IMPORTANT]
-    > **Encryption Key**: You **must** generate and set an `ENCRYPTION_KEY` in your `.env` file before the first run. This key is used to encrypt sensitive data in the SQLite database. If you change this key later, the bot will be unable to decrypt existing data.
+    > **Encryption Key**: You **must** generate and set an `ENCRYPTION_KEY` in your `.env` file before the first run. This key is used to encrypt sensitive data in the SQLite database.
     >
     > To generate a valid 32-byte hex key, run:
     > ```bash
@@ -88,19 +92,46 @@ The bot will start its engine and host the web interface (default: `http://local
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuration Reference
 
-The bot can be configured either via the `.env` file or directly through the Web UI Settings panel.
+The bot is primarily configured through the **Web UI Settings** panel. Below are the key configuration options:
 
+### General & Security
+| Variable | Description |
+| :--- | :--- |
+| `WEBUI_AUTH_ENABLED` | Enable/Disable login protection for the dashboard. |
+| `API_KEY` / `API_SECRET` | Your exchange credentials (stored encrypted). |
+| `ENCRYPTION_KEY` | Hex key for database encryption (set in `.env`). |
+
+### Trading Strategy
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `PORT` | Port for the web interface | `3000` |
-| `TRADE_EXCHANGE` | Exchange used for executing trades | `bybit` |
-| `LIQUIDATION_EXCHANGES` | Comma-separated list of exchanges to monitor | `bybit,binance` |
-| `TRADE_LEVERAGE` | Leverage used for orders | `5` |
-| `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal | `true` |
-| `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal | `false` |
-| `CMC_FILTER_ENABLED` | Enable CoinMarketCap ranking filter | `false` |
+| `TRADE_EXCHANGE` | Exchange used for executing trades. | `bybit` |
+| `LIQUIDATION_EXCHANGES` | Exchanges to monitor for liquidation signals. | `bybit,binance` |
+| `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
+| `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
+| `OFFSET_PERCENTAGE` | Price deviation from VWAP required for entry. | `0.5%` |
+| `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
+| `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
+| `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. | `false` |
+
+### Filters & Dynamic Thresholds
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `LIQUIDATION_VALUE_THRESHOLD` | Min liquidation value (USD/BTC) to trigger trade. | `1000` |
+| `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven mean liquidation values. | `false` |
+| `LIQUIDATIONREPORT_KEY` | Your [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) Key. | |
+| `CMC_FILTER_ENABLED` | Restrict trading to high-liquidity coins. | `false` |
+| `CMC_RANK_LIMIT` | Top N coins to include in the whitelist. | `100` |
+
+### Risk Management
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `TAKE_PROFIT_PERCENTAGE` | Target profit for closing positions. | `1.0%` |
+| `STOP_LOSS_PERCENTAGE` | Max loss before closing positions. | `0.5%` |
+| `ENABLE_TRAILING_PROFIT` | Use native exchange trailing stops. | `false` |
+| `TRAILING_PROFIT_PERCENTAGE` | Trailing distance for the stop loss. | `0.2%` |
+| `MAX_OPEN_POSITIONS` | Maximum number of simultaneous trades. | `3` |
 
 ---
 
@@ -108,14 +139,15 @@ The bot can be configured either via the `.env` file or directly through the Web
 
 ```text
 ├── src/
-│   ├── exchanges/      # Exchange-specific adapters
-│   ├── bot.js          # Core trading engine logic
+│   ├── exchanges/      # Unified exchange adapters (Bybit, Binance, OKX, etc.)
+│   ├── bot.js          # Core trading engine and strategy logic
 │   ├── server.js       # Express server and API routes
-│   ├── db.js           # Database management
-│   ├── config.js       # Configuration loader
-│   └── index.js        # Entry point
+│   ├── db.js           # SQLite management with encryption support
+│   ├── config.js       # Dynamic configuration loader
+│   ├── cmc.js          # CoinMarketCap API integration
+│   └── index.js        # Main entry point
 ├── public/             # Web UI assets (HTML, CSS, JS)
-├── bot_data.sqlite     # Local database file
+├── bot_data.sqlite     # Local encrypted database
 └── package.json        # Dependencies and scripts
 ```
 
@@ -129,4 +161,4 @@ Trading cryptocurrencies involves significant risk. This software is provided "a
 
 ## 📄 License
 
-This project is licensed under the **ISC License**. See the `LICENSE` file (if available) or `package.json` for details.
+This project is licensed under the **ISC License**.
