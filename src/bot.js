@@ -638,6 +638,24 @@ class TradingBot {
             const tradeValue = (totalWalletUSDT * cfg.TRADE_LEVERAGE) * (cfg.TRADE_AMOUNT_PERCENTAGE / 100);
             let amountInToken = tradeValue / entryPrice;
 
+            if (cfg.ENABLE_DCA_MARTINGALE) {
+                const positions = db.getPositions();
+                const position = positions.find(p => p.symbol === symbol);
+                let multiplier = 1;
+                
+                if (position && position.size > 0 && position.entry_price > 0) {
+                    const margin = (position.size * position.entry_price) / cfg.TRADE_LEVERAGE;
+                    if (margin > 0) {
+                        const pnlPercent = (position.unrealized_pnl / margin) * 100;
+                        multiplier = Math.ceil(Math.abs(pnlPercent));
+                        if (multiplier === 0) multiplier = 1;
+                    }
+                }
+                
+                amountInToken = amountInToken * multiplier;
+                logger.info(`DCA Martingale Multiplier for ${symbol}: ${multiplier}x`);
+            }
+
             if (this.tradeExchange.exchange && this.tradeExchange.exchange.amountToPrecision) {
                 const formatted = this.tradeExchange.exchange.amountToPrecision(symbol, amountInToken);
                 amountInToken = parseFloat(formatted);

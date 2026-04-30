@@ -106,7 +106,8 @@ const defaults = {
     MAX_OPEN_POSITIONS: '3',
     CMC_API_KEY: '',
     CMC_RANK_LIMIT: '100',
-    CMC_FILTER_ENABLED: 'false'
+    CMC_FILTER_ENABLED: 'false',
+    ENABLE_DCA_MARTINGALE: 'false'
 };
 
 const currentConfig = getConfig();

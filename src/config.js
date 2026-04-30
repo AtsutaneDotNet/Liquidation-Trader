@@ -31,6 +31,7 @@ function getConfig() {
         CMC_API_KEY: dbConfig.CMC_API_KEY || '',
         CMC_RANK_LIMIT: parseInt(dbConfig.CMC_RANK_LIMIT) || 100,
         CMC_FILTER_ENABLED: dbConfig.CMC_FILTER_ENABLED === 'true',
+        ENABLE_DCA_MARTINGALE: dbConfig.ENABLE_DCA_MARTINGALE === 'true',
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
         WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,
         WEB_HOST: process.env.WEB_HOST || 'localhost'
