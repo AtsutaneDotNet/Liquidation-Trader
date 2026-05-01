@@ -4,30 +4,33 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![Exchange Support](https://img.shields.io/badge/Exchanges-Binance%20%7C%20Bybit%20%7C%20BitMEX%20%7C%20OKX%20%7C%20Lighter-orange.svg)](https://ccxt.pro/)
 
-Liquidation-Trader is a high-performance, automated cryptocurrency trading bot designed to capitalize on market liquidations. By monitoring real-time liquidation streams across multiple exchanges, the bot identifies potential volatility spikes and executes trades using sophisticated technical indicators like **VWAP** and **RSI**.
+Liquidation-Trader is a high-performance, automated cryptocurrency trading bot designed to capitalize on market liquidations. By monitoring real-time liquidation streams across multiple exchanges, the bot identifies potential volatility spikes and executes trades using sophisticated technical indicators.
 
 ---
 
 ## ✨ Key Features
 
--   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter**.
--   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) [Liquidation Report](https://liquidation.report) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events for every specific asset.
+-   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter** using the unified **CCXT Pro** engine.
+-   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) [Liquidation Report](https://liquidation.report) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events.
 -   **Advanced Strategies**:
     -   **VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
-    -   **Confluence Mode**: Require both VWAP and RSI signals to match before executing a trade for higher precision.
+    -   **ADX (Average Directional Index)**: Detect trend strength and potential reversals/exhaustion.
+    -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX) to align before executing a trade for higher precision.
     -   **DCA Martingale**: Position-based order sizing that scales based on unrealized PnL percentages.
 -   **Intelligent Filtering**:
     -   **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
+    -   **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
     -   **Value Threshold**: Filter liquidations by USD or BTC value.
 -   **Robust Risk Management**:
     -   Dynamic **Take Profit** and **Stop Loss** placement.
-    -   Support for **Native Trailing Stop** to lock in gains during strong trends.
+    -   **Native Trailing Stop**: Lock in gains during strong trends with exchange-native trailing stops and activation prices.
     -   Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
     -   **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
 -   **Premium Web UI**:
     -   **Glassmorphism Design**: A modern, sleek, and responsive interface.
     -   **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
+    -   **Trade Decisions Page**: A dedicated log of every trade evaluation, showing indicator values and the logic behind entry decisions.
     -   **Toast Notifications**: Instant visual feedback for order executions.
     -   **Live Logs**: View bot terminal output directly in the browser.
 -   **Reliability**:
@@ -109,20 +112,25 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `TRADE_EXCHANGE` | Exchange used for executing trades. | `bybit` |
 | `LIQUIDATION_EXCHANGES` | Exchanges to monitor for liquidation signals. | `bybit,binance` |
 | `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
+| `TRADE_AMOUNT_PERCENTAGE` | % of wallet balance used per trade. | `5%` |
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
 | `OFFSET_PERCENTAGE` | Price deviation from VWAP required for entry. | `0.5%` |
 | `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
 | `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
+| `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |
+| `ADX_THRESHOLD` | ADX value threshold for entry. | `25` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. | `false` |
 
 ### Filters & Dynamic Thresholds
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `LIQUIDATION_VALUE_THRESHOLD` | Min liquidation value (USD/BTC) to trigger trade. | `1000` |
-| `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven mean liquidation values. | `false` |
+| `LIQUIDATION_VALUE_THRESHOLD` | Min liquidation value to trigger trade. | `1000` |
+| `LIQUIDATION_VALUE_CURRENCY` | Currency for threshold (`USD` or `BTC`). | `USD` |
+| `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven [Liquidation Report](https://liquidation.report) values. | `false` |
 | `LIQUIDATIONREPORT_KEY` | Your [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) Key. | |
 | `CMC_FILTER_ENABLED` | Restrict trading to high-liquidity coins. | `false` |
 | `CMC_RANK_LIMIT` | Top N coins to include in the whitelist. | `100` |
+| `COIN_BLACKLIST` | Comma-separated list of symbols to ignore. | |
 
 ### Risk Management
 | Variable | Description | Default |
@@ -145,6 +153,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 │   ├── db.js           # SQLite management with encryption support
 │   ├── config.js       # Dynamic configuration loader
 │   ├── cmc.js          # CoinMarketCap API integration
+│   ├── logger.js       # Winston-based logging system
 │   └── index.js        # Main entry point
 ├── public/             # Web UI assets (HTML, CSS, JS)
 ├── bot_data.sqlite     # Local encrypted database
