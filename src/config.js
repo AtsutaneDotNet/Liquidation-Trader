@@ -34,6 +34,7 @@ function getConfig() {
         ENABLE_DCA_MARTINGALE: dbConfig.ENABLE_DCA_MARTINGALE === 'true',
         ENABLE_DYNAMIC_THRESHOLDS: dbConfig.ENABLE_DYNAMIC_THRESHOLDS === 'true',
         LIQUIDATIONREPORT_KEY: dbConfig.LIQUIDATIONREPORT_KEY || '',
+        COIN_BLACKLIST: dbConfig.COIN_BLACKLIST || '',
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
         WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,
         WEB_HOST: process.env.WEB_HOST || 'localhost'
