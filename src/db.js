@@ -109,7 +109,8 @@ const defaults = {
     CMC_FILTER_ENABLED: 'false',
     ENABLE_DCA_MARTINGALE: 'false',
     ENABLE_DYNAMIC_THRESHOLDS: 'false',
-    LIQUIDATIONREPORT_KEY: ''
+    LIQUIDATIONREPORT_KEY: '',
+    COIN_BLACKLIST: ''
 };
 
 const currentConfig = getConfig();

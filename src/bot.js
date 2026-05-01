@@ -587,6 +587,17 @@ class TradingBot {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
 
+        const blacklistStr = cfg.COIN_BLACKLIST || '';
+        const blacklist = blacklistStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        if (blacklist.length > 0) {
+            const symUpper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const isBlacklisted = blacklist.some(b => symUpper.startsWith(b));
+            if (isBlacklisted) {
+                logger.info(`Symbol ${symbol} is blacklisted. Holding bot from opening new position.`);
+                return;
+            }
+        }
+
         try {
             let vwapSide = null;
             let rsiSide = null;

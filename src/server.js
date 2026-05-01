@@ -108,7 +108,10 @@ class WebServer {
                     if (isMaskedKey && typeof value === 'string' && value.includes('*')) {
                         continue;
                     }
-                    if (value !== undefined && value !== null && value !== '') {
+                    if (value !== undefined && value !== null) {
+                        if (value === '' && key !== 'COIN_BLACKLIST') {
+                            continue;
+                        }
                         config.set(key, value.toString());
                     }
                 }
