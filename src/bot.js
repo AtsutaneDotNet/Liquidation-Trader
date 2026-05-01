@@ -740,18 +740,18 @@ class TradingBot {
                         
                         if (adxResult !== null) {
                             logger.info(`ADX (${period}, ${cfg.ADX_TIMEFRAME}): ${adxResult.adx.toFixed(2)} | +DI: ${adxResult.plusDI.toFixed(2)} | -DI: ${adxResult.minusDI.toFixed(2)}`);
-                            if (adxResult.adx > threshold) {
+                            if (adxResult.adx <= threshold) {
                                 if (adxResult.plusDI > adxResult.minusDI) {
                                     adxSide = 'sell';
-                                    logger.info(`ADX Condition met: ADX > ${threshold} and +DI > -DI. Signal: SHORT.`);
+                                    logger.info(`ADX Condition met: ADX <= ${threshold} and +DI > -DI. Signal: SHORT.`);
                                 } else if (adxResult.minusDI > adxResult.plusDI) {
                                     adxSide = 'buy';
-                                    logger.info(`ADX Condition met: ADX > ${threshold} and -DI > +DI. Signal: LONG.`);
+                                    logger.info(`ADX Condition met: ADX <= ${threshold} and -DI > +DI. Signal: LONG.`);
                                 } else {
-                                    logger.info(`ADX Condition: Value is strong but DIs are equal. No trade signal.`);
+                                    logger.info(`ADX Condition: Value is weak but DIs are equal. No trade signal.`);
                                 }
                             } else {
-                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is below threshold (${threshold}). No trade signal.`);
+                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is above threshold (${threshold}). No trade signal.`);
                             }
                         }
                     } else {
