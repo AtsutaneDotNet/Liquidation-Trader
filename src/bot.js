@@ -68,8 +68,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP or RSI strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_ADX_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, or ADX strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -583,6 +583,73 @@ class TradingBot {
         return 100 - (100 / (1 + rs));
     }
 
+    calculateADX(highs, lows, closes, period = 14) {
+        if (!highs || highs.length < period * 2) return null;
+        
+        let tr = [];
+        let plusDM = [];
+        let minusDM = [];
+        
+        for (let i = 1; i < highs.length; i++) {
+            const h = highs[i], l = lows[i], prevH = highs[i-1], prevL = lows[i-1], prevC = closes[i-1];
+            tr.push(Math.max(h - l, Math.abs(h - prevC), Math.abs(l - prevC)));
+            const upMove = h - prevH;
+            const downMove = prevL - l;
+            plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
+            minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
+        }
+        
+        const smooth = (data, period) => {
+            let smoothed = [];
+            let sum = 0;
+            for (let i = 0; i < period; i++) sum += data[i];
+            smoothed.push(sum);
+            for (let i = period; i < data.length; i++) {
+                const prev = smoothed[smoothed.length - 1];
+                smoothed.push(prev - (prev / period) + data[i]);
+            }
+            return smoothed;
+        };
+        
+        const smoothedTR = smooth(tr, period);
+        const smoothedPlusDM = smooth(plusDM, period);
+        const smoothedMinusDM = smooth(minusDM, period);
+        
+        let dx = [];
+        let plusDIList = [];
+        let minusDIList = [];
+        for (let i = 0; i < smoothedTR.length; i++) {
+            const trVal = smoothedTR[i];
+            if (trVal === 0) {
+                plusDIList.push(0); minusDIList.push(0); dx.push(0);
+                continue;
+            }
+            const plusDI = 100 * (smoothedPlusDM[i] / trVal);
+            const minusDI = 100 * (smoothedMinusDM[i] / trVal);
+            plusDIList.push(plusDI);
+            minusDIList.push(minusDI);
+            const diSum = plusDI + minusDI;
+            dx.push(diSum === 0 ? 0 : 100 * Math.abs(plusDI - minusDI) / diSum);
+        }
+        
+        if (dx.length < period) return null;
+        
+        let adx = [];
+        let sumDx = 0;
+        for(let i=0; i<period; i++) sumDx += dx[i];
+        adx.push(sumDx / period);
+        for (let i = period; i < dx.length; i++) {
+            const prevAdx = adx[adx.length - 1];
+            adx.push((prevAdx * (period - 1) + dx[i]) / period);
+        }
+        
+        return {
+            adx: adx[adx.length - 1],
+            plusDI: plusDIList[plusDIList.length - 1],
+            minusDI: minusDIList[minusDIList.length - 1]
+        };
+    }
+
     async evaluateTrade(symbol, currentPrice) {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
@@ -601,6 +668,7 @@ class TradingBot {
         try {
             let vwapSide = null;
             let rsiSide = null;
+            let adxSide = null;
 
             // --- 1. VWAP Strategy ---
             if (cfg.ENABLE_VWAP_STRATEGY) {
@@ -658,21 +726,59 @@ class TradingBot {
                 }
             }
 
-            // --- 3. Confluence Logic (AND) ---
-            let finalSide = null;
-
-            if (cfg.ENABLE_VWAP_STRATEGY && cfg.ENABLE_RSI_STRATEGY) {
-                if (vwapSide && rsiSide && vwapSide === rsiSide) {
-                    finalSide = vwapSide;
-                    logger.info(`Confluence matched! Both VWAP and RSI signal: ${finalSide.toUpperCase()}`);
+            // --- 3. ADX Strategy ---
+            if (cfg.ENABLE_ADX_STRATEGY) {
+                if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.has['fetchOHLCV']) {
+                    const period = parseInt(cfg.ADX_PERIOD) || 14;
+                    const threshold = parseFloat(cfg.ADX_THRESHOLD) || 25;
+                    const klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.ADX_TIMEFRAME, undefined, period * 2 + 100);
+                    if (klines && klines.length > period * 2) {
+                        const highs = klines.map(k => k[2]);
+                        const lows = klines.map(k => k[3]);
+                        const closes = klines.map(k => k[4]);
+                        const adxResult = this.calculateADX(highs, lows, closes, period);
+                        
+                        if (adxResult !== null) {
+                            logger.info(`ADX (${period}, ${cfg.ADX_TIMEFRAME}): ${adxResult.adx.toFixed(2)} | +DI: ${adxResult.plusDI.toFixed(2)} | -DI: ${adxResult.minusDI.toFixed(2)}`);
+                            if (adxResult.adx > threshold) {
+                                if (adxResult.plusDI > adxResult.minusDI) {
+                                    adxSide = 'sell';
+                                    logger.info(`ADX Condition met: ADX > ${threshold} and +DI > -DI. Signal: SHORT.`);
+                                } else if (adxResult.minusDI > adxResult.plusDI) {
+                                    adxSide = 'buy';
+                                    logger.info(`ADX Condition met: ADX > ${threshold} and -DI > +DI. Signal: LONG.`);
+                                } else {
+                                    logger.info(`ADX Condition: Value is strong but DIs are equal. No trade signal.`);
+                                }
+                            } else {
+                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is below threshold (${threshold}). No trade signal.`);
+                            }
+                        }
+                    } else {
+                        logger.info(`Not enough klines fetched for ADX calculation for ${symbol}.`);
+                    }
                 } else {
-                    logger.info(`Confluence missed or conflicting signals. VWAP: ${vwapSide || 'none'}, RSI: ${rsiSide || 'none'}. No trade.`);
+                    logger.info(`Exchange does not support fetchOHLCV for ADX.`);
+                }
+            }
+
+            // --- 4. Confluence Logic (AND) ---
+            let finalSide = null;
+            const activeStrategies = [];
+            if (cfg.ENABLE_VWAP_STRATEGY) activeStrategies.push({ name: 'VWAP', side: vwapSide });
+            if (cfg.ENABLE_RSI_STRATEGY) activeStrategies.push({ name: 'RSI', side: rsiSide });
+            if (cfg.ENABLE_ADX_STRATEGY) activeStrategies.push({ name: 'ADX', side: adxSide });
+
+            if (activeStrategies.length > 0) {
+                const allSame = activeStrategies.every(s => s.side && s.side === activeStrategies[0].side);
+                if (allSame) {
+                    finalSide = activeStrategies[0].side;
+                    logger.info(`Confluence matched! Signals: ${activeStrategies.map(s => s.name).join(', ')} -> ${finalSide.toUpperCase()}`);
+                } else {
+                    const signalsStr = activeStrategies.map(s => `${s.name}: ${s.side || 'none'}`).join(', ');
+                    logger.info(`Confluence missed or conflicting signals. ${signalsStr}. No trade.`);
                     return;
                 }
-            } else if (cfg.ENABLE_VWAP_STRATEGY) {
-                finalSide = vwapSide;
-            } else if (cfg.ENABLE_RSI_STRATEGY) {
-                finalSide = rsiSide;
             }
 
             if (!finalSide) {

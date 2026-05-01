@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -123,7 +123,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
         if (dynamicCb) formData.set('ENABLE_DYNAMIC_THRESHOLDS', dynamicCb.checked ? 'true' : 'false');
 
-        if (vwapCb && rsiCb && !vwapCb.checked && !rsiCb.checked) {
+        const adxCb = document.getElementById('ENABLE_ADX_STRATEGY');
+        if (adxCb) formData.set('ENABLE_ADX_STRATEGY', adxCb.checked ? 'true' : 'false');
+
+        const isVwapChecked = vwapCb && vwapCb.checked;
+        const isRsiChecked = rsiCb && rsiCb.checked;
+        const isAdxChecked = adxCb && adxCb.checked;
+
+        if (!isVwapChecked && !isRsiChecked && !isAdxChecked) {
             const msg = document.getElementById('save-status');
             msg.textContent = 'Error: At least one strategy must be enabled.';
             msg.style.color = 'var(--danger)';

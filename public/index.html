@@ -337,6 +337,40 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- ADX Sub-section -->
+                            <div class="page-subsection">
+                                <h4>ADX Strategy</h4>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_ADX_STRATEGY" name="ENABLE_ADX_STRATEGY" value="true" style="width: auto; margin: 0;"> Enable ADX
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label for="ADX_PERIOD">ADX Period</label>
+                                        <input type="number" id="ADX_PERIOD" name="ADX_PERIOD" step="1" min="1">
+                                    </div>
+                                    <div class="col">
+                                        <label for="ADX_TIMEFRAME">ADX Timeframe</label>
+                                        <select id="ADX_TIMEFRAME" name="ADX_TIMEFRAME" style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                            <option value="1m">1m</option>
+                                            <option value="3m">3m</option>
+                                            <option value="5m">5m</option>
+                                            <option value="15m">15m</option>
+                                            <option value="1h">1h</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label for="ADX_THRESHOLD">ADX Threshold</label>
+                                        <input type="number" id="ADX_THRESHOLD" name="ADX_THRESHOLD" step="1" placeholder="e.g. 25">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Trading Core Section -->
