@@ -466,6 +466,67 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchDynamicThresholdTable, 5000);
     fetchDynamicThresholdTable();
 
+    // Trade Decisions Live Stream
+    const tbodyTradeDecisions = document.getElementById('trade-decisions-tbody');
+
+    function fetchTradeDecisions() {
+        const pageActive = document.getElementById('trade-decisions-page').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/trade-decisions')
+            .then(res => res.json())
+            .then(data => {
+                if (!tbodyTradeDecisions) return;
+                
+                if (!data || data.length === 0) {
+                    tbodyTradeDecisions.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash; No trade evaluations tracked yet &mdash;</td></tr>';
+                } else {
+                    tbodyTradeDecisions.innerHTML = data.map(record => {
+                        const timeStr = new Date(record.timestamp).toLocaleTimeString();
+                        
+                        const formatStrategy = (strat, name) => {
+                            if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
+                            if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
+                            
+                            const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
+                            const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
+                            
+                            let details = '';
+                            if (name === 'VWAP') {
+                                details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
+                            } else if (name === 'RSI') {
+                                details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
+                            } else if (name === 'ADX') {
+                                details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
+                            }
+                            
+                            return `<div style="font-size: 0.85em;">
+                                <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
+                                <span style="color: var(--text-muted)">${details}</span>
+                            </div>`;
+                        };
+
+                        const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
+                        const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
+
+                        return `<tr>
+                            <td style="color: var(--text-muted);">${timeStr}</td>
+                            <td><strong>${record.symbol}</strong></td>
+                            <td>$${parseFloat(record.price || 0).toFixed(4)}</td>
+                            <td>${formatStrategy(record.vwap, 'VWAP')}</td>
+                            <td>${formatStrategy(record.rsi, 'RSI')}</td>
+                            <td>${formatStrategy(record.adx, 'ADX')}</td>
+                            <td>${confluenceText}</td>
+                            <td><span class="${outcomeClz}">${record.reason}</span></td>
+                        </tr>`;
+                    }).join('');
+                }
+            }).catch(console.error);
+    }
+
+    setInterval(fetchTradeDecisions, 2000);
+    fetchTradeDecisions();
+
     // ── Toast Notification System ───────────────────────────────
     const toastContainer = document.getElementById('toast-container');
 

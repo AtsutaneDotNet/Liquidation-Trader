@@ -32,6 +32,9 @@ class TradingBot {
 
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
+        
+        // In-memory store for recent trade evaluations (max 100), purged on restart
+        this.tradeDecisions = [];
     }
 
     async handleError(errMessage) {
@@ -654,6 +657,25 @@ class TradingBot {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
 
+        const decisionRecord = {
+            timestamp: Date.now(),
+            symbol: symbol,
+            price: currentPrice,
+            vwap: null,
+            rsi: null,
+            adx: null,
+            confluence: null,
+            reason: 'Evaluated',
+            side: null
+        };
+
+        const pushDecision = (reason, side = null) => {
+            decisionRecord.reason = reason;
+            if (side) decisionRecord.side = side;
+            this.tradeDecisions.unshift(decisionRecord);
+            if (this.tradeDecisions.length > 100) this.tradeDecisions.pop();
+        };
+
         const blacklistStr = cfg.COIN_BLACKLIST || '';
         const blacklist = blacklistStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
         if (blacklist.length > 0) {
@@ -661,6 +683,7 @@ class TradingBot {
             const isBlacklisted = blacklist.some(b => symUpper.startsWith(b));
             if (isBlacklisted) {
                 logger.info(`Symbol ${symbol} is blacklisted. Holding bot from opening new position.`);
+                pushDecision('Blacklisted');
                 return;
             }
         }
@@ -692,8 +715,10 @@ class TradingBot {
                     } else {
                         logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
                     }
+                    decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide };
                 } else {
                     logger.info(`No VWAP data available from ticker for ${symbol}.`);
+                    decisionRecord.vwap = { error: 'No data' };
                 }
             }
 
@@ -717,12 +742,15 @@ class TradingBot {
                             } else {
                                 logger.info(`RSI Condition: Value is neutral. No trade signal.`);
                             }
+                            decisionRecord.rsi = { value: rsi, oversold: cfg.RSI_OVERSOLD, overbought: cfg.RSI_OVERBOUGHT, signal: rsiSide };
                         }
                     } else {
                         logger.info(`Not enough klines fetched for RSI calculation for ${symbol}.`);
+                        decisionRecord.rsi = { error: 'Not enough klines' };
                     }
                 } else {
                     logger.info(`Exchange does not support fetchOHLCV for RSI.`);
+                    decisionRecord.rsi = { error: 'Not supported' };
                 }
             }
 
@@ -753,12 +781,15 @@ class TradingBot {
                             } else {
                                 logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is above threshold (${threshold}). No trade signal.`);
                             }
+                            decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide };
                         }
                     } else {
                         logger.info(`Not enough klines fetched for ADX calculation for ${symbol}.`);
+                        decisionRecord.adx = { error: 'Not enough klines' };
                     }
                 } else {
                     logger.info(`Exchange does not support fetchOHLCV for ADX.`);
+                    decisionRecord.adx = { error: 'Not supported' };
                 }
             }
 
@@ -774,14 +805,20 @@ class TradingBot {
                 if (allSame) {
                     finalSide = activeStrategies[0].side;
                     logger.info(`Confluence matched! Signals: ${activeStrategies.map(s => s.name).join(', ')} -> ${finalSide.toUpperCase()}`);
+                    decisionRecord.confluence = { matched: true, side: finalSide };
                 } else {
                     const signalsStr = activeStrategies.map(s => `${s.name}: ${s.side || 'none'}`).join(', ');
                     logger.info(`Confluence missed or conflicting signals. ${signalsStr}. No trade.`);
+                    decisionRecord.confluence = { matched: false, signals: signalsStr };
+                    pushDecision('No Confluence');
                     return;
                 }
+            } else {
+                decisionRecord.confluence = { matched: false, signals: 'No strategies enabled' };
             }
 
             if (!finalSide) {
+                pushDecision('No Signal');
                 return;
             }
 
@@ -790,13 +827,16 @@ class TradingBot {
             const maxPositions = cfg.MAX_OPEN_POSITIONS || 3;
             if (!hasPosition && positions.length >= maxPositions) {
                 logger.info(`Max open positions (${maxPositions}) reached. Holding bot from opening new position for ${symbol}.`);
+                pushDecision('Max Positions Reached');
                 return;
             }
 
             await this.executeTrade(symbol, finalSide, currentPrice, cfg);
+            pushDecision('Trade Executed', finalSide);
 
         } catch (error) {
             this.handleError(`Error in evaluateTrade for ${symbol}: ${error.message}`);
+            pushDecision(`Error: ${error.message}`);
         }
     }
 

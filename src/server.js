@@ -148,6 +148,10 @@ class WebServer {
             res.json(db.getLiquidations(200) || []); // Fetch up to 200 liquidations for the UI
         });
 
+        this.app.get('/api/trade-decisions', (req, res) => {
+            res.json(this.bot.tradeDecisions || []);
+        });
+
         // Dynamic Thresholds
         this.app.get('/api/dynamic-thresholds', (req, res) => {
             const currentConfig = config.get();
