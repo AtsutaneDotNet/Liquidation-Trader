@@ -32,7 +32,7 @@ class TradingBot {
 
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
-        
+
         // In-memory store for recent trade evaluations (max 100), purged on restart
         this.tradeDecisions = [];
     }
@@ -62,7 +62,7 @@ class TradingBot {
         this.errorCount = 0;
         clearTimeout(this.errorTimer);
         logger.info('Starting Trading Bot Engine...');
-        
+
         // Purge old liquidation history to keep DB size minimum
         logger.info('Purging outdated liquidation history from database...');
         db.purgeLiquidations();
@@ -103,12 +103,12 @@ class TradingBot {
             // Load pairs strictly from the chosen trading exchange
             logger.info('Fetching linear market instruments...');
             let allSymbols = await this.tradeExchange.getLinearSymbols();
-            
+
             if (cfg.CMC_FILTER_ENABLED) {
                 const originalCount = allSymbols.length;
                 this.symbols = allSymbols.filter(s => cmc.isSymbolInTop(s));
                 logger.info(`CMC Filter active: ${this.symbols.length}/${originalCount} pairs matched the Top ${cfg.CMC_RANK_LIMIT} ranking list.`);
-                
+
                 // Set refresh interval
                 this.cmcInterval = setInterval(() => {
                     this.refreshCmcRankings().catch(e => logger.warn(`Periodic CMC refresh failed: ${e.message}`));
@@ -368,7 +368,7 @@ class TradingBot {
         const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.005;
 
         const trailingPercent = cfg.ENABLE_TRAILING_PROFIT ? cfg.TRAILING_PROFIT_PERCENTAGE : 0;
-        
+
         let targetTrailingActivationPrice = 0;
         if (trailingPercent > 0 && cfg.TRAILING_ACTIVATION_PERCENTAGE > 0) {
             const activationMultiplier = cfg.TRAILING_ACTIVATION_PERCENTAGE / 100;
@@ -525,7 +525,7 @@ class TradingBot {
             if (cfg.ENABLE_DYNAMIC_THRESHOLDS) {
                 const bases = Object.keys(this.dynamicThresholds).sort((a, b) => b.length - a.length);
                 const symUpper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                
+
                 for (const base of bases) {
                     if (symUpper.startsWith(base)) {
                         thresholdInUsd = this.dynamicThresholds[base];
@@ -588,20 +588,20 @@ class TradingBot {
 
     calculateADX(highs, lows, closes, period = 14) {
         if (!highs || highs.length < period * 2) return null;
-        
+
         let tr = [];
         let plusDM = [];
         let minusDM = [];
-        
+
         for (let i = 1; i < highs.length; i++) {
-            const h = highs[i], l = lows[i], prevH = highs[i-1], prevL = lows[i-1], prevC = closes[i-1];
+            const h = highs[i], l = lows[i], prevH = highs[i - 1], prevL = lows[i - 1], prevC = closes[i - 1];
             tr.push(Math.max(h - l, Math.abs(h - prevC), Math.abs(l - prevC)));
             const upMove = h - prevH;
             const downMove = prevL - l;
             plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
             minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
         }
-        
+
         const smooth = (data, period) => {
             let smoothed = [];
             let sum = 0;
@@ -613,11 +613,11 @@ class TradingBot {
             }
             return smoothed;
         };
-        
+
         const smoothedTR = smooth(tr, period);
         const smoothedPlusDM = smooth(plusDM, period);
         const smoothedMinusDM = smooth(minusDM, period);
-        
+
         let dx = [];
         let plusDIList = [];
         let minusDIList = [];
@@ -634,18 +634,18 @@ class TradingBot {
             const diSum = plusDI + minusDI;
             dx.push(diSum === 0 ? 0 : 100 * Math.abs(plusDI - minusDI) / diSum);
         }
-        
+
         if (dx.length < period) return null;
-        
+
         let adx = [];
         let sumDx = 0;
-        for(let i=0; i<period; i++) sumDx += dx[i];
+        for (let i = 0; i < period; i++) sumDx += dx[i];
         adx.push(sumDx / period);
         for (let i = period; i < dx.length; i++) {
             const prevAdx = adx[adx.length - 1];
             adx.push((prevAdx * (period - 1) + dx[i]) / period);
         }
-        
+
         return {
             adx: adx[adx.length - 1],
             plusDI: plusDIList[plusDIList.length - 1],
@@ -765,16 +765,16 @@ class TradingBot {
                         const lows = klines.map(k => k[3]);
                         const closes = klines.map(k => k[4]);
                         const adxResult = this.calculateADX(highs, lows, closes, period);
-                        
+
                         if (adxResult !== null) {
                             logger.info(`ADX (${period}, ${cfg.ADX_TIMEFRAME}): ${adxResult.adx.toFixed(2)} | +DI: ${adxResult.plusDI.toFixed(2)} | -DI: ${adxResult.minusDI.toFixed(2)}`);
-                            if (adxResult.adx <= threshold) {
+                            if (adxResult.adx >= threshold) {
                                 if (adxResult.plusDI > adxResult.minusDI) {
                                     adxSide = 'sell';
-                                    logger.info(`ADX Condition met: ADX <= ${threshold} and +DI > -DI. Signal: SHORT.`);
+                                    logger.info(`ADX Condition met: ADX >= ${threshold} and +DI > -DI. Signal: SHORT.`);
                                 } else if (adxResult.minusDI > adxResult.plusDI) {
                                     adxSide = 'buy';
-                                    logger.info(`ADX Condition met: ADX <= ${threshold} and -DI > +DI. Signal: LONG.`);
+                                    logger.info(`ADX Condition met: ADX >= ${threshold} and -DI > +DI. Signal: LONG.`);
                                 } else {
                                     logger.info(`ADX Condition: Value is weak but DIs are equal. No trade signal.`);
                                 }
@@ -857,7 +857,7 @@ class TradingBot {
                 const positions = db.getPositions();
                 const position = positions.find(p => p.symbol === symbol);
                 let multiplier = 1;
-                
+
                 if (position && position.size > 0 && position.entry_price > 0) {
                     const margin = (position.size * position.entry_price) / cfg.TRADE_LEVERAGE;
                     if (margin > 0) {
@@ -866,7 +866,7 @@ class TradingBot {
                         if (multiplier === 0) multiplier = 1;
                     }
                 }
-                
+
                 amountInToken = amountInToken * multiplier;
                 logger.info(`DCA Martingale Multiplier for ${symbol}: ${multiplier}x`);
             }
