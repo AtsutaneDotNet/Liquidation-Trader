@@ -52,8 +52,8 @@ db.exec(`
 `);
 
 // Add new columns dynamically if the table already existed
-try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } catch (e) { }
-try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch (e) { }
+try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'LIQUIDATIONREPORT_KEY'];
@@ -88,26 +88,26 @@ const defaults = {
     ENABLE_VWAP_STRATEGY: 'true',
     ENABLE_RSI_STRATEGY: 'false',
     RSI_PERIOD: '14',
-    RSI_TIMEFRAME: '15m',
+    RSI_TIMEFRAME: '1m',
     RSI_OVERBOUGHT: '70',
     RSI_OVERSOLD: '30',
     ENABLE_ADX_STRATEGY: 'false',
     ADX_PERIOD: '14',
-    ADX_TIMEFRAME: '15m',
-    ADX_THRESHOLD: '40',
+    ADX_TIMEFRAME: '1m',
+    ADX_THRESHOLD: '25',
     LIQUIDATION_VALUE_CURRENCY: 'USD',
     LIQUIDATION_VALUE_THRESHOLD: '1000',
-    OFFSET_PERCENTAGE: '5.0',
+    OFFSET_PERCENTAGE: '0.5',
     TAKE_PROFIT_PERCENTAGE: '1.0',
     STOP_LOSS_PERCENTAGE: '0.5',
     ENABLE_TRAILING_PROFIT: 'false',
-    TRAILING_PROFIT_PERCENTAGE: '0.5',
-    TRAILING_ACTIVATION_PERCENTAGE: '1.0',
+    TRAILING_PROFIT_PERCENTAGE: '0.2',
+    TRAILING_ACTIVATION_PERCENTAGE: '0.0',
     TRADE_LEVERAGE: '10',
-    TRADE_AMOUNT_PERCENTAGE: '0.25',
+    TRADE_AMOUNT_PERCENTAGE: '5',
     TRADE_EXCHANGE: 'bybit',
     LIQUIDATION_EXCHANGES: 'bybit',
-    MAX_OPEN_POSITIONS: '1',
+    MAX_OPEN_POSITIONS: '3',
     CMC_API_KEY: '',
     CMC_RANK_LIMIT: '100',
     CMC_FILTER_ENABLED: 'false',
