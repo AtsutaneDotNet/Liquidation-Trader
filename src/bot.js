@@ -722,12 +722,42 @@ class TradingBot {
                 }
             }
 
-            // --- 2. RSI Strategy ---
-            if (cfg.ENABLE_RSI_STRATEGY) {
-                if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.has['fetchOHLCV']) {
+            // --- 2. RSI & ADX Shared Data Fetching ---
+            let sharedKlines = null;
+            const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
+            const adxEnabled = cfg.ENABLE_ADX_STRATEGY;
+
+            if ((rsiEnabled || adxEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                // If both are enabled and share the same timeframe, fetch once with max limit
+                if (rsiEnabled && adxEnabled && cfg.RSI_TIMEFRAME === cfg.ADX_TIMEFRAME) {
+                    const rsiLimit = (parseInt(cfg.RSI_PERIOD) || 14) + 100;
+                    const adxLimit = (parseInt(cfg.ADX_PERIOD) || 14) * 2 + 100;
+                    const maxLimit = Math.max(rsiLimit, adxLimit);
+
+                    try {
+                        logger.info(`Fetching shared OHLCV for RSI & ADX (${cfg.RSI_TIMEFRAME}, limit: ${maxLimit})...`);
+                        sharedKlines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.RSI_TIMEFRAME, undefined, maxLimit);
+                    } catch (e) {
+                        logger.error(`Error fetching shared OHLCV: ${e.message}`);
+                    }
+                }
+            }
+
+            // --- 3. RSI Strategy ---
+            if (rsiEnabled) {
+                if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                     const period = parseInt(cfg.RSI_PERIOD) || 14;
-                    // fetch more candles to get a stable RSI smoothing
-                    const klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.RSI_TIMEFRAME, undefined, period + 100);
+                    let klines = sharedKlines;
+
+                    // Fetch if not shared or shared fetch failed
+                    if (!klines) {
+                        try {
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.RSI_TIMEFRAME, undefined, period + 100);
+                        } catch (e) {
+                            logger.error(`Error fetching RSI OHLCV: ${e.message}`);
+                        }
+                    }
+
                     if (klines && klines.length > period) {
                         const closes = klines.map(k => k[4]); // Close price is index 4
                         const rsi = this.calculateRSI(closes, period);
@@ -754,12 +784,22 @@ class TradingBot {
                 }
             }
 
-            // --- 3. ADX Strategy ---
-            if (cfg.ENABLE_ADX_STRATEGY) {
-                if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.has['fetchOHLCV']) {
+            // --- 4. ADX Strategy ---
+            if (adxEnabled) {
+                if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                     const period = parseInt(cfg.ADX_PERIOD) || 14;
                     const threshold = parseFloat(cfg.ADX_THRESHOLD) || 25;
-                    const klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.ADX_TIMEFRAME, undefined, period * 2 + 100);
+                    let klines = sharedKlines;
+
+                    // Fetch if not shared or shared fetch failed
+                    if (!klines) {
+                        try {
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.ADX_TIMEFRAME, undefined, period * 2 + 100);
+                        } catch (e) {
+                            logger.error(`Error fetching ADX OHLCV: ${e.message}`);
+                        }
+                    }
+
                     if (klines && klines.length > period * 2) {
                         const highs = klines.map(k => k[2]);
                         const lows = klines.map(k => k[3]);
@@ -779,7 +819,7 @@ class TradingBot {
                                     logger.info(`ADX Condition: Value is weak but DIs are equal. No trade signal.`);
                                 }
                             } else {
-                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is above threshold (${threshold}). No trade signal.`);
+                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is below threshold (${threshold}). No trade signal.`);
                             }
                             decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide };
                         }
