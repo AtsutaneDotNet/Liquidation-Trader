@@ -494,12 +494,15 @@
                                 </div>
                             </div>
                             <div class="page-subsection">
-                                <h4>DCA Martingale</h4>
+                                <h4>DCA Martingale <span style="color: var(--danger); font-weight: bold;">(EXPERIMENTAL)</span></h4>
                                 <div class="form-group row">
                                     <div class="col">
                                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
                                             <input type="checkbox" id="ENABLE_DCA_MARTINGALE" name="ENABLE_DCA_MARTINGALE" value="true" style="width: auto; margin: 0;"> Enable DCA into order size based on PNL %
                                         </label>
+                                        <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
+                                            When enabled, the bot scales the next order size based on the absolute price move percentage (PnL% / Leverage) of any existing position for the same symbol. Multiplier = <code>ceil(abs(PnL% / Leverage))</code>. This allows for automated Martingale-style scaling as positions go into loss or profit.
+                                        </p>
                                     </div>
                                 </div>
                             </div>

@@ -17,7 +17,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
     -   **ADX (Average Directional Index)**: Detect trend strength and potential reversals/exhaustion.
     -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX) to align before executing a trade for higher precision.
-    -   **DCA Martingale**: Position-based order sizing that scales based on unrealized PnL percentages.
+    -   **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 -   **Intelligent Filtering**:
     -   **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
     -   **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
@@ -119,7 +119,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
 | `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |
 | `ADX_THRESHOLD` | ADX value threshold for entry. | `25` |
-| `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. | `false` |
+| `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 
 ### Filters & Dynamic Thresholds
 | Variable | Description | Default |

@@ -902,7 +902,7 @@ class TradingBot {
                     const margin = (position.size * position.entry_price) / cfg.TRADE_LEVERAGE;
                     if (margin > 0) {
                         const pnlPercent = (position.unrealized_pnl / margin) * 100;
-                        multiplier = Math.ceil(Math.abs(pnlPercent));
+                        multiplier = Math.ceil(Math.abs(pnlPercent / cfg.TRADE_LEVERAGE));
                         if (multiplier === 0) multiplier = 1;
                     }
                 }
