@@ -156,13 +156,14 @@ class BinanceExchange extends BaseExchange {
             const oneDay = 24 * 60 * 60 * 1000;
             const sevenDays = 7 * oneDay;
             const thirtyDays = 30 * oneDay;
+            const threeSixtyFiveDays = 365 * oneDay;
 
             if (!this.exchange.has['fetchIncome']) return null;
 
             // Binance allows fetching Income history which includes REALIZED_PNL
             // We fetch the last 100 or so to aggregate.
             const income = await this.exchange.fetchIncome(undefined, undefined, undefined, { incomeType: 'REALIZED_PNL' });
-            let daily = 0, weekly = 0, monthly = 0, total = 0;
+            let daily = 0, weekly = 0, monthly = 0, yearly = 0, total = 0;
 
             if (Array.isArray(income)) {
                 income.forEach(inc => {
@@ -173,9 +174,10 @@ class BinanceExchange extends BaseExchange {
                     if (now - time <= oneDay) daily += amount;
                     if (now - time <= sevenDays) weekly += amount;
                     if (now - time <= thirtyDays) monthly += amount;
+                    if (now - time <= threeSixtyFiveDays) yearly += amount;
                 });
 
-                return { daily_pnl: daily, weekly_pnl: weekly, monthly_pnl: monthly, total_pnl: total };
+                return { daily_pnl: daily, weekly_pnl: weekly, monthly_pnl: monthly, yearly_pnl: yearly, total_pnl: total };
             }
             return null;
         } catch (e) {

@@ -275,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elAccDaily = document.getElementById('acc-daily-pnl');
     const elAccWeekly = document.getElementById('acc-weekly-pnl');
     const elAccMonthly = document.getElementById('acc-monthly-pnl');
+    const elAccYearly = document.getElementById('acc-yearly-pnl');
     const elAccTotalPnl = document.getElementById('acc-total-pnl');
     const tbodyPositions = document.getElementById('positions-tbody');
 
@@ -304,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     elAccDaily.innerHTML = formatPnl(data.daily_pnl);
                     elAccWeekly.innerHTML = formatPnl(data.weekly_pnl);
                     elAccMonthly.innerHTML = formatPnl(data.monthly_pnl);
+                    elAccYearly.innerHTML = formatPnl(data.yearly_pnl);
                     elAccTotalPnl.innerHTML = formatPnl(data.total_pnl);
                 }
             }).catch(console.error);

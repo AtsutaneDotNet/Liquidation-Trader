@@ -20,6 +20,7 @@ db.exec(`
     daily_pnl REAL DEFAULT 0,
     weekly_pnl REAL DEFAULT 0,
     monthly_pnl REAL DEFAULT 0,
+    yearly_pnl REAL DEFAULT 0,
     total_pnl REAL DEFAULT 0,
     updated_at INTEGER DEFAULT 0
   );
@@ -54,6 +55,7 @@ db.exec(`
 // Add new columns dynamically if the table already existed
 try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE account_state ADD COLUMN yearly_pnl REAL DEFAULT 0;'); } catch(e) {}
 
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'LIQUIDATIONREPORT_KEY'];
