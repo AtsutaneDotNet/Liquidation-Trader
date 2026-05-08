@@ -801,3 +801,125 @@ input:focus {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+/* ── Position Cards ─────────────────────────────── */
+.positions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.position-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.position-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.pos-card-buy {
+    border-left: 4px solid var(--accent);
+}
+
+.pos-card-sell {
+    border-left: 4px solid var(--danger);
+}
+
+.pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pos-symbol {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.pos-side {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pos-side.buy {
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--accent);
+}
+
+.pos-side.sell {
+    background: rgba(255, 59, 59, 0.1);
+    color: var(--danger);
+}
+
+.pos-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+}
+
+.pos-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pos-detail-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+}
+
+.pos-detail-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.pos-pnl {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.pos-pnl-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.pos-pnl-value {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.empty-msg {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 60px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px dashed var(--border-color);
+}

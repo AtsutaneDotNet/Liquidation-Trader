@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elAccMonthly = document.getElementById('acc-monthly-pnl');
     const elAccYearly = document.getElementById('acc-yearly-pnl');
     const elAccTotalPnl = document.getElementById('acc-total-pnl');
-    const tbodyPositions = document.getElementById('positions-tbody');
+    const positionsContainer = document.getElementById('positions-container');
 
     function formatUsd(val) {
         return '$' + parseFloat(val || 0).toFixed(2);
@@ -313,24 +313,54 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/positions')
             .then(res => res.json())
             .then(data => {
+                if (!positionsContainer) return;
                 if (!data || data.length === 0) {
-                    tbodyPositions.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; No active positions tracked yet &mdash;</td></tr>';
+                    positionsContainer.innerHTML = '<div class="empty-msg">&mdash; No active positions tracked yet &mdash;</div>';
                 } else {
-                    tbodyPositions.innerHTML = data.map(p => {
+                    positionsContainer.innerHTML = data.map(p => {
                         const sideStr = (p.side || '').toLowerCase();
-                        const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
+                        const isBuy = sideStr === 'buy' || sideStr === 'long';
+                        const sideClz = isBuy ? 'buy' : 'sell';
+                        const cardClz = isBuy ? 'pos-card-buy' : 'pos-card-sell';
                         const sideText = (p.side || 'UNKNOWN').toUpperCase();
-                        return `<tr>
-                            <td><strong>${p.symbol}</strong></td>
-                            <td><span class="${sideClz}">${sideText}</span></td>
-                            <td>${p.size}</td>
-                            <td>${parseFloat(p.entry_price || 0).toFixed(4)}</td>
-                            <td>${parseFloat(p.mark_price || 0).toFixed(4)}</td>
-                            <td>${parseFloat(p.liq_price || 0).toFixed(4)}</td>
-                            <td>${parseFloat(p.tp_price || 0).toFixed(4)}</td>
-                            <td>${parseFloat(p.sl_price || 0).toFixed(4)}</td>
-                            <td>${formatPnl(p.unrealized_pnl)}</td>
-                        </tr>`;
+                        
+                        return `
+                        <div class="position-card ${cardClz}">
+                            <div class="pos-header">
+                                <div class="pos-symbol">${p.symbol}</div>
+                                <div class="pos-side ${sideClz}">${sideText}</div>
+                            </div>
+                            <div class="pos-details">
+                                <div class="pos-detail-item">
+                                    <span class="pos-detail-label">Size</span>
+                                    <span class="pos-detail-value">${p.size}</span>
+                                </div>
+                                <div class="pos-detail-item">
+                                    <span class="pos-detail-label">Entry Price</span>
+                                    <span class="pos-detail-value">${parseFloat(p.entry_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="pos-detail-item">
+                                    <span class="pos-detail-label">Mark Price</span>
+                                    <span class="pos-detail-value">${parseFloat(p.mark_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="pos-detail-item">
+                                    <span class="pos-detail-label">Liq. Price</span>
+                                    <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(p.liq_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="pos-detail-item">
+                                    <span class="pos-detail-label">TP Price</span>
+                                    <span class="pos-detail-value" style="color: var(--accent)">${parseFloat(p.tp_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="pos-detail-item">
+                                    <span class="pos-detail-label">SL Price</span>
+                                    <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(p.sl_price || 0).toFixed(4)}</span>
+                                </div>
+                            </div>
+                            <div class="pos-pnl">
+                                <span class="pos-pnl-label">Unrealized PnL</span>
+                                <span class="pos-pnl-value">${formatPnl(p.unrealized_pnl)}</span>
+                            </div>
+                        </div>`;
                     }).join('');
                 }
             }).catch(console.error);

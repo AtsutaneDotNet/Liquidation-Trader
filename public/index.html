@@ -590,28 +590,8 @@
                         Active Contracts
                     </h3>
                     <p class="subtitle" style="margin-bottom: 1.5rem;">Live tracking of active linear contracts directly from configured exchanges.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="positions-table">
-                            <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Size</th>
-                                    <th>Entry Price</th>
-                                    <th>Mark Price</th>
-                                    <th>Liq. Price</th>
-                                    <th>TP Price</th>
-                                    <th>SL Price</th>
-                                    <th>Unrealized PnL</th>
-                                </tr>
-                            </thead>
-                            <tbody id="positions-tbody">
-                                <tr>
-                                    <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; No active
-                                        positions tracked yet &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="positions-container" class="positions-grid">
+                        <div class="empty-msg">&mdash; No active positions tracked yet &mdash;</div>
                     </div>
                 </div>
             </section>
