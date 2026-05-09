@@ -115,6 +115,8 @@ const defaults = {
     CMC_FILTER_ENABLED: 'false',
     ENABLE_DCA_MARTINGALE: 'false',
     ENABLE_DYNAMIC_THRESHOLDS: 'false',
+    ENABLE_RUNAWAY_HELPER: 'false',
+    RUNAWAY_HELPER_THRESHOLD: '-10',
     LIQUIDATIONREPORT_KEY: '',
     COIN_BLACKLIST: ''
 };

@@ -244,6 +244,27 @@ class TradingBot {
                     if (stillOpen) {
                         logger.info(`Stale position ${stale.symbol} is actually still open. Syncing...`);
                         this.onPositionUpdate([apiMatch]);
+
+                        const cfg = this.config.get();
+                        if (cfg.ENABLE_RUNAWAY_HELPER) {
+                            const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                            const contracts = parseFloat(apiMatch.contracts) || parseFloat(apiMatch.info?.size) || 0;
+                            const entryPrice = parseFloat(apiMatch.entryPrice);
+                            const markPrice = parseFloat(apiMatch.markPrice);
+                            const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                            const unrealizedPnl = parseFloat(apiMatch.unrealizedPnl || apiMatch.info?.unrealisedPnl || 0);
+
+                            if (contracts > 0 && entryPrice > 0) {
+                                const margin = (contracts * entryPrice) / leverage;
+                                if (margin > 0) {
+                                    const pnlPercent = (unrealizedPnl / margin) * 100;
+                                    if (pnlPercent < runawayThreshold) {
+                                        logger.info(`Runaway Helper triggered for ${stale.symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
+                                        this.evaluateTrade(stale.symbol, markPrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         logger.info(`Stale position ${stale.symbol} confirmed closed. Removing.`);
                         db.removePosition(stale.symbol);

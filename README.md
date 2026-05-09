@@ -140,6 +140,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ENABLE_TRAILING_PROFIT` | Use native exchange trailing stops. | `false` |
 | `TRAILING_PROFIT_PERCENTAGE` | Trailing distance for the stop loss. | `0.2%` |
 | `MAX_OPEN_POSITIONS` | Maximum number of simultaneous trades. | `3` |
+| `ENABLE_RUNAWAY_HELPER` | Treat stale positions with deep negative PnL% as massive liquidations to attempt rescue averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
+| `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (must be negative) to trigger the helper on stale positions. | `-10` |
 
 ---
 

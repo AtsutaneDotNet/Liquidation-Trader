@@ -37,6 +37,8 @@ function getConfig() {
         CMC_FILTER_ENABLED: dbConfig.CMC_FILTER_ENABLED === 'true',
         ENABLE_DCA_MARTINGALE: dbConfig.ENABLE_DCA_MARTINGALE === 'true',
         ENABLE_DYNAMIC_THRESHOLDS: dbConfig.ENABLE_DYNAMIC_THRESHOLDS === 'true',
+        ENABLE_RUNAWAY_HELPER: dbConfig.ENABLE_RUNAWAY_HELPER === 'true',
+        RUNAWAY_HELPER_THRESHOLD: parseFloat(dbConfig.RUNAWAY_HELPER_THRESHOLD) || -10,
         LIQUIDATIONREPORT_KEY: dbConfig.LIQUIDATIONREPORT_KEY || '',
         COIN_BLACKLIST: dbConfig.COIN_BLACKLIST || '',
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
