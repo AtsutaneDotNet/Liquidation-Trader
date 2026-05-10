@@ -124,11 +124,20 @@ class WebServer {
 
         // Status
         this.app.get('/api/status', (req, res) => {
+            const db = require('./db');
+            const currentConfig = config.get();
+            const positions = db.getPositions() || [];
+            const state = db.getAccountState() || {};
+            const usedMarginPercent = state.total_value > 0 ? (state.margin_used / state.total_value) * 100 : 0;
+
             res.json({
                 isRunning: this.bot.isRunning,
                 isTrading: this.bot.isTrading,
                 pairsLoaded: Array.isArray(this.bot.symbols) ? this.bot.symbols.length : 0,
-                btcUsdPrice: this.bot.btcUsdPrice
+                btcUsdPrice: this.bot.btcUsdPrice,
+                openPositionsCount: positions.length,
+                maxOpenPositions: parseInt(currentConfig.MAX_OPEN_POSITIONS) || 0,
+                usedMarginPercent: usedMarginPercent
             });
         });
 

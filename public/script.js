@@ -167,6 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tradeStatusDot = document.getElementById('trade-status-indicator').querySelector('.dot');
     const tradeStatusText = document.getElementById('trade-status-text');
     const pairsCount = document.getElementById('pairs-count');
+    const openPositionsCount = document.getElementById('open-positions-count');
+    const maxPositionsCount = document.getElementById('max-positions-count');
+    const usedMarginPercent = document.getElementById('used-margin-percent');
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
 
@@ -196,6 +199,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 pairsCount.textContent = data.pairsLoaded;
                 currentBtcPrice = data.btcUsdPrice || 0;
+
+                if (openPositionsCount) openPositionsCount.textContent = data.openPositionsCount || 0;
+                if (maxPositionsCount) maxPositionsCount.textContent = data.maxOpenPositions || 0;
+                if (usedMarginPercent) usedMarginPercent.textContent = (data.usedMarginPercent || 0).toFixed(2) + '%';
             });
     }
 
@@ -506,58 +513,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Trade Decisions Live Stream
     const tbodyTradeDecisions = document.getElementById('trade-decisions-tbody');
+    const tbodyDashboardTradeDecisions = document.getElementById('dashboard-trade-decisions-tbody');
 
     function fetchTradeDecisions() {
         const pageActive = document.getElementById('trade-decisions-page').classList.contains('active');
-        if (!pageActive) return;
+        const dashPageActive = document.getElementById('dashboard').classList.contains('active');
+        if (!pageActive && !dashPageActive) return;
 
         fetch('/api/trade-decisions')
             .then(res => res.json())
             .then(data => {
-                if (!tbodyTradeDecisions) return;
-                
-                if (!data || data.length === 0) {
-                    tbodyTradeDecisions.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash; No trade evaluations tracked yet &mdash;</td></tr>';
-                } else {
-                    tbodyTradeDecisions.innerHTML = data.map(record => {
-                        const timeStr = new Date(record.timestamp).toLocaleTimeString();
-                        
-                        const formatStrategy = (strat, name) => {
-                            if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
-                            if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
-                            
-                            const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
-                            const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
-                            
-                            let details = '';
-                            if (name === 'VWAP') {
-                                details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
-                            } else if (name === 'RSI') {
-                                details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
-                            } else if (name === 'ADX') {
-                                details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
-                            }
-                            
-                            return `<div style="font-size: 0.85em;">
-                                <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
-                                <span style="color: var(--text-muted)">${details}</span>
-                            </div>`;
-                        };
+                const formatStrategy = (strat, name) => {
+                    if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
+                    if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
+                    
+                    const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
+                    const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
+                    
+                    let details = '';
+                    if (name === 'VWAP') {
+                        details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
+                    } else if (name === 'RSI') {
+                        details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
+                    } else if (name === 'ADX') {
+                        details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
+                    }
+                    
+                    return `<div style="font-size: 0.85em;">
+                        <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
+                        <span style="color: var(--text-muted)">${details}</span>
+                    </div>`;
+                };
 
-                        const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
-                        const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
+                const renderRow = (record) => {
+                    const timeStr = new Date(record.timestamp).toLocaleTimeString();
+                    const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
+                    const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
 
-                        return `<tr>
-                            <td style="color: var(--text-muted);">${timeStr}</td>
-                            <td><strong>${record.symbol}</strong></td>
-                            <td>$${parseFloat(record.price || 0).toFixed(4)}</td>
-                            <td>${formatStrategy(record.vwap, 'VWAP')}</td>
-                            <td>${formatStrategy(record.rsi, 'RSI')}</td>
-                            <td>${formatStrategy(record.adx, 'ADX')}</td>
-                            <td>${confluenceText}</td>
-                            <td><span class="${outcomeClz}">${record.reason}</span></td>
-                        </tr>`;
-                    }).join('');
+                    return `<tr>
+                        <td style="color: var(--text-muted);">${timeStr}</td>
+                        <td><strong>${record.symbol}</strong></td>
+                        <td>$${parseFloat(record.price || 0).toFixed(4)}</td>
+                        <td>${formatStrategy(record.vwap, 'VWAP')}</td>
+                        <td>${formatStrategy(record.rsi, 'RSI')}</td>
+                        <td>${formatStrategy(record.adx, 'ADX')}</td>
+                        <td>${confluenceText}</td>
+                        <td><span class="${outcomeClz}">${record.reason}</span></td>
+                    </tr>`;
+                };
+
+                if (tbodyTradeDecisions && pageActive) {
+                    if (!data || data.length === 0) {
+                        tbodyTradeDecisions.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash; No trade evaluations tracked yet &mdash;</td></tr>';
+                    } else {
+                        tbodyTradeDecisions.innerHTML = data.map(renderRow).join('');
+                    }
+                }
+
+                if (tbodyDashboardTradeDecisions && dashPageActive) {
+                    const confluenceOnly = data.filter(record => record.confluence && record.confluence.matched).slice(0, 10);
+                    if (confluenceOnly.length === 0) {
+                        tbodyDashboardTradeDecisions.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>';
+                    } else {
+                        tbodyDashboardTradeDecisions.innerHTML = confluenceOnly.map(renderRow).join('');
+                    }
                 }
             }).catch(console.error);
     }

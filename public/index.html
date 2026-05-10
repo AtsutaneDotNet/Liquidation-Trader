@@ -133,6 +133,16 @@
                             <h3>Loaded Pairs</h3>
                             <div class="stat-value" id="pairs-count">0</div>
                         </div>
+
+                        <div class="card stat-card">
+                            <h3>Position</h3>
+                            <div class="stat-value"><span id="open-positions-count">0</span> / <span id="max-positions-count">0</span></div>
+                        </div>
+
+                        <div class="card stat-card">
+                            <h3>Used Margin</h3>
+                            <div class="stat-value" id="used-margin-percent">0%</div>
+                        </div>
                     </div>
 
                     <div class="card control-panel">
@@ -175,6 +185,39 @@
                                     <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
                                         Waiting
                                         for liquidations &mdash;</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="page-section">
+                    <h3>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                            </path>
+                        </svg>
+                        Recent Trade Decision History
+                    </h3>
+                    <div class="card form-container table-responsive" style="max-width: 100%;">
+                        <table class="data-table" id="dashboard-trade-decisions-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Symbol</th>
+                                    <th>Price</th>
+                                    <th>VWAP</th>
+                                    <th>RSI</th>
+                                    <th>ADX</th>
+                                    <th>Confluence</th>
+                                    <th>Outcome</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-trade-decisions-tbody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash;
+                                        Waiting for trade evaluations &mdash;</td>
                                 </tr>
                             </tbody>
                         </table>
