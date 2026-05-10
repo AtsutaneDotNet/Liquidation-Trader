@@ -419,13 +419,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         tbodyLiquidations.innerHTML = data.map(liq => {
                             const sideStr = (liq.side || '').toLowerCase();
-                            const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
+                            const isBuy = sideStr === 'buy' || sideStr === 'long';
+                            const sideClz = isBuy ? 'side-buy' : 'side-sell';
                             const timeStr = new Date(liq.timestamp).toLocaleTimeString();
 
                             const liqValue = parseFloat(liq.value || 0);
                             const currentThreshold = getThresholdForLiq(liq);
                             const isHighValue = liqValue >= currentThreshold;
-                            const highlightClass = isHighValue ? 'liq-highlight' : '';
+                            const highlightClass = isHighValue ? (isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell') : '';
 
                             return `<tr class="${highlightClass}">
                                 <td style="color: var(--text-muted);">${timeStr}</td>
@@ -447,9 +448,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         tbodyDashboardLiquidations.innerHTML = highValueLiqs.map(liq => {
                             const sideStr = (liq.side || '').toLowerCase();
-                            const sideClz = (sideStr === 'buy' || sideStr === 'long') ? 'side-buy' : 'side-sell';
+                            const isBuy = sideStr === 'buy' || sideStr === 'long';
+                            const sideClz = isBuy ? 'side-buy' : 'side-sell';
                             const timeStr = new Date(liq.timestamp).toLocaleTimeString();
-                            return `<tr class="liq-highlight">
+                            const highlightClass = isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell';
+                            return `<tr class="${highlightClass}">
                                 <td style="color: var(--text-muted);">${timeStr}</td>
                                 <td style="text-transform: capitalize;">${liq.exchange}</td>
                                 <td><strong>${liq.symbol}</strong></td>

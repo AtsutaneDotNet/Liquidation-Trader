@@ -423,12 +423,20 @@ input:focus {
     background-color: rgba(255, 255, 255, 0.02);
 }
 
-.liq-highlight {
+.liq-highlight-buy {
     background-color: rgba(0, 230, 118, 0.05) !important;
 }
 
-.liq-highlight td:first-child {
+.liq-highlight-buy td:first-child {
     border-left: 3px solid var(--accent);
+}
+
+.liq-highlight-sell {
+    background-color: rgba(255, 59, 59, 0.05) !important;
+}
+
+.liq-highlight-sell td:first-child {
+    border-left: 3px solid var(--danger);
 }
 
 .pnl-positive {
