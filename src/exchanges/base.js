@@ -55,6 +55,55 @@ class BaseExchange {
     async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0, trailingActivationPrice = 0) {
         throw new Error('setTpSl() must be implemented');
     }
+
+    /**
+     * Recursively search for a key in an object up to a certain depth
+     */
+    findKeyInObj(obj, targetKey, depth = 0) {
+        if (!obj || typeof obj !== 'object' || depth > 5) return undefined;
+        if (obj[targetKey] !== undefined) return parseFloat(obj[targetKey]);
+        for (const key in obj) {
+            if (typeof obj[key] === 'object') {
+                const res = this.findKeyInObj(obj[key], targetKey, depth + 1);
+                if (res !== undefined && !isNaN(res)) return res;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Standardize balance object parsing to always use totalWalletBalance and totalAvailableBalance
+     */
+    parseBalanceData(balance) {
+        if (!balance) return null;
+        
+        let total = 0;
+        let free = 0;
+
+        const sourceObj = balance.info || balance;
+
+        const totalWalletBalance = this.findKeyInObj(sourceObj, 'totalWalletBalance');
+        if (totalWalletBalance !== undefined && !isNaN(totalWalletBalance)) {
+            total = totalWalletBalance;
+        } else if (balance.USDT && balance.USDT.total !== undefined) {
+            total = balance.USDT.total;
+        }
+
+        const totalAvailableBalance = this.findKeyInObj(sourceObj, 'totalAvailableBalance');
+        if (totalAvailableBalance !== undefined && !isNaN(totalAvailableBalance)) {
+            free = totalAvailableBalance;
+        } else if (balance.USDT && balance.USDT.free !== undefined) {
+            free = balance.USDT.free;
+        }
+
+        const used = Math.max(0, total - free);
+
+        return {
+            total_value: total,
+            margin_available: free,
+            margin_used: used
+        };
+    }
 }
 
 module.exports = BaseExchange;

@@ -89,16 +89,8 @@ class BitmexExchange extends BaseExchange {
                 const balance = await this.exchange.watchBalance();
                 if (!isRunningCheck()) break;
 
-                if (balance && balance.USDT) {
-                    const total = balance.USDT.total || 0;
-                    const free = balance.USDT.free || 0;
-                    const used = balance.USDT.used > 0 ? balance.USDT.used : Math.max(0, total - free);
-
-                    const data = {
-                        total_value: total,
-                        margin_available: free,
-                        margin_used: used
-                    };
+                const data = this.parseBalanceData(balance);
+                if (data) {
                     callback(data);
                 }
             } catch (e) {

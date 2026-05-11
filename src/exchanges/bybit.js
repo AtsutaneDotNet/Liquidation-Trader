@@ -83,40 +83,13 @@ class BybitExchange extends BaseExchange {
     async watchPrivateBalance(callback, isRunningCheck, errorCallback) {
         if (!this.exchange.has['watchBalance']) return;
 
-        const findTotalAvailableBalance = (obj, depth = 0) => {
-            if (!obj || typeof obj !== 'object' || depth > 5) return undefined;
-            if (obj.totalAvailableBalance !== undefined) return parseFloat(obj.totalAvailableBalance);
-            for (const key in obj) {
-                if (typeof obj[key] === 'object') {
-                    const res = findTotalAvailableBalance(obj[key], depth + 1);
-                    if (res !== undefined && !isNaN(res)) return res;
-                }
-            }
-            return undefined;
-        };
-
         while (isRunningCheck()) {
             try {
                 const balance = await this.exchange.watchBalance();
                 if (!isRunningCheck()) break;
 
-                if (balance && balance.USDT) {
-                    logger.debug(balance);
-                    const total = balance.USDT.total || 0;
-                    let free = balance.USDT.free || 0;
-
-                    const totalAvailableBalance = findTotalAvailableBalance(balance.info);
-                    if (totalAvailableBalance !== undefined && free !== totalAvailableBalance) {
-                        free = totalAvailableBalance;
-                    }
-
-                    const used = balance.USDT.used > 0 ? balance.USDT.used : Math.max(0, total - free);
-
-                    const data = {
-                        total_value: total,
-                        margin_available: free,
-                        margin_used: used
-                    };
+                const data = this.parseBalanceData(balance);
+                if (data) {
                     callback(data);
                 }
             } catch (e) {

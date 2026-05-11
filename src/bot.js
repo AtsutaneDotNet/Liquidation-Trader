@@ -148,17 +148,10 @@ class TradingBot {
             // Initial Balance Fetch
             try {
                 const initialBalance = await this.tradeExchange.fetchBalance();
-                if (initialBalance && initialBalance.USDT) {
-                    const total = initialBalance.USDT.total || 0;
-                    const free = initialBalance.USDT.free || 0;
-                    const used = initialBalance.USDT.used > 0 ? initialBalance.USDT.used : Math.max(0, total - free);
-
-                    this.onBalanceUpdate({
-                        total_value: total,
-                        margin_available: free,
-                        margin_used: used
-                    });
-                    logger.info(`Initial account balance fetched: $${initialBalance.USDT.total}`);
+                const parsedData = this.tradeExchange.parseBalanceData(initialBalance);
+                if (parsedData) {
+                    this.onBalanceUpdate(parsedData);
+                    logger.info(`Initial account balance fetched: $${parsedData.total_value}`);
                 }
             } catch (balanceError) {
                 logger.warn(`Could not fetch initial balance via REST: ${balanceError.message}`);
