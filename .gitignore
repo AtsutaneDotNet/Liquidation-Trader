@@ -76,4 +76,4 @@ Thumbs.db
 # =========================
 tmp/
 temp/
-test/
+tests/
