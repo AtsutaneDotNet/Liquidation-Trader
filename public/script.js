@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openPositionsCount = document.getElementById('open-positions-count');
     const maxPositionsCount = document.getElementById('max-positions-count');
     const usedMarginPercent = document.getElementById('used-margin-percent');
+    const fearGreedValue = document.getElementById('fear-greed-value');
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
 
@@ -203,6 +204,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (openPositionsCount) openPositionsCount.textContent = data.openPositionsCount || 0;
                 if (maxPositionsCount) maxPositionsCount.textContent = data.maxOpenPositions || 0;
                 if (usedMarginPercent) usedMarginPercent.textContent = (data.usedMarginPercent || 0).toFixed(2) + '%';
+                
+                if (fearGreedValue) {
+                    if (data.fearAndGreed) {
+                        const val = parseInt(data.fearAndGreed.value) || 0;
+                        const classif = data.fearAndGreed.classification || '';
+                        fearGreedValue.textContent = `${val} (${classif})`;
+                        
+                        // Dynamic color styling
+                        if (val <= 24) fearGreedValue.style.color = 'var(--danger)';
+                        else if (val <= 44) fearGreedValue.style.color = 'orange';
+                        else if (val <= 55) fearGreedValue.style.color = 'var(--text-muted)';
+                        else if (val <= 74) fearGreedValue.style.color = 'var(--accent)';
+                        else fearGreedValue.style.color = '#00ff00';
+                    } else {
+                        fearGreedValue.textContent = 'N/A';
+                        fearGreedValue.style.color = 'var(--text-muted)';
+                    }
+                }
             });
     }
 

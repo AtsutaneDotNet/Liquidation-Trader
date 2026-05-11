@@ -82,6 +82,43 @@ class CmcService {
 
         return this.cache.has(baseSymbol);
     }
+
+    /**
+     * Fetch the latest Fear and Greed Index from CoinMarketCap
+     * @param {string} apiKey CMC API Key
+     * @returns {Promise<Object|null>}
+     */
+    async getFearAndGreed(apiKey) {
+        if (!apiKey) {
+            return null;
+        }
+
+        try {
+            const response = await fetch(`https://pro-api.coinmarketcap.com/v3/fear-and-greed/latest`, {
+                headers: {
+                    'X-CMC_PRO_API_KEY': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.status?.error_message || `HTTP ${response.status}`);
+            }
+
+            const json = await response.json();
+            if (json && json.data) {
+                return {
+                    value: json.data.value,
+                    classification: json.data.value_classification
+                };
+            }
+            return null;
+        } catch (error) {
+            logger.error(`Failed to fetch CMC Fear and Greed Index: ${error.message}`);
+            return null;
+        }
+    }
 }
 
 module.exports = new CmcService();

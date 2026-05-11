@@ -137,7 +137,8 @@ class WebServer {
                 btcUsdPrice: this.bot.btcUsdPrice,
                 openPositionsCount: positions.length,
                 maxOpenPositions: parseInt(currentConfig.MAX_OPEN_POSITIONS) || 0,
-                usedMarginPercent: usedMarginPercent
+                usedMarginPercent: usedMarginPercent,
+                fearAndGreed: this.bot.fearAndGreed
             });
         });
 

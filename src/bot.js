@@ -30,6 +30,9 @@ class TradingBot {
         this.dynamicThresholds = {};
         this.dynamicInterval = null;
 
+        this.fearAndGreed = null;
+        this.fearAndGreedInterval = null;
+
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
 
@@ -180,10 +183,12 @@ class TradingBot {
             this.updatePnL(); // Fetch once initially
             this.updateBtcPrice(); // Fetch once initially
             this.fetchDynamicThresholds(); // Fetch once initially
+            this.updateFearAndGreed(); // Fetch once initially
 
             this.pnlInterval = setInterval(() => this.updatePnL(), 600000); // Every 10 mins
             this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
             this.dynamicInterval = setInterval(() => this.fetchDynamicThresholds(), 3600000); // Every hour
+            this.fearAndGreedInterval = setInterval(() => this.updateFearAndGreed(), 3600000); // Every hour
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
@@ -211,6 +216,7 @@ class TradingBot {
         clearInterval(this.cmcInterval);
         clearInterval(this.btcInterval);
         clearInterval(this.dynamicInterval);
+        clearInterval(this.fearAndGreedInterval);
     }
 
     async refreshCmcRankings() {
@@ -495,6 +501,25 @@ class TradingBot {
             }
         } catch (e) {
             logger.warn(`Failed to fetch dynamic thresholds: ${e.message}`);
+        }
+    }
+
+    async updateFearAndGreed() {
+        if (!this.isRunning) return;
+        const cfg = this.config.get();
+        if (!cfg.CMC_API_KEY) {
+            this.fearAndGreed = null;
+            return;
+        }
+
+        try {
+            const data = await cmc.getFearAndGreed(cfg.CMC_API_KEY);
+            if (data) {
+                this.fearAndGreed = data;
+                logger.debug(`Updated Fear and Greed Index: ${data.value} (${data.classification})`);
+            }
+        } catch (e) {
+            logger.warn(`Failed to update Fear and Greed Index: ${e.message}`);
         }
     }
 
