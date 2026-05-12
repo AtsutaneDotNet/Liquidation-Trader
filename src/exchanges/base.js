@@ -57,6 +57,13 @@ class BaseExchange {
     }
 
     /**
+     * Fetch array of recently closed PnLs
+     */
+    async fetchClosedPnls() {
+        return [];
+    }
+
+    /**
      * Recursively search for a key in an object up to a certain depth
      */
     findKeyInObj(obj, targetKey, depth = 0) {

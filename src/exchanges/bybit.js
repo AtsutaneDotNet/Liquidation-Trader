@@ -121,14 +121,8 @@ class BybitExchange extends BaseExchange {
         }
     }
 
-    async fetchAggregatedPnl() {
+    async fetchClosedPnls() {
         try {
-            const now = Date.now();
-            const oneDay = 24 * 60 * 60 * 1000;
-            const sevenDays = 7 * oneDay;
-            const thirtyDays = 30 * oneDay;
-            const threeSixtyFiveDays = 365 * oneDay;
-
             // Using direct privateGetV5PositionClosedPnl (Bybit Custom CCXT Method)
             const response = await this.exchange.privateGetV5PositionClosedPnl({
                 category: 'linear',
@@ -136,26 +130,23 @@ class BybitExchange extends BaseExchange {
             });
 
             if (response && response.result && response.result.list) {
-                const list = response.result.list;
-                let daily = 0, weekly = 0, monthly = 0, yearly = 0, total = 0;
-
-                list.forEach(pnl => {
-                    const closedTime = parseInt(pnl.updatedTime);
-                    const amount = parseFloat(pnl.closedPnl || 0);
-                    total += amount;
-
-                    if (now - closedTime <= oneDay) daily += amount;
-                    if (now - closedTime <= sevenDays) weekly += amount;
-                    if (now - closedTime <= thirtyDays) monthly += amount;
-                    if (now - closedTime <= threeSixtyFiveDays) yearly += amount;
+                return response.result.list.map(pnl => {
+                    return {
+                        id: pnl.orderId || `${pnl.symbol}_${pnl.updatedTime}`,
+                        symbol: pnl.symbol || 'UNKNOWN',
+                        side: (pnl.side || 'UNKNOWN').toUpperCase(),
+                        size: parseFloat(pnl.closedSize || 0),
+                        entry_price: parseFloat(pnl.avgEntryPrice || 0),
+                        close_price: parseFloat(pnl.avgExitPrice || 0),
+                        pnl: parseFloat(pnl.closedPnl || 0),
+                        timestamp: parseInt(pnl.updatedTime || 0)
+                    };
                 });
-
-                return { daily_pnl: daily, weekly_pnl: weekly, monthly_pnl: monthly, yearly_pnl: yearly, total_pnl: total };
             }
-            return null;
+            return [];
         } catch (e) {
             logger.error(`[Bybit] Failed to fetch PnL: ${e.message}`);
-            return null;
+            return [];
         }
     }
 

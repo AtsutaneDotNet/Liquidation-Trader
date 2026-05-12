@@ -20,6 +20,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 -   **Intelligent Filtering**:
     -   **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
+    -   **Fear & Greed Index**: Integrate real-time market sentiment into decision-making and dashboard visibility.
     -   **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
     -   **Value Threshold**: Filter liquidations by USD or BTC value.
 -   **Robust Risk Management**:
@@ -30,11 +31,13 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   **Premium Web UI**:
     -   **Glassmorphism Design**: A modern, sleek, and responsive interface.
     -   **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
+    -   **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
     -   **Trade Decisions Page**: A dedicated log of every trade evaluation, showing indicator values and the logic behind entry decisions.
     -   **Toast Notifications**: Instant visual feedback for order executions.
     -   **Live Logs**: View bot terminal output directly in the browser.
--   **Reliability**:
-    -   **SQLite-backed persistence**: Positions and historical data are stored safely.
+-   **Reliability & Security**:
+    -   **Auto-Stop Safeguard**: Automatically stops the engine if 15 consecutive errors occur within 60 seconds, protecting capital from API or network failures.
+    -   **SQLite-backed persistence**: Positions, historical PnL, and trade data are stored safely.
     -   **Stale Position Sync**: Automatically checks and recovers positions from the exchange if the WebSocket stream is interrupted.
     -   **AES-256-GCM Encryption**: Sensitive API keys are encrypted at rest in the database.
 
@@ -139,9 +142,10 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `STOP_LOSS_PERCENTAGE` | Max loss before closing positions. | `0.5%` |
 | `ENABLE_TRAILING_PROFIT` | Use native exchange trailing stops. | `false` |
 | `TRAILING_PROFIT_PERCENTAGE` | Trailing distance for the stop loss. | `0.2%` |
+| `TRAILING_ACTIVATION_PERCENTAGE` | Price deviation to activate trailing stop. | `0.0%` |
 | `MAX_OPEN_POSITIONS` | Maximum number of simultaneous trades. | `3` |
-| `ENABLE_RUNAWAY_HELPER` | Treat stale positions with deep negative PnL% as massive liquidations to attempt rescue averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
-| `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (must be negative) to trigger the helper on stale positions. | `-10` |
+| `ENABLE_RUNAWAY_HELPER` | Rescue stale positions with deep negative PnL% via averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
+| `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (negative) to trigger rescue. | `-10` |
 
 ---
 
@@ -154,6 +158,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 │   ├── server.js       # Express server and API routes
 │   ├── db.js           # SQLite management with encryption support
 │   ├── config.js       # Dynamic configuration loader
+│   ├── crypto.js       # AES-256-GCM encryption utilities
 │   ├── cmc.js          # CoinMarketCap API integration
 │   ├── logger.js       # Winston-based logging system
 │   └── index.js        # Main entry point

@@ -125,14 +125,14 @@ class OkxExchange extends BaseExchange {
         }
     }
 
-    async fetchAggregatedPnl() {
+    async fetchClosedPnls() {
         try {
             // OKX PNL is tricky, fetchIncome or fetchMyTrades might be needed
-            // Fallback to null for now, or implement if known
-            return null;
+            // Fallback to empty array for now
+            return [];
         } catch (e) {
             logger.error(`[OKX] Failed to fetch PnL: ${e.message}`);
-            return null;
+            return [];
         }
     }
 

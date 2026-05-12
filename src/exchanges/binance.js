@@ -124,39 +124,32 @@ class BinanceExchange extends BaseExchange {
         }
     }
 
-    async fetchAggregatedPnl() {
+    async fetchClosedPnls() {
         try {
-            const now = Date.now();
-            const oneDay = 24 * 60 * 60 * 1000;
-            const sevenDays = 7 * oneDay;
-            const thirtyDays = 30 * oneDay;
-            const threeSixtyFiveDays = 365 * oneDay;
-
-            if (!this.exchange.has['fetchIncome']) return null;
+            if (!this.exchange.has['fetchIncome']) return [];
 
             // Binance allows fetching Income history which includes REALIZED_PNL
-            // We fetch the last 100 or so to aggregate.
-            const income = await this.exchange.fetchIncome(undefined, undefined, undefined, { incomeType: 'REALIZED_PNL' });
-            let daily = 0, weekly = 0, monthly = 0, yearly = 0, total = 0;
+            // We fetch the last 100 or so to get individual records.
+            const income = await this.exchange.fetchIncome(undefined, undefined, undefined, { incomeType: 'REALIZED_PNL', limit: 100 });
 
             if (Array.isArray(income)) {
-                income.forEach(inc => {
-                    const time = inc.timestamp;
-                    const amount = parseFloat(inc.amount || 0);
-                    total += amount;
-
-                    if (now - time <= oneDay) daily += amount;
-                    if (now - time <= sevenDays) weekly += amount;
-                    if (now - time <= thirtyDays) monthly += amount;
-                    if (now - time <= threeSixtyFiveDays) yearly += amount;
+                return income.map(inc => {
+                    return {
+                        id: inc.info?.tranId || `${inc.symbol}_${inc.timestamp}`,
+                        symbol: inc.symbol || 'UNKNOWN',
+                        side: 'N/A',
+                        size: 0,
+                        entry_price: 0,
+                        close_price: 0,
+                        pnl: parseFloat(inc.amount || 0),
+                        timestamp: parseInt(inc.timestamp || 0)
+                    };
                 });
-
-                return { daily_pnl: daily, weekly_pnl: weekly, monthly_pnl: monthly, yearly_pnl: yearly, total_pnl: total };
             }
-            return null;
+            return [];
         } catch (e) {
             logger.error(`[Binance] Failed to fetch PnL: ${e.message}`);
-            return null;
+            return [];
         }
     }
 

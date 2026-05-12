@@ -49,6 +49,17 @@ db.exec(`
     timestamp INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS closed_pnl (
+    id TEXT PRIMARY KEY,
+    symbol TEXT,
+    side TEXT,
+    size REAL DEFAULT 0,
+    entry_price REAL DEFAULT 0,
+    close_price REAL DEFAULT 0,
+    pnl REAL DEFAULT 0,
+    timestamp INTEGER
+  );
+
   INSERT OR IGNORE INTO account_state (id) VALUES (1);
 `);
 
@@ -197,6 +208,52 @@ function purgeLiquidations() {
     db.exec('VACUUM'); // Reclaim space
 }
 
+function addClosedPnl(data) {
+    db.prepare(`
+        INSERT OR IGNORE INTO closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, timestamp)
+        VALUES (@id, @symbol, @side, @size, @entry_price, @close_price, @pnl, @timestamp)
+    `).run(data);
+}
+
+function getClosedPnls(limit = 100) {
+    return db.prepare('SELECT * FROM closed_pnl ORDER BY timestamp DESC LIMIT ?').all(limit);
+}
+
+function calculateAggregatedPnl() {
+    const now = new Date();
+    
+    // Daily: From start of today
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    
+    // Weekly: From start of current week (assuming Monday is start of week)
+    const dayOfWeek = now.getDay() || 7; // Sunday=0 -> 7
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1).getTime();
+    
+    // Monthly: From start of current month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    
+    // Yearly: From start of current year
+    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+
+    const row = db.prepare(`
+        SELECT 
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as daily_pnl,
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as weekly_pnl,
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as monthly_pnl,
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as yearly_pnl,
+            SUM(pnl) as total_pnl
+        FROM closed_pnl
+    `).get(startOfDay, startOfWeek, startOfMonth, startOfYear);
+
+    return {
+        daily_pnl: row.daily_pnl || 0,
+        weekly_pnl: row.weekly_pnl || 0,
+        monthly_pnl: row.monthly_pnl || 0,
+        yearly_pnl: row.yearly_pnl || 0,
+        total_pnl: row.total_pnl || 0
+    };
+}
+
 module.exports = {
     db,
     getConfig,
@@ -212,5 +269,8 @@ module.exports = {
     addLiquidation,
     getLiquidations,
     pruneLiquidations,
-    purgeLiquidations
+    purgeLiquidations,
+    addClosedPnl,
+    getClosedPnls,
+    calculateAggregatedPnl
 };

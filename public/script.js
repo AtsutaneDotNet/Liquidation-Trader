@@ -496,6 +496,48 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchLiquidations, 1500); // slightly faster polling for live feeling
     fetchLiquidations();
 
+    // Closed PnL Live Stream
+    const tbodyClosedPnl = document.getElementById('closed-pnl-tbody');
+
+    function fetchClosedPnlsTable() {
+        const pageActive = document.getElementById('closed-pnl-page') && document.getElementById('closed-pnl-page').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/closed-pnl')
+            .then(res => res.json())
+            .then(data => {
+                if (tbodyClosedPnl) {
+                    if (!data || data.length === 0) {
+                        tbodyClosedPnl.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No closed PnL records found &mdash;</td></tr>';
+                    } else {
+                        tbodyClosedPnl.innerHTML = data.map(record => {
+                            const timeStr = new Date(record.timestamp).toLocaleString();
+                            const sideClz = record.side === 'BUY' ? 'side-buy' : (record.side === 'SELL' ? 'side-sell' : '');
+                            const pnlValue = parseFloat(record.pnl || 0);
+                            const pnlClz = pnlValue >= 0 ? 'pnl-positive' : 'pnl-negative';
+                            const pnlFormatted = pnlValue >= 0 ? `+${pnlValue.toFixed(2)}` : pnlValue.toFixed(2);
+                            const entryStr = record.entry_price ? parseFloat(record.entry_price).toFixed(4) : 'N/A';
+                            const closeStr = record.close_price ? parseFloat(record.close_price).toFixed(4) : 'N/A';
+                            const sizeStr = record.size ? record.size : 'N/A';
+
+                            return `<tr>
+                                <td style="color: var(--text-muted);">${timeStr}</td>
+                                <td><strong>${record.symbol}</strong></td>
+                                <td><span class="${sideClz}">${record.side}</span></td>
+                                <td>${sizeStr}</td>
+                                <td>${entryStr}</td>
+                                <td>${closeStr}</td>
+                                <td><strong class="${pnlClz}">${pnlFormatted}</strong></td>
+                            </tr>`;
+                        }).join('');
+                    }
+                }
+            }).catch(console.error);
+    }
+
+    setInterval(fetchClosedPnlsTable, 5000);
+    fetchClosedPnlsTable();
+
     // Dynamic Thresholds Live Stream
     const tbodyDynamicThresholds = document.getElementById('dynamic-thresholds-tbody');
     let globalDynamicThresholds = {};

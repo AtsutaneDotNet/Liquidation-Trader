@@ -158,6 +158,11 @@ class WebServer {
             res.json(db.getLiquidations(200) || []); // Fetch up to 200 liquidations for the UI
         });
 
+        this.app.get('/api/closed-pnl', (req, res) => {
+            const db = require('./db');
+            res.json(db.getClosedPnls(200) || []);
+        });
+
         this.app.get('/api/trade-decisions', (req, res) => {
             res.json(this.bot.tradeDecisions || []);
         });

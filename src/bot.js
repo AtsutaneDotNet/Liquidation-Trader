@@ -440,11 +440,16 @@ class TradingBot {
     async updatePnL() {
         if (!this.isRunning) return;
         try {
-            const pnlData = await this.tradeExchange.fetchAggregatedPnl();
-            if (pnlData) {
-                db.updateAccountState(pnlData);
-                logger.debug(`Aggregated PnL updated. Daily: $${pnlData.daily_pnl.toFixed(2)}`);
+            const closedPnls = await this.tradeExchange.fetchClosedPnls();
+            if (closedPnls && closedPnls.length > 0) {
+                for (const pnl of closedPnls) {
+                    db.addClosedPnl(pnl);
+                }
             }
+
+            const aggregated = db.calculateAggregatedPnl();
+            db.updateAccountState(aggregated);
+            logger.debug(`Aggregated PnL updated. Daily: $${aggregated.daily_pnl.toFixed(2)}`);
         } catch (e) {
             logger.error(`Failed to update PnL loop: ${e.message}`);
         }

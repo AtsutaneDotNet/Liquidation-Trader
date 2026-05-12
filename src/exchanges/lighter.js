@@ -126,8 +126,8 @@ class LighterExchange extends BaseExchange {
         }, 5000);
     }
 
-    async fetchAggregatedPnl() {
-        return null;
+    async fetchClosedPnls() {
+        return [];
     }
 
     async fetchBalance() {
