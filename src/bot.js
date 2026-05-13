@@ -386,6 +386,11 @@ class TradingBot {
                 };
                 this.orderEvents.unshift(orderEvent);
                 if (this.orderEvents.length > 50) this.orderEvents.pop();
+
+                // Remove the position from the DB so the UI reflects the closure immediately
+                if (trade.symbol) {
+                    db.removePosition(trade.symbol);
+                }
             }
         }
     }
