@@ -490,9 +490,19 @@ input:focus {
     overflow: hidden;
 }
 
-.toast.toast-sell {
+.toast.toast-success {
+    border-left-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(0,230,118,0.08);
+}
+
+.toast.toast-error, .toast.toast-sell {
     border-left-color: var(--danger);
     box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(255,59,59,0.08);
+}
+
+.toast.toast-info {
+    border-left-color: #3b82f6;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(59,130,246,0.08);
 }
 
 .toast.toast-hiding {
@@ -527,8 +537,12 @@ input:focus {
     letter-spacing: 0.8px;
 }
 
-.toast-sell .toast-title {
+.toast.toast-error .toast-title, .toast.toast-sell .toast-title {
     color: var(--danger);
+}
+
+.toast.toast-info .toast-title {
+    color: #3b82f6;
 }
 
 .toast-title .toast-icon {
@@ -546,6 +560,13 @@ input:focus {
     transition: color 0.2s;
 }
 .toast-close:hover { color: var(--text-main); }
+
+.toast-message {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
 
 .toast-symbol {
     font-size: 20px;
@@ -591,8 +612,12 @@ input:focus {
     animation: toastProgress 6s linear forwards;
 }
 
-.toast-sell .toast-progress {
+.toast.toast-error .toast-progress, .toast.toast-sell .toast-progress {
     background: var(--danger);
+}
+
+.toast.toast-info .toast-progress {
+    background: #3b82f6;
 }
 
 @keyframes toastProgress {

@@ -134,11 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAdxChecked = adxCb && adxCb.checked;
 
         if (!isVwapChecked && !isRsiChecked && !isAdxChecked) {
-            const msg = document.getElementById('save-status');
-            msg.textContent = 'Error: At least one strategy must be enabled.';
-            msg.style.color = 'var(--danger)';
-            msg.classList.add('show');
-            setTimeout(() => { msg.classList.remove('show'); msg.style.color = ''; }, 3000);
+            showToast({
+                title: 'Configuration Error',
+                message: 'At least one strategy must be enabled.',
+                type: 'error'
+            });
             return;
         }
 
@@ -151,10 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
         })
             .then(res => res.json())
             .then(result => {
-                const msg = document.getElementById('save-status');
-                msg.textContent = result.message;
-                msg.classList.add('show');
-                setTimeout(() => msg.classList.remove('show'), 3000);
+                showToast({
+                    title: 'Configuration Saved',
+                    message: result.message,
+                    type: result.success !== false ? 'success' : 'error'
+                });
                 loadConfig(); // fresh reload to mask api keys again safely
             });
     });
@@ -228,23 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchStatus, 2000);
     fetchStatus();
 
-    // Controls
-    let controlMsgTimeout;
-
     btnStart.addEventListener('click', () => {
         fetch('/api/bot/start', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
-                controlMsg.textContent = data.message;
-                controlMsg.style.color = data.success ? 'var(--accent)' : 'var(--danger)';
+                showToast({
+                    title: 'Engine Status',
+                    message: data.message,
+                    type: data.success ? 'success' : 'error'
+                });
                 fetchStatus();
-
-                if (data.success) {
-                    if (controlMsgTimeout) clearTimeout(controlMsgTimeout);
-                    controlMsgTimeout = setTimeout(() => {
-                        controlMsg.textContent = '';
-                    }, 10000);
-                }
             });
     });
 
@@ -252,16 +246,12 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/bot/stop', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
-                controlMsg.textContent = data.message;
-                controlMsg.style.color = data.success ? 'var(--accent)' : 'var(--danger)';
+                showToast({
+                    title: 'Engine Status',
+                    message: data.message,
+                    type: data.success ? 'success' : 'error'
+                });
                 fetchStatus();
-
-                if (data.success) {
-                    if (controlMsgTimeout) clearTimeout(controlMsgTimeout);
-                    controlMsgTimeout = setTimeout(() => {
-                        controlMsg.textContent = '';
-                    }, 10000);
-                }
             });
     });
 
@@ -648,25 +638,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Toast Notification System ───────────────────────────────
     const toastContainer = document.getElementById('toast-container');
 
+    function showToast(options = {}) {
+        const { title, message, type = 'info', duration = 6000, html = '' } = options;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        toast.innerHTML = `
+            <div class="toast-header">
+                <div class="toast-title">${title}</div>
+                <button class="toast-close" title="Dismiss">✕</button>
+            </div>
+            ${message ? `<div class="toast-message">${message}</div>` : ''}
+            ${html}
+            <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
+
+        const timer = setTimeout(() => dismissToast(toast), duration);
+        toast._dismissTimer = timer;
+        
+        return toast;
+    }
+
+    function dismissToast(toast) {
+        clearTimeout(toast._dismissTimer);
+        toast.classList.add('toast-hiding');
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    }
+
     function showOrderToast(order) {
         const isSell = order.side === 'SELL';
         const sideLabel = isSell ? 'SHORT Executed' : 'LONG Executed';
-        const sideClass = isSell ? 'toast-sell' : '';
+        const type = isSell ? 'sell' : 'success';
         const price = parseFloat(order.price || 0);
         const amount = parseFloat(order.amount || 0);
         const value = parseFloat(order.value || price * amount);
         const timeStr = new Date(order.timestamp).toLocaleTimeString();
         const shortId = order.id ? String(order.id).slice(-8) : 'N/A';
 
-        const toast = document.createElement('div');
-        toast.className = `toast ${sideClass}`;
-        toast.innerHTML = `
-            <div class="toast-header">
-                <div class="toast-title">
-                    ${sideLabel}
-                </div>
-                <button class="toast-close" title="Dismiss">✕</button>
-            </div>
+        const html = `
             <div class="toast-symbol">${order.symbol}</div>
             <div class="toast-details">
                 <div class="toast-detail-row"><span>Type</span><span>${order.type || 'MARKET'}</span></div>
@@ -677,23 +690,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="toast-detail-row"><span>Value</span><span>$${value.toFixed(2)}</span></div>
             </div>
             <div class="toast-time">Order ID: …${shortId} · ${timeStr}</div>
-            <div class="toast-progress"></div>
         `;
 
-        toastContainer.appendChild(toast);
-
-        // Manual close
-        toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
-
-        // Auto-dismiss after 6s (matches progress bar animation)
-        const timer = setTimeout(() => dismissToast(toast), 6000);
-        toast._dismissTimer = timer;
-    }
-
-    function dismissToast(toast) {
-        clearTimeout(toast._dismissTimer);
-        toast.classList.add('toast-hiding');
-        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+        showToast({
+            title: sideLabel,
+            type: type,
+            html: html
+        });
     }
 
     function fetchOrderNotifications() {
