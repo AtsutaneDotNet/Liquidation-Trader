@@ -161,8 +161,8 @@ class TradingBot {
             }
 
             // Kickoff Private Account Streams on Trade Exchange
-            this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, this.handleError.bind(this));
-            this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, this.handleError.bind(this));
+            this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
+            this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
 
             // Kickoff Public Liquidation Stream on all Liq Exchanges using unified symbols
             for (const [exName, exInstance] of Object.entries(this.liqExchanges)) {
@@ -175,7 +175,7 @@ class TradingBot {
                 if (exInstance.exchange && exInstance.exchange.markets) {
                     safeSymbols = this.symbols.filter(sym => exInstance.exchange.markets[sym] !== undefined);
                 }
-                exInstance.watchLiquidations(safeSymbols, (liq) => this.onLiquidation(liq, exName), () => this.isRunning, this.handleError.bind(this));
+                exInstance.watchLiquidations(safeSymbols, (liq) => this.onLiquidation(liq, exName), () => this.isRunning, (err) => logger.warn(err));
                 logger.info(`Starting Liquidation stream for ${exName} with ${safeSymbols.length} validated pairs.`);
             }
 
