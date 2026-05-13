@@ -30,6 +30,10 @@ const logger = {
         console.error('[ERROR]', ...args);
         addLog('error', args);
     },
+    warn: (...args) => {
+        console.warn('[WARN]', ...args);
+        addLog('warn', args);
+    },
     getLogs: () => {
         return logHistory;
     }
