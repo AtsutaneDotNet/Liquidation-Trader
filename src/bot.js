@@ -486,16 +486,81 @@ class TradingBot {
             const key = `${symbol}_${orderSide}`;
             const lastTime = this._lastTpSlSet[key] || 0;
             if (Date.now() - lastTime < 10000) return; // Prevent updating faster than 10s
+
+            // Query open orders to verify if the conditional orders are truly missing or if they just need updating
+            let ordersToCancel = [];
+            if (this.tradeExchange.exchange.has['fetchOpenOrders']) {
+                try {
+                    const oppositeSide = orderSide === 'buy' ? 'sell' : 'buy';
+                    const openOrders = await this.tradeExchange.exchange.fetchOpenOrders(symbol);
+                    
+                    const conditionalOrders = openOrders.filter(o => 
+                        o.side === oppositeSide && 
+                        (o.stopPrice || (o.type && (o.type.includes('stop') || o.type.includes('take_profit') || o.type.includes('trailing'))))
+                    );
+
+                    let hasMatchingTp = false;
+                    let hasMatchingSl = false;
+                    let hasTrailing = false;
+
+                    for (const o of conditionalOrders) {
+                        const typeStr = (o.type || '').toLowerCase();
+                        const origType = (o.info?.origType || '').toLowerCase();
+                        
+                        if (typeStr.includes('trailing') || origType.includes('trailing')) {
+                            hasTrailing = true;
+                        }
+
+                        const triggerPrice = parseFloat(o.stopPrice || o.triggerPrice || o.info?.stopPrice || o.info?.triggerPrice || 0);
+                        if (triggerPrice > 0) {
+                            if (Math.abs(triggerPrice - formattedTp) / formattedTp < 0.005) {
+                                hasMatchingTp = true;
+                            }
+                            if (Math.abs(triggerPrice - formattedSl) / formattedSl < 0.005) {
+                                hasMatchingSl = true;
+                            }
+                        }
+                    }
+
+                    if (trailingPercent > 0) {
+                        shouldUpdate = !(hasMatchingTp && hasTrailing);
+                    } else {
+                        shouldUpdate = !(hasMatchingTp && hasMatchingSl);
+                    }
+
+                    if (shouldUpdate) {
+                        ordersToCancel = conditionalOrders;
+                    }
+
+                } catch (e) {
+                    logger.warn(`Failed to fetch open orders for ${symbol}: ${e.message}`);
+                }
+            }
+
+            // Always update the timer to prevent spamming fetchOpenOrders
             this._lastTpSlSet[key] = Date.now();
 
-            let logMsg = `Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Current TP: ${currentTp}, SL: ${currentSl} -> Target TP: ${formattedTp}, Target SL: ${formattedSl}`;
-            if (trailingPercent > 0) {
-                logMsg += ` (Trailing: Yes, ${trailingPercent}%, Active Price: ${targetTrailingActivationPrice > 0 ? targetTrailingActivationPrice.toFixed(4) : 'Immediate'})`;
-            } else {
-                logMsg += ` (Trailing: No)`;
+            if (shouldUpdate) {
+                if (ordersToCancel.length > 0) {
+                    logger.info(`Canceling ${ordersToCancel.length} outdated/mismatched conditional orders for ${symbol} before recreating...`);
+                    for (const o of ordersToCancel) {
+                        try {
+                            await this.tradeExchange.exchange.cancelOrder(o.id, symbol);
+                        } catch (e) {
+                            logger.warn(`Failed to cancel order ${o.id} for ${symbol}: ${e.message}`);
+                        }
+                    }
+                }
+
+                let logMsg = `Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Target TP: ${formattedTp}, Target SL: ${formattedSl}`;
+                if (trailingPercent > 0) {
+                    logMsg += ` (Trailing: Yes, ${trailingPercent}%, Active Price: ${targetTrailingActivationPrice > 0 ? targetTrailingActivationPrice.toFixed(4) : 'Immediate'})`;
+                } else {
+                    logMsg += ` (Trailing: No)`;
+                }
+                logger.info(logMsg);
+                await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
             }
-            logger.info(logMsg);
-            await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
         }
     }
 
