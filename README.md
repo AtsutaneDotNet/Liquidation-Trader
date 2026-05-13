@@ -117,7 +117,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
 | `TRADE_AMOUNT_PERCENTAGE` | % of wallet balance used per trade. | `5%` |
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
-| `OFFSET_PERCENTAGE` | Price deviation from VWAP required for entry. | `0.5%` |
+| `OFFSET_LONG_PERCENTAGE` | Price deviation from VWAP required for LONG entry. | `0.5%` |
+| `OFFSET_SHORT_PERCENTAGE` | Price deviation from VWAP required for SHORT entry. | `0.5%` |
 | `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
 | `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
 | `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |

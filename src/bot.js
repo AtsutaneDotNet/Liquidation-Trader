@@ -870,12 +870,13 @@ class TradingBot {
                 if (ticker && ticker.vwap) {
                     const vwap = ticker.vwap;
                     logger.info(`VWAP: ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
-                    const offsetMultiplier = cfg.OFFSET_PERCENTAGE / 100;
-                    const upperOffsetValue = vwap * (1 + offsetMultiplier);
-                    const lowerOffsetValue = vwap * (1 - offsetMultiplier);
+                    const longOffsetMultiplier = cfg.OFFSET_LONG_PERCENTAGE / 100;
+                    const shortOffsetMultiplier = cfg.OFFSET_SHORT_PERCENTAGE / 100;
+                    const upperOffsetValue = vwap * (1 + shortOffsetMultiplier);
+                    const lowerOffsetValue = vwap * (1 - longOffsetMultiplier);
 
-                    logger.info(`Upper Offset (+${cfg.OFFSET_PERCENTAGE}%): ${upperOffsetValue.toFixed(4)}`);
-                    logger.info(`Lower Offset (-${cfg.OFFSET_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
+                    logger.info(`Upper Offset (+${cfg.OFFSET_SHORT_PERCENTAGE}%): ${upperOffsetValue.toFixed(4)}`);
+                    logger.info(`Lower Offset (-${cfg.OFFSET_LONG_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
 
                     if (currentPrice > upperOffsetValue) {
                         vwapSide = 'sell';
