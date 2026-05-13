@@ -124,6 +124,26 @@ class BinanceExchange extends BaseExchange {
         }
     }
 
+    async watchPrivateTrades(callback, isRunningCheck, errorCallback) {
+        if (!this.exchange.has['watchMyTrades']) {
+            logger.info('[Binance] CCXT watchMyTrades not available. Fallback: Trades WS disabled.');
+            return;
+        }
+        while (isRunningCheck()) {
+            try {
+                const trades = await this.exchange.watchMyTrades();
+                if (!isRunningCheck()) break;
+
+                callback(trades);
+            } catch (e) {
+                if (isRunningCheck()) {
+                    if (errorCallback) errorCallback(`[Binance] [Trades Stream] ${e.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+    }
+
     async fetchClosedPnls() {
         try {
             if (!this.exchange.has['fetchIncome']) return [];

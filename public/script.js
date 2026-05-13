@@ -670,14 +670,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showOrderToast(order) {
-        const isSell = order.side === 'SELL';
-        const sideLabel = isSell ? 'SHORT Executed' : 'LONG Executed';
-        const type = isSell ? 'sell' : 'success';
         const price = parseFloat(order.price || 0);
         const amount = parseFloat(order.amount || 0);
         const value = parseFloat(order.value || price * amount);
         const timeStr = new Date(order.timestamp).toLocaleTimeString();
         const shortId = order.id ? String(order.id).slice(-8) : 'N/A';
+
+        let sideLabel, type, extraRows = '';
+
+        if (order.isClose || order.type === 'CLOSE') {
+            sideLabel = 'Position Closed';
+            type = 'info'; // Use info toast style
+            
+            if (order.realizedPnl !== undefined && order.realizedPnl !== null) {
+                const pnl = parseFloat(order.realizedPnl);
+                const pnlColor = pnl >= 0 ? 'var(--positive)' : 'var(--danger)';
+                const pnlSign = pnl >= 0 ? '+' : '';
+                extraRows = `<div class="toast-detail-row"><span>Realized PnL</span><span style="color: ${pnlColor}; font-weight: bold;">${pnlSign}$${pnl.toFixed(2)}</span></div>`;
+            }
+        } else {
+            const isSell = order.side === 'SELL';
+            sideLabel = isSell ? 'SHORT Executed' : 'LONG Executed';
+            type = isSell ? 'sell' : 'success';
+        }
 
         const html = `
             <div class="toast-symbol">${order.symbol}</div>
@@ -686,8 +701,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="toast-detail-row"><span>Side</span><span>${order.side}</span></div>
                 <div class="toast-detail-row"><span>Price</span><span>$${price.toFixed(4)}</span></div>
                 <div class="toast-detail-row"><span>Amount</span><span>${amount}</span></div>
-                <div class="toast-detail-row"><span>Leverage</span><span>${order.leverage}×</span></div>
+                ${!order.isClose && order.type !== 'CLOSE' ? `<div class="toast-detail-row"><span>Leverage</span><span>${order.leverage}×</span></div>` : ''}
                 <div class="toast-detail-row"><span>Value</span><span>$${value.toFixed(2)}</span></div>
+                ${extraRows}
             </div>
             <div class="toast-time">Order ID: …${shortId} · ${timeStr}</div>
         `;

@@ -38,6 +38,9 @@ class TradingBot {
 
         // In-memory store for recent trade evaluations (max 100), purged on restart
         this.tradeDecisions = [];
+
+        // Cache to prevent duplicate trade notifications
+        this.seenTradeIds = new Set();
     }
 
     async handleError(errMessage) {
@@ -163,6 +166,7 @@ class TradingBot {
             // Kickoff Private Account Streams on Trade Exchange
             this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
             this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
+            this.tradeExchange.watchPrivateTrades(this.onTradeUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
 
             // Kickoff Public Liquidation Stream on all Liq Exchanges using unified symbols
             for (const [exName, exInstance] of Object.entries(this.liqExchanges)) {
@@ -347,6 +351,42 @@ class TradingBot {
             db.updatePosition(dbPos);
 
             this.handleTpSl(p, contracts).catch(err => logger.error(`TP/SL handler error: ${err.message}`));
+        }
+    }
+
+    async onTradeUpdate(trades) {
+        if (!Array.isArray(trades)) trades = [trades];
+        for (const trade of trades) {
+            if (!trade.id || this.seenTradeIds.has(trade.id)) continue;
+            this.seenTradeIds.add(trade.id);
+            if (this.seenTradeIds.size > 500) {
+                const iterator = this.seenTradeIds.values();
+                this.seenTradeIds.delete(iterator.next().value);
+            }
+
+            // Check if this trade belongs to a known entry order
+            const isEntry = this.orderEvents.some(e => e.id === trade.order || e.id === trade.id);
+            if (!isEntry) {
+                let pnl = trade.info?.realizedPnl || trade.info?.realisedPnl || trade.info?.closedPnl || trade.info?.execProfit;
+                if (pnl !== undefined && !isNaN(parseFloat(pnl))) pnl = parseFloat(pnl);
+
+                const orderEvent = {
+                    id: trade.id,
+                    symbol: trade.symbol || 'UNKNOWN',
+                    side: (trade.side || 'unknown').toUpperCase(),
+                    type: 'CLOSE',
+                    amount: trade.amount || 0,
+                    price: trade.price || 0,
+                    leverage: this.config.get().TRADE_LEVERAGE || 1,
+                    value: (trade.price || 0) * (trade.amount || 0),
+                    timestamp: trade.timestamp || Date.now(),
+                    seen: false,
+                    isClose: true,
+                    realizedPnl: pnl
+                };
+                this.orderEvents.unshift(orderEvent);
+                if (this.orderEvents.length > 50) this.orderEvents.pop();
+            }
         }
     }
 

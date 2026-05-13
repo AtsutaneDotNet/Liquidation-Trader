@@ -21,6 +21,16 @@ class BaseExchange {
     }
 
     /**
+     * Watch for user's private trades (fills) in real-time
+     * @param {function} callback - Callback function for when a trade occurs
+     * @param {function} isRunningCheck - Function returning boolean to keep the loop running
+     * @param {function} errorCallback - Callback for handling errors
+     */
+    async watchPrivateTrades(callback, isRunningCheck, errorCallback) {
+        throw new Error('watchPrivateTrades() must be implemented');
+    }
+
+    /**
      * Fetch wallet balance
      */
     async fetchBalance() {

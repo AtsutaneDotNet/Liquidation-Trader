@@ -126,6 +126,26 @@ class LighterExchange extends BaseExchange {
         }, 5000);
     }
 
+    async watchPrivateTrades(callback, isRunningCheck, errorCallback) {
+        if (!this.exchange.has['watchMyTrades']) {
+            logger.info('[Lighter] CCXT watchMyTrades not available. Fallback: Trades WS disabled.');
+            return;
+        }
+        while (isRunningCheck()) {
+            try {
+                const trades = await this.exchange.watchMyTrades();
+                if (!isRunningCheck()) break;
+
+                callback(trades);
+            } catch (e) {
+                if (isRunningCheck()) {
+                    if (errorCallback) errorCallback(`[Lighter] [Trades Stream] ${e.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+    }
+
     async fetchClosedPnls() {
         return [];
     }
