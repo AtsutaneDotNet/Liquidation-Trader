@@ -387,6 +387,23 @@ class TradingBot {
                 this.orderEvents.unshift(orderEvent);
                 if (this.orderEvents.length > 50) this.orderEvents.pop();
 
+                // Fallback for exchanges without REST Closed PnL
+                const cfg = this.config.get();
+                if (['bitmex', 'okx', 'lighter'].includes(cfg.TRADE_EXCHANGE)) {
+                    db.addClosedPnl({
+                        id: trade.id || `ws_${trade.symbol}_${Date.now()}`,
+                        symbol: trade.symbol || 'UNKNOWN',
+                        side: trade.side ? trade.side.toUpperCase() : 'N/A',
+                        size: trade.amount || 0,
+                        entry_price: 0,
+                        close_price: trade.price || 0,
+                        pnl: pnl || 0,
+                        timestamp: trade.timestamp || Date.now()
+                    });
+                    
+                    db.updateAccountState(db.calculateAggregatedPnl());
+                }
+
                 // Remove the position from the DB so the UI reflects the closure immediately
                 if (trade.symbol) {
                     db.removePosition(trade.symbol);
