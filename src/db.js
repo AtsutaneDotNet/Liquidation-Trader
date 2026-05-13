@@ -254,6 +254,24 @@ function calculateAggregatedPnl() {
     };
 }
 
+function getDailyPnLHistory(days = 30) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffTimestamp = cutoff.getTime();
+
+    // Query groups by date (YYYY-MM-DD) and sums PnL
+    // We use strftime with localtime to match the user's view
+    return db.prepare(`
+        SELECT 
+            strftime('%Y-%m-%d', datetime(timestamp / 1000, 'unixepoch', 'localtime')) as date,
+            SUM(pnl) as daily_pnl
+        FROM closed_pnl
+        WHERE timestamp >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    `).all(cutoffTimestamp);
+}
+
 module.exports = {
     db,
     getConfig,
@@ -272,5 +290,6 @@ module.exports = {
     purgeLiquidations,
     addClosedPnl,
     getClosedPnls,
-    calculateAggregatedPnl
+    calculateAggregatedPnl,
+    getDailyPnLHistory
 };

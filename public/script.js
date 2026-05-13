@@ -735,4 +735,92 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── PnL Chart ────────────────────────────────────────────────
+    let pnlChart = null;
+
+    function initPnlChart() {
+        const ctx = document.getElementById('pnl-chart');
+        if (!ctx) return;
+
+        pnlChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Daily PnL ($)',
+                    data: [],
+                    backgroundColor: [],
+                    borderRadius: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#949bab'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#949bab'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#14171f',
+                        titleColor: '#f0f2f5',
+                        bodyColor: '#f0f2f5',
+                        borderColor: '#2b303d',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw;
+                                return (val >= 0 ? '+' : '') + val.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function fetchPnLHistory() {
+        if (!pnlChart) return;
+        const pageActive = document.getElementById('account').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/pnl/daily-history?days=30')
+            .then(res => res.json())
+            .then(data => {
+                const labels = data.map(d => d.date.split('-').slice(1).join('/')); // MM/DD
+                const values = data.map(d => d.daily_pnl);
+                const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b'); // Accent or Danger
+
+                pnlChart.data.labels = labels;
+                pnlChart.data.datasets[0].data = values;
+                pnlChart.data.datasets[0].backgroundColor = colors;
+                pnlChart.update();
+            })
+            .catch(console.error);
+    }
+
+    initPnlChart();
+    setInterval(fetchPnLHistory, 5000);
+    fetchPnLHistory();
+
 });

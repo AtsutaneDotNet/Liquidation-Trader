@@ -163,6 +163,12 @@ class WebServer {
             res.json(db.getClosedPnls(200) || []);
         });
 
+        this.app.get('/api/pnl/daily-history', (req, res) => {
+            const db = require('./db');
+            const days = parseInt(req.query.days) || 30;
+            res.json(db.getDailyPnLHistory(days) || []);
+        });
+
         this.app.get('/api/trade-decisions', (req, res) => {
             res.json(this.bot.tradeDecisions || []);
         });
