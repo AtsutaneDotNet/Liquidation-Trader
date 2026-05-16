@@ -2,13 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Login Form ────────────────────────────────────────────────
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', function (e) {
             e.preventDefault();
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
             const errorEl = document.getElementById('login-error');
             const submitBtn = this.querySelector('button[type="submit"]');
-            
+
             const originalText = submitBtn.textContent;
             submitBtn.textContent = 'Authenticating...';
             submitBtn.disabled = true;
@@ -18,23 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    window.location.href = '/';
-                } else {
-                    errorEl.textContent = result.message || 'Invalid credentials';
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        window.location.href = '/';
+                    } else {
+                        errorEl.textContent = result.message || 'Invalid credentials';
+                        errorEl.style.display = 'block';
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    errorEl.textContent = 'Network error. Please try again.';
                     errorEl.style.display = 'block';
                     submitBtn.textContent = originalText;
                     submitBtn.disabled = false;
-                }
-            })
-            .catch(err => {
-                errorEl.textContent = 'Network error. Please try again.';
-                errorEl.style.display = 'block';
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            });
+                });
         });
         return; // Stop further execution on login page
     }
@@ -205,18 +205,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (openPositionsCount) openPositionsCount.textContent = data.openPositionsCount || 0;
                 if (maxPositionsCount) maxPositionsCount.textContent = data.maxOpenPositions || 0;
                 if (usedMarginPercent) usedMarginPercent.textContent = (data.usedMarginPercent || 0).toFixed(2) + '%';
-                
+
                 if (fearGreedValue) {
                     if (data.fearAndGreed) {
                         const val = parseInt(data.fearAndGreed.value) || 0;
                         const classif = data.fearAndGreed.classification || '';
                         fearGreedValue.textContent = `${val} (${classif})`;
-                        
+
                         // Dynamic color styling
-                        if (val <= 24) fearGreedValue.style.color = 'var(--danger)';
-                        else if (val <= 44) fearGreedValue.style.color = 'orange';
-                        else if (val <= 55) fearGreedValue.style.color = 'var(--text-muted)';
-                        else if (val <= 74) fearGreedValue.style.color = 'var(--accent)';
+                        if (val <= 20) fearGreedValue.style.color = 'var(--danger)';
+                        else if (val <= 40) fearGreedValue.style.color = 'orange';
+                        else if (val <= 60) fearGreedValue.style.color = 'var(--text-muted)';
+                        else if (val <= 80) fearGreedValue.style.color = 'var(--accent)';
                         else fearGreedValue.style.color = '#00ff00';
                     } else {
                         fearGreedValue.textContent = 'N/A';
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const sideClz = isBuy ? 'buy' : 'sell';
                         const cardClz = isBuy ? 'pos-card-buy' : 'pos-card-sell';
                         const sideText = (p.side || 'UNKNOWN').toUpperCase();
-                        
+
                         return `
                         <div class="position-card ${cardClz}">
                             <div class="pos-header">
@@ -404,10 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currencyInput = document.getElementById('LIQUIDATION_VALUE_CURRENCY');
                 const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
                 const useDynamic = dynamicCb ? dynamicCb.checked : false;
-                
+
                 const threshold = parseFloat(thresholdInput ? thresholdInput.value : 0) || 0;
                 const currency = currencyInput ? currencyInput.value : 'USD';
-                
+
                 let effectiveThreshold = threshold;
                 if (currency === 'BTC' && currentBtcPrice > 0) {
                     effectiveThreshold = threshold * currentBtcPrice;
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 const mapped = data.mapped || [];
                 globalDynamicThresholds = data.rawMap || {};
-                
+
                 if (pageActive && tbodyDynamicThresholds) {
                     if (mapped.length === 0) {
                         tbodyDynamicThresholds.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash; Bot is stopped or no pairs loaded &mdash;</td></tr>';
@@ -577,10 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formatStrategy = (strat, name) => {
                     if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
                     if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
-                    
+
                     const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
                     const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
-                    
+
                     let details = '';
                     if (name === 'VWAP') {
                         details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (name === 'ADX') {
                         details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
                     }
-                    
+
                     return `<div style="font-size: 0.85em;">
                         <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
                         <span style="color: var(--text-muted)">${details}</span>
@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { title, message, type = 'info', duration = 6000, html = '' } = options;
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        
+
         toast.innerHTML = `
             <div class="toast-header">
                 <div class="toast-title">${title}</div>
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const timer = setTimeout(() => dismissToast(toast), duration);
         toast._dismissTimer = timer;
-        
+
         return toast;
     }
 
@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (order.isClose || order.type === 'CLOSE') {
             sideLabel = 'Position Closed';
             type = 'info'; // Use info toast style
-            
+
             if (order.realizedPnl !== undefined && order.realizedPnl !== null) {
                 const pnl = parseFloat(order.realizedPnl);
                 const pnlColor = pnl >= 0 ? 'var(--positive)' : 'var(--danger)';
@@ -884,7 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         borderWidth: 1,
                         displayColors: false,
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const val = context.raw;
                                 return (val >= 0 ? '+' : '') + val.toFixed(2);
                             }
