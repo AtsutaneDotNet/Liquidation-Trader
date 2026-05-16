@@ -635,6 +635,74 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchTradeDecisions, 2000);
     fetchTradeDecisions();
 
+    // ── Browser Notification System ────────────────────────────
+    const browserNotifyCb = document.getElementById('BROWSER_NOTIFICATIONS_ENABLED');
+    const btnRequestNotify = document.getElementById('btn-request-notifications');
+    const notifyStatus = document.getElementById('notification-status');
+
+    function updateNotificationUI() {
+        if (!('Notification' in window)) {
+            if (notifyStatus) notifyStatus.textContent = '(Not supported by browser)';
+            if (browserNotifyCb) browserNotifyCb.disabled = true;
+            return;
+        }
+
+        const permission = Notification.permission;
+        if (permission === 'granted') {
+            if (btnRequestNotify) btnRequestNotify.style.display = 'none';
+            if (notifyStatus) notifyStatus.textContent = '(Authorized)';
+        } else if (permission === 'denied') {
+            if (btnRequestNotify) btnRequestNotify.style.display = 'none';
+            if (notifyStatus) notifyStatus.textContent = '(Blocked by browser)';
+            if (browserNotifyCb) browserNotifyCb.disabled = true;
+        } else {
+            if (btnRequestNotify) btnRequestNotify.style.display = 'inline-block';
+            if (notifyStatus) notifyStatus.textContent = '(Requires Authorization)';
+        }
+    }
+
+    if (browserNotifyCb) {
+        browserNotifyCb.checked = localStorage.getItem('enableBrowserNotifications') === 'true';
+        browserNotifyCb.addEventListener('change', () => {
+            localStorage.setItem('enableBrowserNotifications', browserNotifyCb.checked);
+            if (browserNotifyCb.checked && Notification.permission === 'default') {
+                requestNotificationPermission();
+            }
+        });
+    }
+
+    if (btnRequestNotify) {
+        btnRequestNotify.addEventListener('click', requestNotificationPermission);
+    }
+
+    function requestNotificationPermission() {
+        if (!('Notification' in window)) return;
+        Notification.requestPermission().then(() => {
+            updateNotificationUI();
+        });
+    }
+
+    function sendBrowserNotification(title, message) {
+        const enabled = localStorage.getItem('enableBrowserNotifications') === 'true';
+        if (!enabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+
+        try {
+            // Strip HTML from message if any
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = message;
+            const plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+            new Notification(title, {
+                body: plainText,
+                icon: '/favicon.ico' // Or any suitable icon
+            });
+        } catch (e) {
+            console.error('Failed to send browser notification:', e);
+        }
+    }
+
+    updateNotificationUI();
+
     // ── Toast Notification System ───────────────────────────────
     const toastContainer = document.getElementById('toast-container');
 
@@ -654,6 +722,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         toastContainer.appendChild(toast);
+
+        // Also trigger browser notification if enabled
+        if (message) {
+            sendBrowserNotification(title, message);
+        }
 
         toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
 
@@ -713,6 +786,10 @@ document.addEventListener('DOMContentLoaded', () => {
             type: type,
             html: html
         });
+
+        // Trigger detailed browser notification for orders
+        const detailText = `${order.symbol} | ${order.side} ${order.type} | Price: $${price.toFixed(4)} | Amount: ${amount}`;
+        sendBrowserNotification(sideLabel, detailText);
     }
 
     function fetchOrderNotifications() {
