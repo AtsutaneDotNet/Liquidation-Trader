@@ -149,7 +149,7 @@ class BinanceExchange extends BaseExchange {
             // Binance allows fetching Income history which includes REALIZED_PNL
             // We fetch the last 100 or so to get individual records.
             const income = await this.exchange.fapiPrivateGetIncome({ incomeType: 'REALIZED_PNL', limit: 100 });
-            
+
             if (Array.isArray(income)) {
                 return income.map(inc => {
                     return {
@@ -190,13 +190,31 @@ class BinanceExchange extends BaseExchange {
 
     async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0, trailingActivationPrice = 0) {
         try {
+            try {
+                const openOrders = await exchange.exchange.fapiPrivateGetOpenAlgoOrders(symbol);
+
+                const ordersToCancel = openOrders.filter(order => {
+                    const type = (order.type || '').toUpperCase();
+                    const rawType = (order.info && order.info.origType ? order.info.origType : (order.info && order.info.type ? order.info.type : '')).toUpperCase();
+                    const targetTypes = ['TAKE_PROFIT_MARKET', 'STOP_MARKET', 'TRAILING_STOP_MARKET'];
+                    return targetTypes.includes(type) || targetTypes.includes(rawType);
+                });
+
+                for (const order of ordersToCancel) {
+                    await this.exchange.cancelOrder(order.id, symbol);
+                    logger.info(`[Binance] Cancelled existing conditional order ${order.id} for ${symbol}`);
+                }
+            } catch (err) {
+                logger.warn(`[Binance] Error fetching or cancelling existing orders for ${symbol}: ${err.message}`);
+            }
+
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
 
-            await this.exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', oppositeSide, size, undefined, {
+            await this.exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', oppositeSide, undefined, undefined, {
                 stopPrice: tpStr,
-                reduceOnly: true
+                closePosition: true
             });
 
             if (trailingPercent > 0) {
@@ -213,7 +231,7 @@ class BinanceExchange extends BaseExchange {
             } else {
                 await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
                     stopPrice: slStr,
-                    reduceOnly: true
+                    closePosition: true
                 });
             }
 

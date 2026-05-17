@@ -89,6 +89,26 @@ class BaseExchange {
     }
 
     /**
+     * Recursively search for a coin object (e.g., USDT) inside raw data
+     */
+    findCoinObj(obj, coinSymbol = 'USDT', depth = 0) {
+        if (!obj || typeof obj !== 'object' || depth > 5) return null;
+        
+        const assetName = obj.asset || obj.coin || obj.ccy;
+        if (assetName !== undefined && String(assetName).toUpperCase() === coinSymbol.toUpperCase()) {
+            return obj;
+        }
+
+        for (const key in obj) {
+            if (typeof obj[key] === 'object') {
+                const res = this.findCoinObj(obj[key], coinSymbol, depth + 1);
+                if (res) return res;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Standardize balance object parsing to always use totalWalletBalance and totalAvailableBalance
      */
     parseBalanceData(balance) {
@@ -96,21 +116,97 @@ class BaseExchange {
         
         let total = 0;
         let free = 0;
+        let foundTotal = false;
+        let foundFree = false;
 
         const sourceObj = balance.info || balance;
 
-        const totalWalletBalance = this.findKeyInObj(sourceObj, 'totalWalletBalance');
-        if (totalWalletBalance !== undefined && !isNaN(totalWalletBalance)) {
-            total = totalWalletBalance;
-        } else if (balance.USDT && balance.USDT.total !== undefined) {
-            total = balance.USDT.total;
+        // 1. Try to find coin-specific USDT data first to be highly precise
+        const coinObj = this.findCoinObj(sourceObj, 'USDT');
+        if (coinObj) {
+            const coinTotalKeys = ['walletBalance', 'equity', 'eq', 'cashBal', 'total'];
+            for (const key of coinTotalKeys) {
+                if (coinObj[key] !== undefined) {
+                    const val = parseFloat(coinObj[key]);
+                    if (!isNaN(val)) {
+                        total = val;
+                        foundTotal = true;
+                        break;
+                    }
+                }
+            }
+
+            const coinFreeKeys = ['availableBalance', 'availBal', 'available', 'freeBalance', 'free_balance', 'free'];
+            for (const key of coinFreeKeys) {
+                if (coinObj[key] !== undefined) {
+                    const val = parseFloat(coinObj[key]);
+                    if (!isNaN(val)) {
+                        free = val;
+                        foundFree = true;
+                        break;
+                    }
+                }
+            }
         }
 
-        const totalAvailableBalance = this.findKeyInObj(sourceObj, 'totalAvailableBalance');
-        if (totalAvailableBalance !== undefined && !isNaN(totalAvailableBalance)) {
-            free = totalAvailableBalance;
-        } else if (balance.USDT && balance.USDT.free !== undefined) {
-            free = balance.USDT.free;
+        // 2. Fallback to unique account-level keys in raw info
+        if (!foundTotal) {
+            const accountTotalKeys = ['totalWalletBalance', 'totalBalance', 'walletBalance', 'total_balance', 'wallet_balance', 'total'];
+            for (const key of accountTotalKeys) {
+                const val = this.findKeyInObj(sourceObj, key);
+                if (val !== undefined && !isNaN(val)) {
+                    total = val;
+                    foundTotal = true;
+                    break;
+                }
+            }
+        }
+
+        if (!foundFree) {
+            const accountFreeKeys = ['totalAvailableBalance', 'availableBalance', 'available', 'freeBalance', 'free_balance', 'free'];
+            for (const key of accountFreeKeys) {
+                const val = this.findKeyInObj(sourceObj, key);
+                if (val !== undefined && !isNaN(val)) {
+                    free = val;
+                    foundFree = true;
+                    break;
+                }
+            }
+        }
+
+        // 3. Fallbacks using standard CCXT parsed properties
+        let detectedCoin = 'USDT';
+        if (!foundTotal) {
+            if (balance.USDT && balance.USDT.total !== undefined) {
+                total = parseFloat(balance.USDT.total);
+            } else if (balance.total && balance.total.USDT !== undefined) {
+                total = parseFloat(balance.total.USDT);
+            } else if (balance.total && typeof balance.total === 'object') {
+                for (const coin in balance.total) {
+                    const val = parseFloat(balance.total[coin]);
+                    if (val > 0) {
+                        total = val;
+                        detectedCoin = coin;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!foundFree) {
+            if (detectedCoin && balance[detectedCoin] && balance[detectedCoin].free !== undefined) {
+                free = parseFloat(balance[detectedCoin].free);
+            } else if (detectedCoin && balance.free && balance.free[detectedCoin] !== undefined) {
+                free = parseFloat(balance.free[detectedCoin]);
+            } else if (balance.free && typeof balance.free === 'object') {
+                for (const coin in balance.free) {
+                    const val = parseFloat(balance.free[coin]);
+                    if (val > 0) {
+                        free = val;
+                        break;
+                    }
+                }
+            }
         }
 
         const used = Math.max(0, total - free);
