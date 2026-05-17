@@ -191,18 +191,21 @@ class BinanceExchange extends BaseExchange {
     async setTpSl(symbol, side, size, takeProfit, stopLoss, entryPrice = 0, trailingPercent = 0, trailingActivationPrice = 0) {
         try {
             try {
-                const openOrders = await exchange.exchange.fapiPrivateGetOpenAlgoOrders(symbol);
+                const marketId = this.exchange.market(symbol).id;
+                const openOrders = await this.exchange.fapiPrivateGetOpenAlgoOrders({ symbol: marketId });
 
                 const ordersToCancel = openOrders.filter(order => {
-                    const type = (order.type || '').toUpperCase();
-                    const rawType = (order.info && order.info.origType ? order.info.origType : (order.info && order.info.type ? order.info.type : '')).toUpperCase();
+                    const type = (order.type || order.origType || '').toUpperCase();
                     const targetTypes = ['TAKE_PROFIT_MARKET', 'STOP_MARKET', 'TRAILING_STOP_MARKET'];
-                    return targetTypes.includes(type) || targetTypes.includes(rawType);
+                    return targetTypes.includes(type);
                 });
 
                 for (const order of ordersToCancel) {
-                    await this.exchange.cancelOrder(order.id, symbol);
-                    logger.info(`[Binance] Cancelled existing conditional order ${order.id} for ${symbol}`);
+                    await this.exchange.fapiPrivateDeleteAlgoOrder({
+                        symbol: marketId,
+                        algoId: order.algoId
+                    });
+                    logger.info(`[Binance] Cancelled existing conditional algo order ${order.algoId} for ${symbol}`);
                 }
             } catch (err) {
                 logger.warn(`[Binance] Error fetching or cancelling existing orders for ${symbol}: ${err.message}`);
