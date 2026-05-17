@@ -312,6 +312,31 @@ class TradingBot {
             let currentTp = parseFloat(p.takeProfitPrice || p.info?.takeProfit || p.info?.tpPrice || p.info?.takeProfitPrice || 0);
             let currentSl = parseFloat(p.stopLossPrice || p.info?.stopLoss || p.info?.slPrice || p.info?.stopLossPrice || 0);
 
+            if ((!currentTp || !currentSl) && this.tradeExchange && this.tradeExchange.exchange && typeof this.tradeExchange.exchange.fapiPrivateGetOpenAlgoOrders === 'function') {
+                try {
+                    const marketId = this.tradeExchange.exchange.market(p.symbol).id;
+                    const openAlgoOrders = await this.tradeExchange.exchange.fapiPrivateGetOpenAlgoOrders({ symbol: marketId });
+                    if (Array.isArray(openAlgoOrders)) {
+                        for (const order of openAlgoOrders) {
+                            const type = (order.orderType || '').toUpperCase();
+                            const triggerPrice = parseFloat(order.triggerPrice || order.stopPrice || 0);
+                            if (triggerPrice > 0) {
+                                if (type === 'TAKE_PROFIT_MARKET' && !currentTp) {
+                                    currentTp = triggerPrice;
+                                } else if (type === 'STOP_MARKET' && !currentSl) {
+                                    currentSl = triggerPrice;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    logger.warn(`[onPositionUpdate] Failed to fetch open algo orders for ${p.symbol}: ${e.message}`);
+                }
+            }
+
+            p.takeProfitPrice = currentTp;
+            p.stopLossPrice = currentSl;
+
             let s_size = contracts;
             let s_entryPrice = p.entryPrice || 0;
             let s_markPrice = p.markPrice || 0;

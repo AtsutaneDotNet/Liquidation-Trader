@@ -86,14 +86,49 @@ class BinanceExchange extends BaseExchange {
     async watchPrivateBalance(callback, isRunningCheck, errorCallback) {
         if (!this.exchange.has['watchBalance']) return;
 
-        while (isRunningCheck()) {
-            try {
-                const balance = await this.exchange.watchBalance();
-                if (!isRunningCheck()) break;
+        let lastFetchTime = 0;
+        let timeoutId = null;
+        let isFetching = false;
 
+        const triggerBalanceUpdate = async () => {
+            if (isFetching) return;
+            isFetching = true;
+            try {
+                const balance = await this.fetchBalance();
                 const data = this.parseBalanceData(balance);
                 if (data) {
                     callback(data);
+                }
+            } catch (e) {
+                logger.error(`[Binance] Error fetching balance on WS trigger: ${e.message}`);
+            } finally {
+                isFetching = false;
+                lastFetchTime = Date.now();
+            }
+        };
+
+        while (isRunningCheck()) {
+            try {
+                await this.exchange.watchBalance();
+                if (!isRunningCheck()) break;
+
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+
+                const now = Date.now();
+                const timeSinceLastFetch = now - lastFetchTime;
+
+                if (timeSinceLastFetch > 2000) {
+                    // Fetch immediately, but don't await so we don't block the WS loop
+                    triggerBalanceUpdate();
+                } else {
+                    // Debounce rapid updates
+                    timeoutId = setTimeout(() => {
+                        if (isRunningCheck()) {
+                            triggerBalanceUpdate();
+                        }
+                    }, 2000 - timeSinceLastFetch);
                 }
             } catch (e) {
                 if (isRunningCheck()) {
@@ -195,15 +230,15 @@ class BinanceExchange extends BaseExchange {
                 const openOrders = await this.exchange.fapiPrivateGetOpenAlgoOrders({ symbol: marketId });
 
                 const ordersToCancel = openOrders.filter(order => {
-                    const type = (order.type || order.origType || '').toUpperCase();
+                    const type = (order.orderType || '').toUpperCase();
                     const targetTypes = ['TAKE_PROFIT_MARKET', 'STOP_MARKET', 'TRAILING_STOP_MARKET'];
                     return targetTypes.includes(type);
                 });
 
                 for (const order of ordersToCancel) {
                     await this.exchange.fapiPrivateDeleteAlgoOrder({
-                        symbol: marketId,
-                        algoId: order.algoId
+                        algoId: order.algoId,
+                        clientAlgoId: order.clientAlgoId
                     });
                     logger.info(`[Binance] Cancelled existing conditional algo order ${order.algoId} for ${symbol}`);
                 }
@@ -220,6 +255,11 @@ class BinanceExchange extends BaseExchange {
                 closePosition: true
             });
 
+            await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
+                stopPrice: slStr,
+                closePosition: true
+            });
+
             if (trailingPercent > 0) {
                 let clampedPercent = Math.max(0.1, Math.min(5.0, trailingPercent));
                 const trailingParams = {
@@ -231,11 +271,6 @@ class BinanceExchange extends BaseExchange {
                 }
                 logger.info(`[Binance] Configuring native Trailing Stop with callbackRate ${clampedPercent}%${trailingActivationPrice > 0 ? ' and activationPrice ' + trailingParams.activationPrice : ''}`);
                 await this.exchange.createOrder(symbol, 'TRAILING_STOP_MARKET', oppositeSide, size, undefined, trailingParams);
-            } else {
-                await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
-                    stopPrice: slStr,
-                    closePosition: true
-                });
             }
 
             logger.info(`[Binance] Conditional exit parameters independently bound to ${symbol}.`);
