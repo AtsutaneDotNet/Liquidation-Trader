@@ -146,23 +146,21 @@ class BinanceExchange extends BaseExchange {
 
     async fetchClosedPnls() {
         try {
-            if (!this.exchange.has['fetchIncome']) return [];
-
             // Binance allows fetching Income history which includes REALIZED_PNL
             // We fetch the last 100 or so to get individual records.
-            const income = await this.exchange.fetchIncome(undefined, undefined, undefined, { incomeType: 'REALIZED_PNL', limit: 100 });
-
+            const income = await this.exchange.fapiPrivateGetIncome({ incomeType: 'REALIZED_PNL', limit: 100 });
+            
             if (Array.isArray(income)) {
                 return income.map(inc => {
                     return {
-                        id: inc.info?.tranId || `${inc.symbol}_${inc.timestamp}`,
+                        id: inc.tranId || `${inc.symbol}_${inc.time}`,
                         symbol: inc.symbol || 'UNKNOWN',
                         side: 'N/A',
                         size: 0,
                         entry_price: 0,
                         close_price: 0,
-                        pnl: parseFloat(inc.amount || 0),
-                        timestamp: parseInt(inc.timestamp || 0)
+                        pnl: parseFloat(inc.income || 0),
+                        timestamp: parseInt(inc.time || 0)
                     };
                 });
             }
@@ -195,7 +193,7 @@ class BinanceExchange extends BaseExchange {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
-            
+
             await this.exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', oppositeSide, size, undefined, {
                 stopPrice: tpStr,
                 reduceOnly: true
