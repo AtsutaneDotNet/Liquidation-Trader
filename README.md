@@ -13,7 +13,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter** using the unified **CCXT Pro** engine.
 -   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) [Liquidation Report](https://liquidation.report) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events.
 -   **Advanced Strategies**:
-    -   **VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price.
+    -   **Dual VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price, utilizing independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
     -   **ADX (Average Directional Index)**: Detect trend strength and potential reversals/exhaustion.
     -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX) to align before executing a trade for higher precision.
@@ -26,6 +26,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   **Robust Risk Management**:
     -   Dynamic **Take Profit** and **Stop Loss** placement.
     -   **Native Trailing Stop**: Lock in gains during strong trends with exchange-native trailing stops and activation prices.
+    -   **Unified PnL Tracking**: Calculate and display daily, weekly, monthly, yearly, and total PnL statistics across Bybit, Binance, OKX, BitMEX, and Lighter exchanges.
     -   Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
     -   **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
 -   **Premium Web UI**:
@@ -33,13 +34,15 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
     -   **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
     -   **Trade Decisions Page**: A dedicated log of every trade evaluation, showing indicator values and the logic behind entry decisions.
-    -   **Toast Notifications**: Instant visual feedback for order executions.
+    -   **Desktop & Browser Notifications**: Real-time system-level notifications for instant updates on executed orders and trade entries.
+    -   **Toast Notifications & Auto-Sync**: Toast alerts for order executions with automated database cleanups that instantly clear closed positions from the SQLite state, keeping the dashboard highly responsive.
     -   **Live Logs**: View bot terminal output directly in the browser.
 -   **Reliability & Security**:
     -   **Auto-Stop Safeguard**: Automatically stops the engine if 15 consecutive errors occur within 60 seconds, protecting capital from API or network failures.
     -   **SQLite-backed persistence**: Positions, historical PnL, and trade data are stored safely.
     -   **Stale Position Sync**: Automatically checks and recovers positions from the exchange if the WebSocket stream is interrupted.
     -   **AES-256-GCM Encryption**: Sensitive API keys are encrypted at rest in the database.
+
 
 ---
 
@@ -121,8 +124,13 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `OFFSET_SHORT_PERCENTAGE` | Price deviation from VWAP required for SHORT entry. | `0.5%` |
 | `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
 | `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
+| `RSI_PERIOD` | Number of candles for RSI calculation. | `14` |
+| `RSI_OVERBOUGHT` | RSI upper bound representing overbought levels. | `70` |
+| `RSI_OVERSOLD` | RSI lower bound representing oversold levels. | `30` |
 | `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |
-| `ADX_THRESHOLD` | ADX value threshold for entry. | `25` |
+| `ADX_TIMEFRAME` | Timeframe for ADX calculation (e.g., `1m`, `5m`). | `1m` |
+| `ADX_PERIOD` | Number of candles for ADX calculation. | `14` |
+| `ADX_THRESHOLD` | ADX strength threshold to trigger trade signals. | `25` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 
 ### Filters & Dynamic Thresholds
@@ -154,7 +162,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 
 ```text
 ├── src/
-│   ├── exchanges/      # Unified exchange adapters (Bybit, Binance, OKX, etc.)
+│   ├── exchanges/      # Unified exchange adapters (Bybit, Binance, OKX, Lighter, BitMEX)
 │   ├── bot.js          # Core trading engine and strategy logic
 │   ├── server.js       # Express server and API routes
 │   ├── db.js           # SQLite management with encryption support

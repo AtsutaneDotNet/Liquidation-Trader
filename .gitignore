@@ -76,6 +76,7 @@ Thumbs.db
 # =========================
 tmp/
 temp/
+src/tests/
 test*.js
 tests/
 test/
