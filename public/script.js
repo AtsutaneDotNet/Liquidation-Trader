@@ -52,7 +52,29 @@ document.addEventListener('DOMContentLoaded', () => {
             pages.forEach(p => p.classList.remove('active'));
 
             btn.classList.add('active');
-            document.getElementById(btn.dataset.target).classList.add('active');
+            const targetId = btn.dataset.target;
+            const pageEl = document.getElementById(targetId);
+            if (pageEl) pageEl.classList.add('active');
+
+            // Trigger immediate render on navigated tabs to maintain high responsiveness
+            if (targetId === 'dashboard') {
+                fetchStatus();
+                fetchLiquidations();
+                fetchTradeDecisions();
+            } else if (targetId === 'positions') {
+                fetchAccountData();
+            } else if (targetId === 'account') {
+                fetchAccountData();
+                fetchPnLHistory();
+            } else if (targetId === 'liquidations-page') {
+                fetchLiquidations();
+            } else if (targetId === 'closed-pnl-page') {
+                fetchClosedPnlsTable();
+            } else if (targetId === 'dynamic-thresholds-page') {
+                fetchDynamicThresholdTable();
+            } else if (targetId === 'trade-decisions-page') {
+                fetchTradeDecisions();
+            }
         });
     });
 
@@ -179,6 +201,83 @@ document.addEventListener('DOMContentLoaded', () => {
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
 
+    // ── Currency Switcher Setup ──────────────────────────────
+    const currencySymbols = {
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        MYR: 'RM',
+        JPY: '¥',
+        SGD: 'S$',
+        BTC: '₿'
+    };
+
+    let exchangeRates = {
+        USD: 1.0,
+        EUR: 0.92,
+        GBP: 0.79,
+        MYR: 4.70,
+        JPY: 155.0,
+        SGD: 1.35,
+        BTC: 0.000015 // Updated dynamically from live status
+    };
+
+    function fetchExchangeRates() {
+        fetch('https://open.er-api.com/v6/latest/USD')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.rates) {
+                    for (const cur of ['EUR', 'GBP', 'MYR', 'JPY', 'SGD']) {
+                        if (data.rates[cur]) {
+                            exchangeRates[cur] = data.rates[cur];
+                        }
+                    }
+                    console.log('Exchange rates updated successfully:', exchangeRates);
+                    updateBtcRateAndReRender();
+                }
+            })
+            .catch(err => {
+                console.warn('Could not fetch live exchange rates, using fallbacks:', err);
+            });
+    }
+
+    function convertFromUsd(val) {
+        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+        const rate = exchangeRates[cur] || 1.0;
+        return val * rate;
+    }
+
+    function formatSelectedCurrency(val) {
+        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+        const converted = convertFromUsd(val);
+        const symbol = currencySymbols[cur] || '$';
+        
+        if (cur === 'BTC') {
+            return symbol + parseFloat(converted).toFixed(6);
+        } else if (cur === 'JPY') {
+            return symbol + Math.round(converted).toLocaleString();
+        } else {
+            return symbol + parseFloat(converted).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    }
+
+    function updateBtcRateAndReRender() {
+        if (currentBtcPrice > 0) {
+            exchangeRates.BTC = 1 / currentBtcPrice;
+        }
+        
+        // Re-trigger visual updates instantly on currency change or rate updates
+        fetchAccountData();
+        fetchLiquidations();
+        fetchClosedPnlsTable();
+        fetchDynamicThresholdTable();
+        fetchTradeDecisions();
+        fetchPnLHistory();
+    }
+
+    // Call exchange rate fetch on initialization
+    fetchExchangeRates();
+
     function fetchStatus() {
         fetch('/api/status')
             .then(res => res.json())
@@ -205,6 +304,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 pairsCount.textContent = data.pairsLoaded;
                 currentBtcPrice = data.btcUsdPrice || 0;
+                if (currentBtcPrice > 0) {
+                    exchangeRates.BTC = 1 / currentBtcPrice;
+                }
 
                 if (openPositionsCount) openPositionsCount.textContent = data.openPositionsCount || 0;
                 if (maxPositionsCount) maxPositionsCount.textContent = data.maxOpenPositions || 0;
@@ -303,14 +405,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const positionsContainer = document.getElementById('positions-container');
 
     function formatUsd(val) {
-        return '$' + parseFloat(val || 0).toFixed(2);
+        return formatSelectedCurrency(val);
     }
 
     function formatPnl(val) {
-        const num = parseFloat(val || 0);
-        const sign = num > 0 ? '+' : '';
-        const clz = num >= 0 ? 'pnl-positive' : 'pnl-negative';
-        return `<span class="${clz}">${sign}${num.toFixed(2)}</span>`;
+        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+        const numUsd = parseFloat(val || 0);
+        const converted = convertFromUsd(numUsd);
+        
+        const sign = converted > 0 ? '+' : '';
+        const clz = numUsd >= 0 ? 'pnl-positive' : 'pnl-negative';
+        const symbol = currencySymbols[cur] || '$';
+        
+        let formattedVal = '';
+        if (cur === 'BTC') {
+            formattedVal = parseFloat(converted).toFixed(6);
+        } else if (cur === 'JPY') {
+            formattedVal = Math.round(converted).toLocaleString();
+        } else {
+            formattedVal = parseFloat(converted).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        return `<span class="${clz}">${sign}${symbol}${formattedVal}</span>`;
     }
 
     function fetchAccountData() {
@@ -455,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
                                 <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
                                 <td>${liq.amount}</td>
-                                <td>$${parseFloat(liq.value || 0).toFixed(2)}</td>
+                                <td>${formatSelectedCurrency(liq.value)}</td>
                             </tr>`;
                         }).join('');
                     }
@@ -479,7 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
                                 <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
                                 <td>${liq.amount}</td>
-                                <td>$${parseFloat(liq.value || 0).toFixed(2)}</td>
+                                <td>${formatSelectedCurrency(liq.value)}</td>
                             </tr>`;
                         }).join('');
                     }
@@ -507,9 +623,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         tbodyClosedPnl.innerHTML = data.map(record => {
                             const timeStr = new Date(record.timestamp).toLocaleString();
                             const sideClz = record.side === 'BUY' ? 'side-buy' : (record.side === 'SELL' ? 'side-sell' : '');
-                            const pnlValue = parseFloat(record.pnl || 0);
-                            const pnlClz = pnlValue >= 0 ? 'pnl-positive' : 'pnl-negative';
-                            const pnlFormatted = pnlValue >= 0 ? `+${pnlValue.toFixed(2)}` : pnlValue.toFixed(2);
                             const entryStr = record.entry_price ? parseFloat(record.entry_price).toFixed(4) : 'N/A';
                             const closeStr = record.close_price ? parseFloat(record.close_price).toFixed(4) : 'N/A';
                             const sizeStr = record.size ? record.size : 'N/A';
@@ -521,7 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td>${sizeStr}</td>
                                 <td>${entryStr}</td>
                                 <td>${closeStr}</td>
-                                <td><strong class="${pnlClz}">${pnlFormatted}</strong></td>
+                                <td>${formatPnl(record.pnl)}</td>
                             </tr>`;
                         }).join('');
                     }
@@ -554,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
                             return `<tr>
                                 <td><strong>${item.symbol}</strong></td>
-                                <td>$${parseFloat(item.threshold || 0).toFixed(2)}</td>
+                                <td>${formatSelectedCurrency(item.threshold)}</td>
                                 <td><span style="color: ${statusColor}">${item.status}</span></td>
                             </tr>`;
                         }).join('');
@@ -607,10 +720,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
                     const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
 
+                    const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                    const symbol = currencySymbols[cur] || '$';
+                    const convertedPrice = convertFromUsd(record.price || 0);
+                    const priceFormatted = symbol + parseFloat(convertedPrice).toFixed(cur === 'BTC' ? 6 : (cur === 'JPY' ? 0 : 4));
+
                     return `<tr>
                         <td style="color: var(--text-muted);">${timeStr}</td>
                         <td><strong>${record.symbol}</strong></td>
-                        <td>$${parseFloat(record.price || 0).toFixed(4)}</td>
+                        <td>${priceFormatted}</td>
                         <td>${formatStrategy(record.vwap, 'VWAP')}</td>
                         <td>${formatStrategy(record.rsi, 'RSI')}</td>
                         <td>${formatStrategy(record.adx, 'ADX')}</td>
@@ -766,7 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pnl = parseFloat(order.realizedPnl);
                 const pnlColor = pnl >= 0 ? 'var(--positive)' : 'var(--danger)';
                 const pnlSign = pnl >= 0 ? '+' : '';
-                extraRows = `<div class="toast-detail-row"><span>Realized PnL</span><span style="color: ${pnlColor}; font-weight: bold;">${pnlSign}$${pnl.toFixed(2)}</span></div>`;
+                extraRows = `<div class="toast-detail-row"><span>Realized PnL</span><span style="color: ${pnlColor}; font-weight: bold;">${pnlSign}${formatSelectedCurrency(pnl)}</span></div>`;
             }
         } else {
             const isSell = order.side === 'SELL';
@@ -779,10 +897,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="toast-details">
                 <div class="toast-detail-row"><span>Type</span><span>${order.type || 'MARKET'}</span></div>
                 <div class="toast-detail-row"><span>Side</span><span>${order.side}</span></div>
-                <div class="toast-detail-row"><span>Price</span><span>$${price.toFixed(4)}</span></div>
+                <div class="toast-detail-row"><span>Price</span><span>${formatSelectedCurrency(price)}</span></div>
                 <div class="toast-detail-row"><span>Amount</span><span>${amount}</span></div>
                 ${!order.isClose && order.type !== 'CLOSE' ? `<div class="toast-detail-row"><span>Leverage</span><span>${order.leverage}×</span></div>` : ''}
-                <div class="toast-detail-row"><span>Value</span><span>$${value.toFixed(2)}</span></div>
+                <div class="toast-detail-row"><span>Value</span><span>${formatSelectedCurrency(value)}</span></div>
                 ${extraRows}
             </div>
             <div class="toast-time">Order ID: …${shortId} · ${timeStr}</div>
@@ -795,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Trigger detailed browser notification for orders
-        const detailText = `${order.symbol} | ${order.side} ${order.type} | Price: $${price.toFixed(4)} | Amount: ${amount}`;
+        const detailText = `${order.symbol} | ${order.side} ${order.type} | Price: ${formatSelectedCurrency(price)} | Amount: ${amount}`;
         sendBrowserNotification(sideLabel, detailText);
     }
 
@@ -850,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Daily PnL ($)',
+                    label: `Daily PnL (${currencySymbols[localStorage.getItem('selectedCurrency') || 'USD'] || '$'})`,
                     data: [],
                     backgroundColor: [],
                     borderRadius: 4,
@@ -893,7 +1011,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         callbacks: {
                             label: function (context) {
                                 const val = context.raw;
-                                return (val >= 0 ? '+' : '') + val.toFixed(2);
+                                const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                                const symbol = currencySymbols[cur] || '$';
+                                const formattedVal = cur === 'BTC' ? val.toFixed(6) : (cur === 'JPY' ? Math.round(val).toLocaleString() : val.toFixed(2));
+                                return (val >= 0 ? '+' : '') + symbol + formattedVal;
                             }
                         }
                     }
@@ -910,11 +1031,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/pnl/daily-history?days=30')
             .then(res => res.json())
             .then(data => {
+                const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                const symbol = currencySymbols[cur] || '$';
                 const labels = data.map(d => d.date.split('-').slice(1).join('/')); // MM/DD
-                const values = data.map(d => d.daily_pnl);
+                const values = data.map(d => convertFromUsd(d.daily_pnl));
                 const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b'); // Accent or Danger
 
                 pnlChart.data.labels = labels;
+                pnlChart.data.datasets[0].label = `Daily PnL (${symbol})`;
                 pnlChart.data.datasets[0].data = values;
                 pnlChart.data.datasets[0].backgroundColor = colors;
                 pnlChart.update();
@@ -925,5 +1049,18 @@ document.addEventListener('DOMContentLoaded', () => {
     initPnlChart();
     setInterval(fetchPnLHistory, 5000);
     fetchPnLHistory();
+
+    // ── Currency Switcher Selector Listener ───────────────────
+    const currencySelect = document.getElementById('currency-select');
+    if (currencySelect) {
+        // Load initial currency selection from local storage
+        currencySelect.value = localStorage.getItem('selectedCurrency') || 'USD';
+        
+        currencySelect.addEventListener('change', (e) => {
+            localStorage.setItem('selectedCurrency', e.target.value);
+            console.log('Active currency updated to:', e.target.value);
+            updateBtcRateAndReRender();
+        });
+    }
 
 });
