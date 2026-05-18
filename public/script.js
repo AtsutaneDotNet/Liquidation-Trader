@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_FEARGREED_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -129,11 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const adxCb = document.getElementById('ENABLE_ADX_STRATEGY');
         if (adxCb) formData.set('ENABLE_ADX_STRATEGY', adxCb.checked ? 'true' : 'false');
 
+        const fgCb = document.getElementById('ENABLE_FEARGREED_STRATEGY');
+        if (fgCb) formData.set('ENABLE_FEARGREED_STRATEGY', fgCb.checked ? 'true' : 'false');
+
         const isVwapChecked = vwapCb && vwapCb.checked;
         const isRsiChecked = rsiCb && rsiCb.checked;
         const isAdxChecked = adxCb && adxCb.checked;
+        const isFgChecked = fgCb && fgCb.checked;
 
-        if (!isVwapChecked && !isRsiChecked && !isAdxChecked) {
+        if (!isVwapChecked && !isRsiChecked && !isAdxChecked && !isFgChecked) {
             showToast({
                 title: 'Configuration Error',
                 message: 'At least one strategy must be enabled.',
@@ -588,6 +592,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
                     } else if (name === 'ADX') {
                         details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
+                    } else if (name === 'F&G') {
+                        details = `State: ${strat.classification}`;
                     }
 
                     return `<div style="font-size: 0.85em;">
@@ -608,6 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${formatStrategy(record.vwap, 'VWAP')}</td>
                         <td>${formatStrategy(record.rsi, 'RSI')}</td>
                         <td>${formatStrategy(record.adx, 'ADX')}</td>
+                        <td>${formatStrategy(record.fearAndGreed, 'F&G')}</td>
                         <td>${confluenceText}</td>
                         <td><span class="${outcomeClz}">${record.reason}</span></td>
                     </tr>`;

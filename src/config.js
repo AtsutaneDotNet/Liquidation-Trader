@@ -11,6 +11,7 @@ function getConfig() {
         API_SECRET: dbConfig.API_SECRET || '',
         ENABLE_VWAP_STRATEGY: dbConfig.ENABLE_VWAP_STRATEGY === 'true',
         ENABLE_RSI_STRATEGY: dbConfig.ENABLE_RSI_STRATEGY === 'true',
+        ENABLE_FEARGREED_STRATEGY: dbConfig.ENABLE_FEARGREED_STRATEGY === 'true',
         RSI_PERIOD: parseInt(dbConfig.RSI_PERIOD) || 14,
         RSI_TIMEFRAME: dbConfig.RSI_TIMEFRAME || '1m',
         RSI_OVERBOUGHT: parseFloat(dbConfig.RSI_OVERBOUGHT) || 70,

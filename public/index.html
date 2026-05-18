@@ -225,13 +225,14 @@
                                     <th>VWAP</th>
                                     <th>RSI</th>
                                     <th>ADX</th>
+                                    <th>F&G</th>
                                     <th>Confluence</th>
                                     <th>Outcome</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboard-trade-decisions-tbody">
                                 <tr>
-                                    <td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash;
+                                    <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
                                         Waiting for trade evaluations &mdash;</td>
                                 </tr>
                             </tbody>
@@ -503,6 +504,21 @@
                                         <label for="ADX_THRESHOLD">ADX Threshold</label>
                                         <input type="number" id="ADX_THRESHOLD" name="ADX_THRESHOLD" step="1"
                                             placeholder="e.g. 25">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fear & Greed Sub-section -->
+                            <div class="page-subsection">
+                                <h4>Fear & Greed Strategy</h4>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_FEARGREED_STRATEGY" name="ENABLE_FEARGREED_STRATEGY" value="true" style="width: auto; margin: 0;"> Enable Fear & Greed
+                                        </label>
+                                        <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
+                                            When enabled, the bot checks the Crypto Fear & Greed Index from CoinMarketCap. <strong style="color: orange;">Fear</strong> gives a <strong style="color: var(--danger);">SHORT</strong> signal, while <strong style="color: var(--accent);">Greed</strong> gives a <strong style="color: #00ff00;">LONG</strong> signal. <strong style="color: var(--danger);">Extreme Fear</strong> and <strong style="color: #00ff00;">Extreme Greed</strong> yield no signal (blocking trades if confluence is required), and <strong style="color: var(--text-muted);">Neutral</strong> ignores this strategy completely, allowing other enabled strategies to decide. Requires CMC API Key.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -913,13 +929,14 @@
                                     <th>VWAP</th>
                                     <th>RSI</th>
                                     <th>ADX</th>
+                                    <th>F&G</th>
                                     <th>Confluence</th>
                                     <th>Outcome</th>
                                 </tr>
                             </thead>
                             <tbody id="trade-decisions-tbody">
                                 <tr>
-                                    <td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash;
+                                    <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
                                         Waiting for trade evaluations &mdash;</td>
                                 </tr>
                             </tbody>

@@ -77,8 +77,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_ADX_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, or ADX strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_ADX_STRATEGY && !cfg.ENABLE_FEARGREED_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, ADX, or Fear & Greed strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -823,6 +823,7 @@ class TradingBot {
             let vwapSide = null;
             let rsiSide = null;
             let adxSide = null;
+            let fgSide = null;
 
             // --- 1. VWAP Strategy ---
             if (cfg.ENABLE_VWAP_STRATEGY) {
@@ -965,12 +966,39 @@ class TradingBot {
                 }
             }
 
-            // --- 4. Confluence Logic (AND) ---
+            // --- 5. Fear & Greed Strategy ---
+            if (cfg.ENABLE_FEARGREED_STRATEGY) {
+                if (this.fearAndGreed) {
+                    const classification = (this.fearAndGreed.classification || '').toLowerCase();
+                    if (classification === 'fear') {
+                        fgSide = 'sell';
+                        logger.info(`Fear & Greed Condition met: Fear. Signal: SHORT.`);
+                    } else if (classification === 'greed') {
+                        fgSide = 'buy';
+                        logger.info(`Fear & Greed Condition met: Greed. Signal: LONG.`);
+                    } else if (classification === 'neutral') {
+                        fgSide = 'ignore';
+                        logger.info(`Fear & Greed Condition met: Neutral. Ignoring F&G for confluence.`);
+                    } else {
+                        // Extreme Fear or Extreme Greed keeps fgSide = null to block trade
+                        logger.info(`Fear & Greed Condition met: ${this.fearAndGreed.classification}. Signal: NONE (No trade).`);
+                    }
+                    decisionRecord.fearAndGreed = { classification: this.fearAndGreed.classification, signal: fgSide };
+                } else {
+                    logger.info(`No Fear & Greed data available.`);
+                    decisionRecord.fearAndGreed = { error: 'No data' };
+                }
+            }
+
+            // --- 6. Confluence Logic (AND) ---
             let finalSide = null;
             const activeStrategies = [];
             if (cfg.ENABLE_VWAP_STRATEGY) activeStrategies.push({ name: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY) activeStrategies.push({ name: 'RSI', side: rsiSide });
             if (cfg.ENABLE_ADX_STRATEGY) activeStrategies.push({ name: 'ADX', side: adxSide });
+            if (cfg.ENABLE_FEARGREED_STRATEGY && fgSide !== 'ignore') {
+                activeStrategies.push({ name: 'Fear&Greed', side: fgSide });
+            }
 
             if (activeStrategies.length > 0) {
                 const allSame = activeStrategies.every(s => s.side && s.side === activeStrategies[0].side);

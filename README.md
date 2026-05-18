@@ -16,7 +16,8 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **Dual VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price, utilizing independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
     -   **ADX (Average Directional Index)**: Detect trend strength and potential reversals/exhaustion.
-    -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX) to align before executing a trade for higher precision.
+    -   **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Fear gives SHORT, Greed gives LONG, Extreme states halt trading.
+    -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX, Fear & Greed) to align before executing a trade for higher precision.
     -   **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 -   **Intelligent Filtering**:
     -   **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
@@ -131,6 +132,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ADX_TIMEFRAME` | Timeframe for ADX calculation (e.g., `1m`, `5m`). | `1m` |
 | `ADX_PERIOD` | Number of candles for ADX calculation. | `14` |
 | `ADX_THRESHOLD` | ADX strength threshold to trigger trade signals. | `25` |
+| `ENABLE_FEARGREED_STRATEGY` | Toggle Fear & Greed entry signal. | `false` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 
 ### Filters & Dynamic Thresholds
