@@ -820,6 +820,9 @@ class TradingBot {
         }
 
         try {
+            const positions = db.getPositions();
+            const openPosition = positions.find(p => p.symbol === symbol);
+
             let vwapSide = null;
             let rsiSide = null;
             let adxSide = null;
@@ -968,7 +971,12 @@ class TradingBot {
 
             // --- 5. Fear & Greed Strategy ---
             if (cfg.ENABLE_FEARGREED_STRATEGY) {
-                if (this.fearAndGreed) {
+                if (openPosition) {
+                    const posSide = (openPosition.side || '').toLowerCase();
+                    fgSide = 'ignore';
+                    logger.info(`Bypassing Fear & Greed strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
+                    decisionRecord.fearAndGreed = { classification: 'Bypassed (Open Position)', signal: fgSide };
+                } else if (this.fearAndGreed) {
                     const classification = (this.fearAndGreed.classification || '').toLowerCase();
                     if (classification === 'fear') {
                         fgSide = 'sell';
@@ -1022,8 +1030,7 @@ class TradingBot {
                 return;
             }
 
-            const positions = db.getPositions();
-            const hasPosition = positions.some(p => p.symbol === symbol);
+            const hasPosition = !!openPosition;
             const maxPositions = cfg.MAX_OPEN_POSITIONS || 3;
             if (!hasPosition && positions.length >= maxPositions) {
                 logger.info(`Max open positions (${maxPositions}) reached. Holding bot from opening new position for ${symbol}.`);

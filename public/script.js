@@ -217,10 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         fearGreedValue.textContent = `${val} (${classif})`;
 
                         // Dynamic color styling
-                        if (val <= 20) fearGreedValue.style.color = 'var(--danger)';
-                        else if (val <= 40) fearGreedValue.style.color = 'orange';
-                        else if (val <= 60) fearGreedValue.style.color = 'var(--text-muted)';
-                        else if (val <= 80) fearGreedValue.style.color = 'var(--accent)';
+                        if (val < 20) fearGreedValue.style.color = 'var(--danger)';
+                        else if (val < 40) fearGreedValue.style.color = 'orange';
+                        else if (val < 60) fearGreedValue.style.color = 'var(--text-muted)';
+                        else if (val < 80) fearGreedValue.style.color = 'var(--accent)';
                         else fearGreedValue.style.color = '#00ff00';
                     } else {
                         fearGreedValue.textContent = 'N/A';
