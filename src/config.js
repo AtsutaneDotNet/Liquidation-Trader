@@ -41,7 +41,7 @@ function getConfig() {
         ENABLE_DYNAMIC_THRESHOLDS: dbConfig.ENABLE_DYNAMIC_THRESHOLDS === 'true',
         ENABLE_RUNAWAY_HELPER: dbConfig.ENABLE_RUNAWAY_HELPER === 'true',
         RUNAWAY_HELPER_THRESHOLD: parseFloat(dbConfig.RUNAWAY_HELPER_THRESHOLD) || -10,
-        LIQUIDATIONREPORT_KEY: dbConfig.LIQUIDATIONREPORT_KEY || '',
+        RAPIDAPI_KEY: dbConfig.RAPIDAPI_KEY || '',
         COIN_BLACKLIST: dbConfig.COIN_BLACKLIST || '',
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
         WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,

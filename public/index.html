@@ -529,7 +529,7 @@
                                             <input type="checkbox" id="ENABLE_FEARGREED_STRATEGY" name="ENABLE_FEARGREED_STRATEGY" value="true" style="width: auto; margin: 0;"> Enable Fear & Greed
                                         </label>
                                         <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
-                                            When enabled, the bot checks the Crypto Fear & Greed Index from CoinMarketCap. <strong style="color: orange;">Fear</strong> gives a <strong style="color: var(--danger);">SHORT</strong> signal, while <strong style="color: var(--accent);">Greed</strong> gives a <strong style="color: #00ff00;">LONG</strong> signal. <strong style="color: var(--danger);">Extreme Fear</strong> and <strong style="color: #00ff00;">Extreme Greed</strong> yield no signal (blocking trades if confluence is required), and <strong style="color: var(--text-muted);">Neutral</strong> ignores this strategy completely, allowing other enabled strategies to decide. Requires CMC API Key.
+                                            When enabled, the bot checks the Crypto Fear & Greed Index from RapidAPI. <strong style="color: orange;">Fear</strong> gives a <strong style="color: var(--danger);">SHORT</strong> signal, while <strong style="color: var(--accent);">Greed</strong> gives a <strong style="color: #00ff00;">LONG</strong> signal. <strong style="color: var(--danger);">Extreme Fear</strong> and <strong style="color: #00ff00;">Extreme Greed</strong> yield no signal (blocking trades if confluence is required), and <strong style="color: var(--text-muted);">Neutral</strong> ignores this strategy completely, allowing other enabled strategies to decide. Requires RapidAPI Key.
                                         </p>
                                     </div>
                                 </div>
@@ -606,8 +606,8 @@
                                         </label>
                                     </div>
                                     <div class="col">
-                                        <label for="LIQUIDATIONREPORT_KEY">RapidAPI Key</label>
-                                        <input type="password" id="LIQUIDATIONREPORT_KEY" name="LIQUIDATIONREPORT_KEY"
+                                        <label for="RAPIDAPI_KEY">RapidAPI Key</label>
+                                        <input type="password" id="RAPIDAPI_KEY" name="RAPIDAPI_KEY"
                                             placeholder="Paste your RapidAPI Key here">
                                     </div>
                                 </div>

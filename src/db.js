@@ -69,7 +69,7 @@ try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } ca
 try { db.exec('ALTER TABLE account_state ADD COLUMN yearly_pnl REAL DEFAULT 0;'); } catch(e) {}
 
 
-const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'LIQUIDATIONREPORT_KEY'];
+const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
 
 function getConfig() {
     const rows = db.prepare('SELECT * FROM config').all();
@@ -130,11 +130,26 @@ const defaults = {
     ENABLE_DYNAMIC_THRESHOLDS: 'false',
     ENABLE_RUNAWAY_HELPER: 'false',
     RUNAWAY_HELPER_THRESHOLD: '-10',
-    LIQUIDATIONREPORT_KEY: '',
+    RAPIDAPI_KEY: '',
     COIN_BLACKLIST: ''
 };
 
 const currentConfig = getConfig();
+
+// Migration: LIQUIDATIONREPORT_KEY -> RAPIDAPI_KEY
+if (currentConfig['LIQUIDATIONREPORT_KEY'] !== undefined) {
+    const oldValue = currentConfig['LIQUIDATIONREPORT_KEY'];
+    setConfig('RAPIDAPI_KEY', oldValue);
+    try {
+        db.prepare("DELETE FROM config WHERE key = 'LIQUIDATIONREPORT_KEY'").run();
+        console.log('[Migration] Successfully migrated LIQUIDATIONREPORT_KEY to RAPIDAPI_KEY in SQLite database.');
+    } catch (e) {
+        console.error('[Migration] Failed to delete old LIQUIDATIONREPORT_KEY:', e.message);
+    }
+    currentConfig['RAPIDAPI_KEY'] = oldValue;
+    delete currentConfig['LIQUIDATIONREPORT_KEY'];
+}
+
 for (const [k, v] of Object.entries(defaults)) {
     if (currentConfig[k] === undefined) {
         setConfig(k, v);

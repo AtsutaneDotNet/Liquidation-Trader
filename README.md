@@ -11,7 +11,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 ## ✨ Key Features
 
 -   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter** using the unified **CCXT Pro** engine.
--   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) [Liquidation Report](https://liquidation.report) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events.
+-   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events.
 -   **Advanced Strategies**:
     -   **Dual VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price, utilizing independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
@@ -53,7 +53,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   **Database**: SQLite (via `better-sqlite3`) with encryption.
 -   **API Integration**: [CCXT Pro](https://ccxt.pro/) for unified exchange WebSocket and REST connectivity.
 -   **Frontend**: Vanilla HTML/JS with a premium CSS design system (Glassmorphism).
--   **Indicator Source**: [RapidAPI Liquidation Report](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) for dynamic thresholds.
+-   **Indicator Source**: [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) for dynamic thresholds & Fear & Greed Index.
 
 ---
 
@@ -64,7 +64,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   [Node.js](https://nodejs.org/) (v18 or higher recommended)
 -   API Keys for your preferred exchanges.
 -   (Optional) [CoinMarketCap API Key](https://coinmarketcap.com/api/) for symbol filtering.
--   (Optional) [RapidAPI Key](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) for Dynamic Thresholds (**Pro Plan and above recommended**).
+-   (Optional) [RapidAPI Key](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) for Dynamic Thresholds & Fear & Greed Index.
 
 ### Installation
 
@@ -140,8 +140,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | :--- | :--- | :--- |
 | `LIQUIDATION_VALUE_THRESHOLD` | Min liquidation value to trigger trade. | `1000` |
 | `LIQUIDATION_VALUE_CURRENCY` | Currency for threshold (`USD` or `BTC`). | `USD` |
-| `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven [Liquidation Report](https://liquidation.report) values. | `false` |
-| `LIQUIDATIONREPORT_KEY` | Your [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-report) Key. | |
+| `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) values. | `false` |
+| `RAPIDAPI_KEY` | Your [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) Key. | |
 | `CMC_FILTER_ENABLED` | Restrict trading to high-liquidity coins. | `false` |
 | `CMC_RANK_LIMIT` | Top N coins to include in the whitelist. | `100` |
 | `COIN_BLACKLIST` | Comma-separated list of symbols to ignore. | |

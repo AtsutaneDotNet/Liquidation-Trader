@@ -94,7 +94,7 @@ class WebServer {
             if (responseConfig.API_SECRET) responseConfig.API_SECRET = '********';
             if (responseConfig.WEBUI_USERNAME) responseConfig.WEBUI_USERNAME = responseConfig.WEBUI_USERNAME.replace(/.(?=.{4})/g, '*');
             if (responseConfig.WEBUI_PASSWORD) responseConfig.WEBUI_PASSWORD = '********';
-            if (responseConfig.LIQUIDATIONREPORT_KEY) responseConfig.LIQUIDATIONREPORT_KEY = responseConfig.LIQUIDATIONREPORT_KEY.replace(/.(?=.{4})/g, '*');
+            if (responseConfig.RAPIDAPI_KEY) responseConfig.RAPIDAPI_KEY = responseConfig.RAPIDAPI_KEY.replace(/.(?=.{4})/g, '*');
             res.json(responseConfig);
         });
 
@@ -104,7 +104,7 @@ class WebServer {
                 const updates = req.body;
                 for (const [key, value] of Object.entries(updates)) {
                     // Prevent overwriting API key with mask
-                    const isMaskedKey = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'LIQUIDATIONREPORT_KEY'].includes(key);
+                    const isMaskedKey = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'RAPIDAPI_KEY'].includes(key);
                     if (isMaskedKey && typeof value === 'string' && value.includes('*')) {
                         continue;
                     }

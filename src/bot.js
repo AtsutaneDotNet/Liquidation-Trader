@@ -563,16 +563,16 @@ class TradingBot {
     async fetchDynamicThresholds() {
         if (!this.isRunning) return;
         const cfg = this.config.get();
-        if (!cfg.ENABLE_DYNAMIC_THRESHOLDS || !cfg.LIQUIDATIONREPORT_KEY) {
+        if (!cfg.ENABLE_DYNAMIC_THRESHOLDS || !cfg.RAPIDAPI_KEY) {
             return;
         }
 
         try {
             logger.info('Fetching dynamic liquidation thresholds from liquidation.report...');
-            const response = await fetch('https://liquidation-report.p.rapidapi.com/data', {
+            const response = await fetch('https://liquidation-trader.p.rapidapi.com/data', {
                 headers: {
-                    'X-RapidAPI-Key': cfg.LIQUIDATIONREPORT_KEY,
-                    'X-RapidAPI-Host': 'liquidation-report.p.rapidapi.com'
+                    'X-RapidAPI-Key': cfg.RAPIDAPI_KEY,
+                    'X-RapidAPI-Host': 'liquidation-trader.p.rapidapi.com'
                 }
             });
 
@@ -599,16 +599,33 @@ class TradingBot {
     async updateFearAndGreed() {
         if (!this.isRunning) return;
         const cfg = this.config.get();
-        if (!cfg.CMC_API_KEY) {
+        if (!cfg.RAPIDAPI_KEY) {
             this.fearAndGreed = null;
             return;
         }
 
         try {
-            const data = await cmc.getFearAndGreed(cfg.CMC_API_KEY);
-            if (data) {
-                this.fearAndGreed = data;
-                logger.debug(`Updated Fear and Greed Index: ${data.value} (${data.classification})`);
+            const response = await fetch('https://liquidation-trader.p.rapidapi.com/sentiment', {
+                headers: {
+                    'X-RapidAPI-Key': cfg.RAPIDAPI_KEY,
+                    'X-RapidAPI-Host': 'liquidation-trader.p.rapidapi.com'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API returned status ${response.status}`);
+            }
+
+            const json = await response.json();
+            if (json && json.data && json.data.market && json.data.market.fear_greed) {
+                const fg = json.data.market.fear_greed;
+                this.fearAndGreed = {
+                    value: fg.value,
+                    classification: fg.label
+                };
+                logger.debug(`Updated Fear and Greed Index: ${fg.value} (${fg.label})`);
+            } else {
+                this.fearAndGreed = null;
             }
         } catch (e) {
             logger.warn(`Failed to update Fear and Greed Index: ${e.message}`);
