@@ -138,7 +138,15 @@ const currentConfig = getConfig();
 
 // Migration: LIQUIDATIONREPORT_KEY -> RAPIDAPI_KEY
 if (currentConfig['LIQUIDATIONREPORT_KEY'] !== undefined) {
-    const oldValue = currentConfig['LIQUIDATIONREPORT_KEY'];
+    let oldValue = currentConfig['LIQUIDATIONREPORT_KEY'];
+    // Decrypt if it was stored encrypted (since it's not in the new ENCRYPTED_KEYS)
+    if (oldValue && /^[a-f0-9]{32}:[a-f0-9]{32}:[a-f0-9]+$/i.test(oldValue)) {
+        try {
+            oldValue = decrypt(oldValue);
+        } catch (e) {
+            console.error('[Migration] Failed to decrypt LIQUIDATIONREPORT_KEY during migration:', e.message);
+        }
+    }
     setConfig('RAPIDAPI_KEY', oldValue);
     try {
         db.prepare("DELETE FROM config WHERE key = 'LIQUIDATIONREPORT_KEY'").run();
@@ -148,6 +156,24 @@ if (currentConfig['LIQUIDATIONREPORT_KEY'] !== undefined) {
     }
     currentConfig['RAPIDAPI_KEY'] = oldValue;
     delete currentConfig['LIQUIDATIONREPORT_KEY'];
+}
+
+// Migration: Fix double encrypted RAPIDAPI_KEY
+const finalConfig = getConfig();
+if (finalConfig['RAPIDAPI_KEY']) {
+    const keyVal = finalConfig['RAPIDAPI_KEY'];
+    const isDoubleEncrypted = /^[a-f0-9]{32}:[a-f0-9]{32}:[a-f0-9]+$/i.test(keyVal);
+    if (isDoubleEncrypted) {
+        try {
+            const decryptedOnceMore = decrypt(keyVal);
+            if (decryptedOnceMore) {
+                setConfig('RAPIDAPI_KEY', decryptedOnceMore);
+                console.log('[Migration] Successfully fixed double-encrypted RAPIDAPI_KEY in SQLite database.');
+            }
+        } catch (e) {
+            console.error('[Migration] Failed to decrypt double-encrypted RAPIDAPI_KEY:', e.message);
+        }
+    }
 }
 
 for (const [k, v] of Object.entries(defaults)) {
