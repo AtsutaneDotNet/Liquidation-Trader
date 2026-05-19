@@ -305,6 +305,13 @@
                                     <input type="password" id="API_SECRET" name="API_SECRET" placeholder="Wait...">
                                 </div>
                             </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="RAPIDAPI_KEY">RapidAPI Key</label>
+                                    <input type="password" id="RAPIDAPI_KEY" name="RAPIDAPI_KEY"
+                                        placeholder="Paste your RapidAPI Key here">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- WebUI Security Section -->
@@ -350,12 +357,18 @@
                                 Browser Notifications
                             </h3>
                             <div class="form-group row">
-                                <div class="col" style="flex-direction: row; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                                    <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
-                                        <input type="checkbox" id="BROWSER_NOTIFICATIONS_ENABLED" style="width: auto; margin: 0;"> Enable Desktop Notifications
+                                <div class="col"
+                                    style="flex-direction: row; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                        <input type="checkbox" id="BROWSER_NOTIFICATIONS_ENABLED"
+                                            style="width: auto; margin: 0;"> Enable Desktop Notifications
                                     </label>
-                                    <button type="button" id="btn-request-notifications" class="btn" style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); display: none;">Authorize Permission</button>
-                                    <span id="notification-status" style="font-size: 12px; color: var(--text-muted);"></span>
+                                    <button type="button" id="btn-request-notifications" class="btn"
+                                        style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); display: none;">Authorize
+                                        Permission</button>
+                                    <span id="notification-status"
+                                        style="font-size: 12px; color: var(--text-muted);"></span>
                                 </div>
                             </div>
                         </div>
@@ -525,11 +538,24 @@
                                 <h4>Fear & Greed Strategy</h4>
                                 <div class="form-group row">
                                     <div class="col">
-                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                            <input type="checkbox" id="ENABLE_FEARGREED_STRATEGY" name="ENABLE_FEARGREED_STRATEGY" value="true" style="width: auto; margin: 0;"> Enable Fear & Greed
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_FEARGREED_STRATEGY"
+                                                name="ENABLE_FEARGREED_STRATEGY" value="true"
+                                                style="width: auto; margin: 0;"> Enable Fear & Greed
                                         </label>
                                         <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
-                                            When enabled, the bot checks the Crypto Fear & Greed Index from RapidAPI. <strong style="color: orange;">Fear</strong> gives a <strong style="color: var(--danger);">SHORT</strong> signal, while <strong style="color: var(--accent);">Greed</strong> gives a <strong style="color: #00ff00;">LONG</strong> signal. <strong style="color: var(--danger);">Extreme Fear</strong> and <strong style="color: #00ff00;">Extreme Greed</strong> yield no signal (blocking trades if confluence is required), and <strong style="color: var(--text-muted);">Neutral</strong> ignores this strategy completely, allowing other enabled strategies to decide. Requires RapidAPI Key.
+                                            When enabled, the bot checks the Crypto Fear & Greed Index from RapidAPI.
+                                            <strong style="color: orange;">Fear</strong> gives a <strong
+                                                style="color: var(--danger);">SHORT</strong> signal, while <strong
+                                                style="color: var(--accent);">Greed</strong> gives a <strong
+                                                style="color: #00ff00;">LONG</strong> signal. <strong
+                                                style="color: var(--danger);">Extreme Fear</strong> and <strong
+                                                style="color: #00ff00;">Extreme Greed</strong> yield no signal (blocking
+                                            trades if confluence is required), and <strong
+                                                style="color: var(--text-muted);">Neutral</strong> ignores this strategy
+                                            completely, allowing other enabled strategies to decide. Requires RapidAPI
+                                            Key.
                                         </p>
                                     </div>
                                 </div>
@@ -595,7 +621,7 @@
                                 </div>
                             </div>
                             <div class="page-subsection" style="margin-top: 1rem;">
-                                <h4>Liquidation.report API (Dynamic Thresholds)</h4>
+                                <h4>Dynamic Thresholds</h4>
                                 <div class="form-group row">
                                     <div class="col">
                                         <label
@@ -604,11 +630,9 @@
                                                 name="ENABLE_DYNAMIC_THRESHOLDS" value="true"
                                                 style="width: auto; margin: 0;"> Enable Dynamic Thresholds
                                         </label>
-                                    </div>
-                                    <div class="col">
-                                        <label for="RAPIDAPI_KEY">RapidAPI Key</label>
-                                        <input type="password" id="RAPIDAPI_KEY" name="RAPIDAPI_KEY"
-                                            placeholder="Paste your RapidAPI Key here">
+                                        <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
+                                            When enabled, the bot periodically fetches dynamic, statistically-driven mean liquidation threshold values for each base asset via RapidAPI. This dynamic threshold overrides the static <strong>Min Liquidation Value Threshold</strong> for each coin, ensuring trade evaluations are triggered only by liquidations that are statistically significant relative to each coin's typical volume. Requires RapidAPI Key.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
