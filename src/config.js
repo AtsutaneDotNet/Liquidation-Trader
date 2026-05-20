@@ -39,6 +39,7 @@ function getConfig() {
         CMC_FILTER_ENABLED: dbConfig.CMC_FILTER_ENABLED === 'true',
         ENABLE_DCA_MARTINGALE: dbConfig.ENABLE_DCA_MARTINGALE === 'true',
         ENABLE_DYNAMIC_THRESHOLDS: dbConfig.ENABLE_DYNAMIC_THRESHOLDS === 'true',
+        REPLACE_BELOW_MIN_THRESHOLD: dbConfig.REPLACE_BELOW_MIN_THRESHOLD === 'true',
         ENABLE_RUNAWAY_HELPER: dbConfig.ENABLE_RUNAWAY_HELPER === 'true',
         RUNAWAY_HELPER_THRESHOLD: parseFloat(dbConfig.RUNAWAY_HELPER_THRESHOLD) || -10,
         RAPIDAPI_KEY: dbConfig.RAPIDAPI_KEY || '',

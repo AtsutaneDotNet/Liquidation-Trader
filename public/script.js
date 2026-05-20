@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_FEARGREED_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_FEARGREED_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -144,6 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
         if (dynamicCb) formData.set('ENABLE_DYNAMIC_THRESHOLDS', dynamicCb.checked ? 'true' : 'false');
+
+        const replaceBelowMinCb = document.getElementById('REPLACE_BELOW_MIN_THRESHOLD');
+        if (replaceBelowMinCb) formData.set('REPLACE_BELOW_MIN_THRESHOLD', replaceBelowMinCb.checked ? 'true' : 'false');
 
         const runawayCb = document.getElementById('ENABLE_RUNAWAY_HELPER');
         if (runawayCb) formData.set('ENABLE_RUNAWAY_HELPER', runawayCb.checked ? 'true' : 'false');
@@ -524,6 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currencyInput = document.getElementById('LIQUIDATION_VALUE_CURRENCY');
                 const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
                 const useDynamic = dynamicCb ? dynamicCb.checked : false;
+                const replaceBelowMinCb = document.getElementById('REPLACE_BELOW_MIN_THRESHOLD');
+                const replaceBelowMin = replaceBelowMinCb ? replaceBelowMinCb.checked : false;
 
                 const threshold = parseFloat(thresholdInput ? thresholdInput.value : 0) || 0;
                 const currency = currencyInput ? currencyInput.value : 'USD';
@@ -541,7 +546,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const symUpper = (liq.symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
                         for (const base of bases) {
                             if (symUpper.startsWith(base)) {
-                                currentThreshold = globalDynamicThresholds[base];
+                                const dynVal = globalDynamicThresholds[base];
+                                if (replaceBelowMin && dynVal < effectiveThreshold) {
+                                    currentThreshold = effectiveThreshold;
+                                } else {
+                                    currentThreshold = dynVal;
+                                }
                                 break;
                             }
                         }

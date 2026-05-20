@@ -676,8 +676,14 @@ class TradingBot {
 
                 for (const base of bases) {
                     if (symUpper.startsWith(base)) {
-                        thresholdInUsd = this.dynamicThresholds[base];
-                        usingDynamic = true;
+                        const dynVal = this.dynamicThresholds[base];
+                        if (cfg.REPLACE_BELOW_MIN_THRESHOLD && dynVal < thresholdInUsd) {
+                            // Do not use dynamic value since it is below minimum static threshold
+                            usingDynamic = false;
+                        } else {
+                            thresholdInUsd = dynVal;
+                            usingDynamic = true;
+                        }
                         break;
                     }
                 }

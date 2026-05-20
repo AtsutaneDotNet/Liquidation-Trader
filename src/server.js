@@ -179,6 +179,7 @@ class WebServer {
             const result = [];
             const symbols = Array.isArray(this.bot.symbols) ? this.bot.symbols : [];
             const isDynamicEnabled = currentConfig.ENABLE_DYNAMIC_THRESHOLDS;
+            const replaceBelowMin = currentConfig.REPLACE_BELOW_MIN_THRESHOLD;
             const btcPrice = this.bot.btcUsdPrice || 1;
             const staticUsd = currentConfig.LIQUIDATION_VALUE_CURRENCY === 'BTC' ? currentConfig.LIQUIDATION_VALUE_THRESHOLD * btcPrice : currentConfig.LIQUIDATION_VALUE_THRESHOLD;
             const dynamicMap = this.bot.dynamicThresholds || {};
@@ -190,12 +191,24 @@ class WebServer {
                 
                 if (isDynamicEnabled) {
                     const symUpper = sym.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    let foundDynamic = false;
                     for (const base of bases) {
                         if (symUpper.startsWith(base)) {
-                            threshold = dynamicMap[base];
-                            status = 'Dynamic (API)';
+                            const dynVal = dynamicMap[base];
+                            if (replaceBelowMin && dynVal < staticUsd) {
+                                threshold = staticUsd;
+                                status = 'Static (Config)';
+                            } else {
+                                threshold = dynVal;
+                                status = 'Dynamic (API)';
+                            }
+                            foundDynamic = true;
                             break;
                         }
+                    }
+                    if (!foundDynamic) {
+                        threshold = staticUsd;
+                        status = 'Static (Config)';
                     }
                 }
                 
