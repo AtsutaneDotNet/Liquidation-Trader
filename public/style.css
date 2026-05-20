@@ -1005,3 +1005,51 @@ canvas#pnl-chart {
     font-weight: 500;
     padding: 8px;
 }
+
+/* ── Premium Search Bar Custom Styles ── */
+.page-header-with-search {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 300px;
+    width: 100%;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 16px 10px 40px !important;
+    background-color: rgba(28, 31, 41, 0.6) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    border-radius: var(--radius) !important;
+    font-size: 14px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    backdrop-filter: blur(5px);
+}
+
+.search-input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 12px rgba(0, 230, 118, 0.2) !important;
+    background-color: rgba(28, 31, 41, 0.8) !important;
+}
+
+.search-input:focus + .search-icon {
+    color: var(--accent);
+}

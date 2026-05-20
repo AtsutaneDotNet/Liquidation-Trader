@@ -39,6 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return; // Stop further execution on login page
     }
 
+    // Caching for real-time table search/filtering
+    let cachedLiquidations = [];
+    let cachedClosedPnls = [];
+    let cachedDynamicThresholds = [];
+    let cachedTradeDecisions = [];
+
     // Sidebar Toggle
     const sidebar = document.getElementById('sidebar');
 
@@ -515,6 +521,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodyLiquidations = document.getElementById('liquidations-tbody');
     const tbodyDashboardLiquidations = document.getElementById('dashboard-liquidations-tbody');
 
+    // Cache parameters for dynamic thresholds inside liquidations rendering
+    let lastEffectiveThreshold = 0;
+    let lastBases = [];
+    let lastUseDynamic = false;
+    let lastReplaceBelowMin = false;
+
+    function renderLiquidations() {
+        if (!tbodyLiquidations) return;
+
+        const searchVal = (document.getElementById('liquidations-search')?.value || '').trim().toUpperCase();
+        let filtered = cachedLiquidations;
+
+        if (searchVal) {
+            filtered = cachedLiquidations.filter(liq =>
+                (liq.symbol || '').toUpperCase().includes(searchVal)
+            );
+        }
+
+        const getThresholdForLiq = (liq) => {
+            let currentThreshold = lastEffectiveThreshold;
+            if (lastUseDynamic) {
+                const symUpper = (liq.symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                for (const base of lastBases) {
+                    if (symUpper.startsWith(base)) {
+                        const dynVal = globalDynamicThresholds[base];
+                        if (lastReplaceBelowMin && dynVal < lastEffectiveThreshold) {
+                            currentThreshold = lastEffectiveThreshold;
+                        } else {
+                            currentThreshold = dynVal;
+                        }
+                        break;
+                    }
+                }
+            }
+            return currentThreshold;
+        };
+
+        if (filtered.length === 0) {
+            tbodyLiquidations.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching liquidations found for "${searchVal}" &mdash;` : '&mdash; No liquidations tracked yet &mdash;'}</td></tr>`;
+        } else {
+            tbodyLiquidations.innerHTML = filtered.map(liq => {
+                const sideStr = (liq.side || '').toLowerCase();
+                const isBuy = sideStr === 'buy' || sideStr === 'long';
+                const sideClz = isBuy ? 'side-buy' : 'side-sell';
+                const timeStr = new Date(liq.timestamp).toLocaleTimeString();
+
+                const liqValue = parseFloat(liq.value || 0);
+                const currentThreshold = getThresholdForLiq(liq);
+                const isHighValue = liqValue >= currentThreshold;
+                const highlightClass = isHighValue ? (isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell') : '';
+
+                return `<tr class="${highlightClass}">
+                    <td style="color: var(--text-muted);">${timeStr}</td>
+                    <td style="text-transform: capitalize;">${liq.exchange}</td>
+                    <td><strong>${liq.symbol}</strong></td>
+                    <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
+                    <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
+                    <td>${liq.amount}</td>
+                    <td>${formatSelectedCurrency(liq.value)}</td>
+                </tr>`;
+            }).join('');
+        }
+    }
+
     function fetchLiquidations() {
         const liqPageActive = document.getElementById('liquidations-page').classList.contains('active');
         const dashPageActive = document.getElementById('dashboard').classList.contains('active');
@@ -523,32 +593,34 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/liquidations')
             .then(res => res.json())
             .then(data => {
+                cachedLiquidations = data || [];
+
                 const thresholdInput = document.getElementById('LIQUIDATION_VALUE_THRESHOLD');
                 const currencyInput = document.getElementById('LIQUIDATION_VALUE_CURRENCY');
                 const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
-                const useDynamic = dynamicCb ? dynamicCb.checked : false;
+                lastUseDynamic = dynamicCb ? dynamicCb.checked : false;
                 const replaceBelowMinCb = document.getElementById('REPLACE_BELOW_MIN_THRESHOLD');
-                const replaceBelowMin = replaceBelowMinCb ? replaceBelowMinCb.checked : false;
+                lastReplaceBelowMin = replaceBelowMinCb ? replaceBelowMinCb.checked : false;
 
                 const threshold = parseFloat(thresholdInput ? thresholdInput.value : 0) || 0;
                 const currency = currencyInput ? currencyInput.value : 'USD';
 
-                let effectiveThreshold = threshold;
+                lastEffectiveThreshold = threshold;
                 if (currency === 'BTC' && currentBtcPrice > 0) {
-                    effectiveThreshold = threshold * currentBtcPrice;
+                    lastEffectiveThreshold = threshold * currentBtcPrice;
                 }
 
-                const bases = Object.keys(globalDynamicThresholds).sort((a, b) => b.length - a.length);
+                lastBases = Object.keys(globalDynamicThresholds).sort((a, b) => b.length - a.length);
 
                 const getThresholdForLiq = (liq) => {
-                    let currentThreshold = effectiveThreshold;
-                    if (useDynamic) {
+                    let currentThreshold = lastEffectiveThreshold;
+                    if (lastUseDynamic) {
                         const symUpper = (liq.symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        for (const base of bases) {
+                        for (const base of lastBases) {
                             if (symUpper.startsWith(base)) {
                                 const dynVal = globalDynamicThresholds[base];
-                                if (replaceBelowMin && dynVal < effectiveThreshold) {
-                                    currentThreshold = effectiveThreshold;
+                                if (lastReplaceBelowMin && dynVal < lastEffectiveThreshold) {
+                                    currentThreshold = lastEffectiveThreshold;
                                 } else {
                                     currentThreshold = dynVal;
                                 }
@@ -559,36 +631,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     return currentThreshold;
                 };
 
-                if (tbodyLiquidations) {
-                    if (!data || data.length === 0) {
-                        tbodyLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No liquidations tracked yet &mdash;</td></tr>';
-                    } else {
-                        tbodyLiquidations.innerHTML = data.map(liq => {
-                            const sideStr = (liq.side || '').toLowerCase();
-                            const isBuy = sideStr === 'buy' || sideStr === 'long';
-                            const sideClz = isBuy ? 'side-buy' : 'side-sell';
-                            const timeStr = new Date(liq.timestamp).toLocaleTimeString();
+                // Render page content
+                renderLiquidations();
 
-                            const liqValue = parseFloat(liq.value || 0);
-                            const currentThreshold = getThresholdForLiq(liq);
-                            const isHighValue = liqValue >= currentThreshold;
-                            const highlightClass = isHighValue ? (isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell') : '';
-
-                            return `<tr class="${highlightClass}">
-                                <td style="color: var(--text-muted);">${timeStr}</td>
-                                <td style="text-transform: capitalize;">${liq.exchange}</td>
-                                <td><strong>${liq.symbol}</strong></td>
-                                <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
-                                <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
-                                <td>${liq.amount}</td>
-                                <td>${formatSelectedCurrency(liq.value)}</td>
-                            </tr>`;
-                        }).join('');
-                    }
-                }
-
+                // Render dashboard high value stream
                 if (tbodyDashboardLiquidations && dashPageActive) {
-                    const highValueLiqs = data.filter(liq => parseFloat(liq.value || 0) >= getThresholdForLiq(liq)).slice(0, 10);
+                    const highValueLiqs = cachedLiquidations.filter(liq => parseFloat(liq.value || 0) >= getThresholdForLiq(liq)).slice(0, 10);
                     if (highValueLiqs.length === 0) {
                         tbodyDashboardLiquidations.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No recent high value liquidations &mdash;</td></tr>';
                     } else {
@@ -619,6 +667,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // Closed PnL Live Stream
     const tbodyClosedPnl = document.getElementById('closed-pnl-tbody');
 
+    function renderClosedPnlsTable() {
+        if (!tbodyClosedPnl) return;
+
+        const searchVal = (document.getElementById('closed-pnl-search')?.value || '').trim().toUpperCase();
+        let filtered = cachedClosedPnls;
+
+        if (searchVal) {
+            filtered = cachedClosedPnls.filter(record =>
+                (record.symbol || '').toUpperCase().includes(searchVal)
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbodyClosedPnl.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching records found for "${searchVal}" &mdash;` : '&mdash; No closed PnL records found &mdash;'}</td></tr>`;
+        } else {
+            tbodyClosedPnl.innerHTML = filtered.map(record => {
+                const timeStr = new Date(record.timestamp).toLocaleString();
+                const sideClz = record.side === 'BUY' ? 'side-buy' : (record.side === 'SELL' ? 'side-sell' : '');
+                const entryStr = record.entry_price ? parseFloat(record.entry_price).toFixed(4) : 'N/A';
+                const closeStr = record.close_price ? parseFloat(record.close_price).toFixed(4) : 'N/A';
+                const sizeStr = record.size ? record.size : 'N/A';
+
+                return `<tr>
+                    <td style="color: var(--text-muted);">${timeStr}</td>
+                    <td><strong>${record.symbol}</strong></td>
+                    <td><span class="${sideClz}">${record.side}</span></td>
+                    <td>${sizeStr}</td>
+                    <td>${entryStr}</td>
+                    <td>${closeStr}</td>
+                    <td>${formatPnl(record.pnl)}</td>
+                </tr>`;
+            }).join('');
+        }
+    }
+
     function fetchClosedPnlsTable() {
         const pageActive = document.getElementById('closed-pnl-page') && document.getElementById('closed-pnl-page').classList.contains('active');
         if (!pageActive) return;
@@ -626,29 +709,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/closed-pnl')
             .then(res => res.json())
             .then(data => {
-                if (tbodyClosedPnl) {
-                    if (!data || data.length === 0) {
-                        tbodyClosedPnl.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; No closed PnL records found &mdash;</td></tr>';
-                    } else {
-                        tbodyClosedPnl.innerHTML = data.map(record => {
-                            const timeStr = new Date(record.timestamp).toLocaleString();
-                            const sideClz = record.side === 'BUY' ? 'side-buy' : (record.side === 'SELL' ? 'side-sell' : '');
-                            const entryStr = record.entry_price ? parseFloat(record.entry_price).toFixed(4) : 'N/A';
-                            const closeStr = record.close_price ? parseFloat(record.close_price).toFixed(4) : 'N/A';
-                            const sizeStr = record.size ? record.size : 'N/A';
-
-                            return `<tr>
-                                <td style="color: var(--text-muted);">${timeStr}</td>
-                                <td><strong>${record.symbol}</strong></td>
-                                <td><span class="${sideClz}">${record.side}</span></td>
-                                <td>${sizeStr}</td>
-                                <td>${entryStr}</td>
-                                <td>${closeStr}</td>
-                                <td>${formatPnl(record.pnl)}</td>
-                            </tr>`;
-                        }).join('');
-                    }
-                }
+                cachedClosedPnls = data || [];
+                renderClosedPnlsTable();
             }).catch(console.error);
     }
 
@@ -659,6 +721,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodyDynamicThresholds = document.getElementById('dynamic-thresholds-tbody');
     let globalDynamicThresholds = {};
 
+    function renderDynamicThresholdTable() {
+        if (!tbodyDynamicThresholds) return;
+
+        const searchVal = (document.getElementById('dynamic-thresholds-search')?.value || '').trim().toUpperCase();
+        let filtered = cachedDynamicThresholds;
+
+        if (searchVal) {
+            filtered = cachedDynamicThresholds.filter(item =>
+                (item.symbol || '').toUpperCase().includes(searchVal)
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbodyDynamicThresholds.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching dynamic thresholds found for "${searchVal}" &mdash;` : '&mdash; Bot is stopped or no pairs loaded &mdash;'}</td></tr>`;
+        } else {
+            tbodyDynamicThresholds.innerHTML = filtered.map(item => {
+                const isDynamic = item.status === 'Dynamic (API)';
+                const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
+                return `<tr>
+                    <td><strong>${item.symbol}</strong></td>
+                    <td>${formatSelectedCurrency(item.threshold)}</td>
+                    <td><span style="color: ${statusColor}">${item.status}</span></td>
+                </tr>`;
+            }).join('');
+        }
+    }
+
     function fetchDynamicThresholdTable() {
         const pageActive = document.getElementById('dynamic-thresholds-page').classList.contains('active');
 
@@ -667,21 +756,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 const mapped = data.mapped || [];
                 globalDynamicThresholds = data.rawMap || {};
+                cachedDynamicThresholds = mapped;
 
-                if (pageActive && tbodyDynamicThresholds) {
-                    if (mapped.length === 0) {
-                        tbodyDynamicThresholds.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash; Bot is stopped or no pairs loaded &mdash;</td></tr>';
-                    } else {
-                        tbodyDynamicThresholds.innerHTML = mapped.map(item => {
-                            const isDynamic = item.status === 'Dynamic (API)';
-                            const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
-                            return `<tr>
-                                <td><strong>${item.symbol}</strong></td>
-                                <td>${formatSelectedCurrency(item.threshold)}</td>
-                                <td><span style="color: ${statusColor}">${item.status}</span></td>
-                            </tr>`;
-                        }).join('');
-                    }
+                if (pageActive) {
+                    renderDynamicThresholdTable();
                 }
             }).catch(console.error);
     }
@@ -693,6 +771,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodyTradeDecisions = document.getElementById('trade-decisions-tbody');
     const tbodyDashboardTradeDecisions = document.getElementById('dashboard-trade-decisions-tbody');
 
+    const formatStrategy = (strat, name) => {
+        if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
+        if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
+
+        const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
+        const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
+
+        let details = '';
+        if (name === 'VWAP') {
+            details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
+        } else if (name === 'RSI') {
+            details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
+        } else if (name === 'ADX') {
+            details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
+        } else if (name === 'F&G') {
+            details = `State: ${strat.classification}`;
+        }
+
+        return `<div style="font-size: 0.85em;">
+            <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
+            <span style="color: var(--text-muted)">${details}</span>
+        </div>`;
+    };
+
+    const renderTradeDecisionRow = (record) => {
+        const timeStr = new Date(record.timestamp).toLocaleTimeString();
+        const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
+        const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
+
+        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+        const symbol = currencySymbols[cur] || '$';
+        const convertedPrice = convertFromUsd(record.price || 0);
+        const priceFormatted = symbol + parseFloat(convertedPrice).toFixed(cur === 'BTC' ? 6 : (cur === 'JPY' ? 0 : 4));
+
+        return `<tr>
+            <td style="color: var(--text-muted);">${timeStr}</td>
+            <td><strong>${record.symbol}</strong></td>
+            <td>${priceFormatted}</td>
+            <td>${formatStrategy(record.vwap, 'VWAP')}</td>
+            <td>${formatStrategy(record.rsi, 'RSI')}</td>
+            <td>${formatStrategy(record.adx, 'ADX')}</td>
+            <td>${formatStrategy(record.fearAndGreed, 'F&G')}</td>
+            <td>${confluenceText}</td>
+            <td><span class="${outcomeClz}">${record.reason}</span></td>
+        </tr>`;
+    };
+
+    function renderTradeDecisions() {
+        if (!tbodyTradeDecisions) return;
+
+        const searchVal = (document.getElementById('trade-decisions-search')?.value || '').trim().toUpperCase();
+        let filtered = cachedTradeDecisions;
+
+        if (searchVal) {
+            filtered = cachedTradeDecisions.filter(record =>
+                (record.symbol || '').toUpperCase().includes(searchVal)
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbodyTradeDecisions.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
+        } else {
+            tbodyTradeDecisions.innerHTML = filtered.map(renderTradeDecisionRow).join('');
+        }
+    }
+
     function fetchTradeDecisions() {
         const pageActive = document.getElementById('trade-decisions-page').classList.contains('active');
         const dashPageActive = document.getElementById('dashboard').classList.contains('active');
@@ -701,67 +845,18 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/trade-decisions')
             .then(res => res.json())
             .then(data => {
-                const formatStrategy = (strat, name) => {
-                    if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
-                    if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
+                cachedTradeDecisions = data || [];
 
-                    const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
-                    const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
-
-                    let details = '';
-                    if (name === 'VWAP') {
-                        details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
-                    } else if (name === 'RSI') {
-                        details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
-                    } else if (name === 'ADX') {
-                        details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
-                    } else if (name === 'F&G') {
-                        details = `State: ${strat.classification}`;
-                    }
-
-                    return `<div style="font-size: 0.85em;">
-                        <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
-                        <span style="color: var(--text-muted)">${details}</span>
-                    </div>`;
-                };
-
-                const renderRow = (record) => {
-                    const timeStr = new Date(record.timestamp).toLocaleTimeString();
-                    const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
-                    const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
-
-                    const cur = localStorage.getItem('selectedCurrency') || 'USD';
-                    const symbol = currencySymbols[cur] || '$';
-                    const convertedPrice = convertFromUsd(record.price || 0);
-                    const priceFormatted = symbol + parseFloat(convertedPrice).toFixed(cur === 'BTC' ? 6 : (cur === 'JPY' ? 0 : 4));
-
-                    return `<tr>
-                        <td style="color: var(--text-muted);">${timeStr}</td>
-                        <td><strong>${record.symbol}</strong></td>
-                        <td>${priceFormatted}</td>
-                        <td>${formatStrategy(record.vwap, 'VWAP')}</td>
-                        <td>${formatStrategy(record.rsi, 'RSI')}</td>
-                        <td>${formatStrategy(record.adx, 'ADX')}</td>
-                        <td>${formatStrategy(record.fearAndGreed, 'F&G')}</td>
-                        <td>${confluenceText}</td>
-                        <td><span class="${outcomeClz}">${record.reason}</span></td>
-                    </tr>`;
-                };
-
-                if (tbodyTradeDecisions && pageActive) {
-                    if (!data || data.length === 0) {
-                        tbodyTradeDecisions.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash; No trade evaluations tracked yet &mdash;</td></tr>';
-                    } else {
-                        tbodyTradeDecisions.innerHTML = data.map(renderRow).join('');
-                    }
+                if (pageActive) {
+                    renderTradeDecisions();
                 }
 
                 if (tbodyDashboardTradeDecisions && dashPageActive) {
-                    const confluenceOnly = data.filter(record => record.confluence && record.confluence.matched).slice(0, 10);
+                    const confluenceOnly = cachedTradeDecisions.filter(record => record.confluence && record.confluence.matched).slice(0, 10);
                     if (confluenceOnly.length === 0) {
-                        tbodyDashboardTradeDecisions.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>';
+                        tbodyDashboardTradeDecisions.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>';
                     } else {
-                        tbodyDashboardTradeDecisions.innerHTML = confluenceOnly.map(renderRow).join('');
+                        tbodyDashboardTradeDecisions.innerHTML = confluenceOnly.map(renderTradeDecisionRow).join('');
                     }
                 }
             }).catch(console.error);
@@ -1072,5 +1167,26 @@ document.addEventListener('DOMContentLoaded', () => {
             updateBtcRateAndReRender();
         });
     }
+
+    // ── Search Input Listeners ─────────────────────────────────
+    const searchBindings = [
+        { id: 'liquidations-search', render: renderLiquidations },
+        { id: 'closed-pnl-search', render: renderClosedPnlsTable },
+        { id: 'dynamic-thresholds-search', render: renderDynamicThresholdTable },
+        { id: 'trade-decisions-search', render: renderTradeDecisions }
+    ];
+
+    searchBindings.forEach(binding => {
+        const inputEl = document.getElementById(binding.id);
+        if (inputEl) {
+            inputEl.addEventListener('input', binding.render);
+            inputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    inputEl.value = '';
+                    binding.render();
+                }
+            });
+        }
+    });
 
 });
