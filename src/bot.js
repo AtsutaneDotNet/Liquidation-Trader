@@ -1002,11 +1002,11 @@ class TradingBot {
                 } else if (this.fearAndGreed) {
                     const classification = (this.fearAndGreed.classification || '').toLowerCase();
                     if (classification === 'fear') {
-                        fgSide = 'sell';
-                        logger.info(`Fear & Greed Condition met: Fear. Signal: SHORT.`);
-                    } else if (classification === 'greed') {
                         fgSide = 'buy';
-                        logger.info(`Fear & Greed Condition met: Greed. Signal: LONG.`);
+                        logger.info(`Fear & Greed Condition met: Fear. Signal: LONG.`);
+                    } else if (classification === 'greed') {
+                        fgSide = 'sell';
+                        logger.info(`Fear & Greed Condition met: Greed. Signal: SHORT.`);
                     } else if (classification === 'neutral') {
                         fgSide = 'ignore';
                         logger.info(`Fear & Greed Condition met: Neutral. Ignoring F&G for confluence.`);
