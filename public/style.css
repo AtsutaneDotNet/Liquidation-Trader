@@ -175,6 +175,42 @@ header {
     margin-bottom: 1px;
 }
 
+.main-header {
+    height: 60px;
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.header-logo {
+    margin-bottom: 0;
+    font-size: 20px;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.currency-switcher-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.currency-switcher-container .currency-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 header h2 {
     font-size: 28px;
     font-weight: 600;
@@ -744,6 +780,22 @@ input:focus {
 }
 
 @media (max-width: 600px) {
+    .main-header {
+        padding: 0 12px;
+    }
+    
+    .header-logo {
+        font-size: 16px !important;
+    }
+    
+    .currency-switcher-container {
+        gap: 4px !important;
+    }
+    
+    .currency-switcher-container .currency-label {
+        display: none;
+    }
+
     .app-container {
         flex-direction: column;
     }
