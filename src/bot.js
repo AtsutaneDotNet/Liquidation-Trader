@@ -520,7 +520,87 @@ class TradingBot {
                 logMsg += ` (Trailing: No)`;
             }
             logger.info(logMsg);
-            await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
+            try {
+                await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
+            } catch (error) {
+                logger.error(`Failed to set TP/SL/Trailing for ${symbol}: ${error.message}`);
+                await this.executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg);
+            }
+        }
+    }
+
+    async executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg) {
+        try {
+            logger.info(`Running fallback logic for ${symbol}...`);
+            let currentPrice = null;
+
+            if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.has['fetchTicker']) {
+                const ticker = await this.tradeExchange.exchange.fetchTicker(symbol);
+                if (ticker && ticker.last) {
+                    currentPrice = ticker.last;
+                }
+            }
+
+            if (!currentPrice) {
+                logger.warn(`Fallback for ${symbol} failed: Could not fetch latest price.`);
+                return;
+            }
+
+            let pnlPercent = 0;
+            if (orderSide === 'buy') {
+                pnlPercent = ((currentPrice - entryPrice) / entryPrice) * 100;
+            } else {
+                pnlPercent = ((entryPrice - currentPrice) / entryPrice) * 100;
+            }
+
+            let targetThresholdPercent = cfg.TAKE_PROFIT_PERCENTAGE;
+            if (trailingPercent > 0 && cfg.TRAILING_ACTIVATION_PERCENTAGE > 0) {
+                targetThresholdPercent = Math.min(cfg.TAKE_PROFIT_PERCENTAGE, cfg.TRAILING_ACTIVATION_PERCENTAGE);
+            }
+
+            let shouldClose = false;
+            
+            if (orderSide === 'buy') {
+                const passedTp = currentPrice >= formattedTp;
+                const passedTrailing = (trailingPercent > 0 && targetTrailingActivationPrice > 0) ? (currentPrice >= targetTrailingActivationPrice) : false;
+                
+                if (passedTp || passedTrailing) {
+                    if (pnlPercent >= targetThresholdPercent) {
+                        shouldClose = true;
+                    } else {
+                        logger.info(`Fallback holding ${symbol} close: Pnl% (${pnlPercent.toFixed(2)}%) is below threshold (${targetThresholdPercent}%).`);
+                    }
+                }
+            } else if (orderSide === 'sell') {
+                const passedTp = currentPrice <= formattedTp;
+                const passedTrailing = (trailingPercent > 0 && targetTrailingActivationPrice > 0) ? (currentPrice <= targetTrailingActivationPrice) : false;
+                
+                if (passedTp || passedTrailing) {
+                    if (pnlPercent >= targetThresholdPercent) {
+                        shouldClose = true;
+                    } else {
+                        logger.info(`Fallback holding ${symbol} close: Pnl% (${pnlPercent.toFixed(2)}%) is below threshold (${targetThresholdPercent}%).`);
+                    }
+                }
+            }
+
+            if (shouldClose) {
+                logger.info(`Market volatility fallback triggered! Closing position for ${symbol} at Market. Pnl%: ${pnlPercent.toFixed(2)}% >= Target Threshold: ${targetThresholdPercent}%`);
+                const closeSide = orderSide === 'buy' ? 'sell' : 'buy';
+                
+                // Market close with reduceOnly
+                await this.tradeExchange.exchange.createOrder(
+                    symbol,
+                    'market',
+                    closeSide,
+                    contracts,
+                    undefined,
+                    { reduceOnly: true }
+                );
+                logger.info(`Emergency fallback close executed successfully for ${symbol}.`);
+            }
+        } catch (e) {
+            logger.error(`Fallback close error for ${symbol}: ${e.message}`);
         }
     }
 
