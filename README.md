@@ -16,7 +16,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **Dual VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price, utilizing independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
     -   **ADX (Average Directional Index)**: Detect trend strength and potential reversals/exhaustion.
-    -   **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Fear gives SHORT, Greed gives LONG, Extreme states halt trading.
+    -   **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Fear gives LONG, Greed gives SHORT, Extreme states halt trading.
     -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX, Fear & Greed) to align before executing a trade for higher precision.
     -   **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 -   **Intelligent Filtering**:
