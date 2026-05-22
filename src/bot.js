@@ -1204,6 +1204,12 @@ class TradingBot {
 
     async executeTrade(symbol, side, entryPrice, cfg) {
         try {
+            const isLeverageAllowed = await this.tradeExchange.checkMaxLeverage(symbol, cfg.TRADE_LEVERAGE);
+            if (!isLeverageAllowed) {
+                logger.info(`Max leverage for ${symbol} is lower than the configured TRADE_LEVERAGE (${cfg.TRADE_LEVERAGE}). Skipping order.`);
+                return;
+            }
+
             const balance = await this.tradeExchange.fetchBalance();
             const totalWalletUSDT = balance.USDT ? balance.USDT.total : 0;
 

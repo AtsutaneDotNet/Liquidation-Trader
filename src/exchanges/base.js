@@ -74,6 +74,44 @@ class BaseExchange {
     }
 
     /**
+     * Check if the exchange allows the requested leverage for a specific symbol
+     * @param {string} symbol - Symbol to check
+     * @param {number} requiredLeverage - The leverage requested in settings
+     * @returns {boolean} - true if allowed or undetermined, false if strictly exceeds max allowed
+     */
+    async checkMaxLeverage(symbol, requiredLeverage) {
+        if (!this.exchange) return true;
+
+        try {
+            // First check if the max leverage is available in the loaded markets cache
+            const market = this.exchange.markets ? this.exchange.markets[symbol] : null;
+            if (market && market.limits && market.limits.leverage && market.limits.leverage.max !== undefined) {
+                return requiredLeverage <= market.limits.leverage.max;
+            }
+
+            // Fallback to fetchLeverageTiers if supported by the exchange
+            if (this.exchange.has['fetchLeverageTiers']) {
+                const tiers = await this.exchange.fetchLeverageTiers([symbol]);
+                if (tiers && tiers[symbol] && tiers[symbol].length > 0) {
+                    // Extract the maximum leverage from all the tiers available for this symbol
+                    const maxAllowed = Math.max(...tiers[symbol].map(t => t.maxLeverage || 0));
+                    if (maxAllowed > 0) {
+                        return requiredLeverage <= maxAllowed;
+                    }
+                }
+            }
+        } catch (e) {
+            if (require('../logger')) {
+                const logger = require('../logger');
+                logger.warn(`[BaseExchange] Failed to verify max leverage for ${symbol}: ${e.message}`);
+            }
+        }
+
+        // Return true if we couldn't definitively prove it's not allowed
+        return true;
+    }
+
+    /**
      * Recursively search for a key in an object up to a certain depth
      */
     findKeyInObj(obj, targetKey, depth = 0) {
