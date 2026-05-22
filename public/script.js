@@ -1264,13 +1264,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Settings Section Tab Switching Logic ───────────────────
+    // ── Settings Section Tab Switching Logic & Scroll Enhancements ──
     const settingsTabBtns = document.querySelectorAll('.settings-tab-btn');
     const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+    const tabsContainer = document.querySelector('.settings-tabs');
 
-    if (settingsTabBtns.length > 0) {
+    if (settingsTabBtns.length > 0 && tabsContainer) {
+        let isDragging = false;
+        let dragThreshold = 6; // pixels to distinguish click vs drag
+        let startDragX = 0;
+
+        tabsContainer.addEventListener('mousedown', (e) => {
+            startDragX = e.pageX;
+            isDragging = false;
+        });
+
+        tabsContainer.addEventListener('mousemove', (e) => {
+            if (Math.abs(e.pageX - startDragX) > dragThreshold) {
+                isDragging = true;
+            }
+        });
+
         settingsTabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                if (isDragging) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return;
+                }
                 settingsTabBtns.forEach(b => b.classList.remove('active'));
                 settingsTabContents.forEach(c => c.classList.remove('active'));
 
@@ -1282,7 +1303,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        // 1. Mouse wheel horizontal scrolling translation
+        tabsContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                tabsContainer.scrollLeft += e.deltaY * 0.85; // scroll multiplier
+            }
+        }, { passive: false });
+
+        // 2. Click-and-drag swipe scrolling on desktop
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        tabsContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            tabsContainer.classList.add('dragging');
+            startX = e.pageX - tabsContainer.offsetLeft;
+            scrollLeft = tabsContainer.scrollLeft;
+        });
+
+        tabsContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            tabsContainer.classList.remove('dragging');
+        });
+
+        tabsContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            tabsContainer.classList.remove('dragging');
+        });
+
+        tabsContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - tabsContainer.offsetLeft;
+            const walk = (x - startX) * 1.6; // multiplier for fluid sensitivity
+            tabsContainer.scrollLeft = scrollLeft - walk;
+        });
     }
 
 });
+
 

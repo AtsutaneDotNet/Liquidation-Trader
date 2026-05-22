@@ -1119,6 +1119,13 @@ canvas#pnl-chart {
     gap: 6px;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.settings-tabs.dragging {
+    cursor: grabbing;
 }
 
 .settings-tabs::-webkit-scrollbar {
@@ -1141,6 +1148,9 @@ canvas#pnl-chart {
     white-space: nowrap;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .settings-tab-btn:hover {
