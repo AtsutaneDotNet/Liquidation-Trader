@@ -1233,6 +1233,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const importedConfig = JSON.parse(evt.target.result);
                     
+                    const excludedKeys = [
+                        'API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 
+                        'RAPIDAPI_KEY', 'CMC_API_KEY', 'WEBUI_AUTH_ENABLED', 
+                        'LOG_LEVEL', 'WEB_PORT', 'WEB_HOST'
+                    ];
+                    for (const key of excludedKeys) {
+                        delete importedConfig[key];
+                    }
+                    
                     fetch('/api/config', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

@@ -126,8 +126,12 @@ class WebServer {
         this.app.get('/api/config/export', (req, res) => {
             const currentConfig = config.get();
             const exportConfig = { ...currentConfig };
-            const sensitiveKeys = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'RAPIDAPI_KEY', 'CMC_API_KEY'];
-            for (const key of sensitiveKeys) {
+            const excludedKeys = [
+                'API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 
+                'RAPIDAPI_KEY', 'CMC_API_KEY', 'WEBUI_AUTH_ENABLED', 
+                'LOG_LEVEL', 'WEB_PORT', 'WEB_HOST'
+            ];
+            for (const key of excludedKeys) {
                 delete exportConfig[key];
             }
             res.setHeader('Content-disposition', 'attachment; filename=liquidation-trader-settings.json');
