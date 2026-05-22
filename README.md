@@ -13,10 +13,10 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter** using the unified **CCXT Pro** engine.
 -   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events.
 -   **Advanced Strategies**:
-    -   **Dual VWAP Offset**: Trade based on price deviations from a rolling Volume Weighted Average Price calculated dynamically from historical OHLCV data. Supports configurable timeframes (`VWAP_TIMEFRAME`) and period lengths (`VWAP_PERIOD`), with independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
-    -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
-    -   **ADX (Average Directional Index)**: Detect trend strength and exhaustion. Generates entry signals only when the ADX value is below or equal to the configured threshold (indicating trend weakness/exhaustion or consolidation), using -DI and +DI crossovers.
-    -   **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Fear gives LONG, Greed gives SHORT, Extreme states halt trading.
+    -   **Dual VWAP Offset**: Trade based on price deviations from a rolling Volume Weighted Average Price calculated dynamically from historical OHLCV data. Supports configurable timeframes (`VWAP_TIMEFRAME`) and period lengths (`VWAP_PERIOD`), with independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries. Custom signal directions (buy/sell/none) can be configured for VWAP deviations.
+    -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions. Configure advanced threshold directions (above/under) and custom signal actions.
+    -   **ADX (Average Directional Index)**: Detect trend strength and exhaustion. Generates entry signals based on customizable threshold direction (above/under) and DI crossover logic.
+    -   **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Custom mapping for Extreme Fear, Fear, Greed, and Extreme Greed signals.
     -   **Confluence Mode**: Require all enabled strategies (VWAP, RSI, ADX, Fear & Greed) to align in the same direction before executing a trade for maximum precision.
     -   **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 -   **Intelligent Filtering**:
@@ -32,7 +32,8 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **Max Leverage Safeguard**: Automatically checks the maximum allowed leverage on the exchange for the specific symbol (via market limit cache or `fetchLeverageTiers` API) and skips the trade if the configured `TRADE_LEVERAGE` exceeds it, preventing API errors and protecting account health.
     -   **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
 -   **Premium Web UI**:
-    -   **Glassmorphism Design**: A modern, sleek, and responsive interface.
+    -   **Modern 6-Tab Interface**: A fully responsive, premium 6-tab configuration system with detailed descriptions, desktop drag-to-scroll swipe gestures, and glassmorphism design.
+    -   **Import/Export Settings**: Seamlessly backup and restore your strategy configurations without exposing sensitive API keys.
     -   **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
     -   **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
     -   **Trade Decisions Page**: A dedicated log of every trade evaluation, showing indicator values and the logic behind entry decisions.
@@ -126,16 +127,29 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `VWAP_PERIOD` | Number of candles for VWAP calculation. | `14` |
 | `OFFSET_LONG_PERCENTAGE` | Price deviation from VWAP required for LONG entry. | `0.5%` |
 | `OFFSET_SHORT_PERCENTAGE` | Price deviation from VWAP required for SHORT entry. | `0.5%` |
+| `VWAP_UPPER_SIGNAL` | Signal direction for price above VWAP offset. | `sell` |
+| `VWAP_LOWER_SIGNAL` | Signal direction for price below VWAP offset. | `buy` |
 | `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
 | `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
 | `RSI_PERIOD` | Number of candles for RSI calculation. | `14` |
 | `RSI_OVERBOUGHT` | RSI upper bound representing overbought levels. | `70` |
 | `RSI_OVERSOLD` | RSI lower bound representing oversold levels. | `30` |
+| `RSI_OVERBOUGHT_DIR` | Condition for RSI overbought (`above`/`under`). | `above` |
+| `RSI_OVERBOUGHT_SIGNAL` | Signal direction when overbought. | `sell` |
+| `RSI_OVERSOLD_DIR` | Condition for RSI oversold (`above`/`under`). | `under` |
+| `RSI_OVERSOLD_SIGNAL` | Signal direction when oversold. | `buy` |
 | `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |
 | `ADX_TIMEFRAME` | Timeframe for ADX calculation (e.g., `1m`, `5m`). | `1m` |
 | `ADX_PERIOD` | Number of candles for ADX calculation. | `14` |
-| `ADX_THRESHOLD` | ADX strength threshold (trade is only considered if ADX is below or equal to threshold). | `25` |
+| `ADX_THRESHOLD` | ADX strength threshold. | `25` |
+| `ADX_THRESHOLD_DIR` | Condition for ADX threshold (`above`/`under`). | `under` |
+| `ADX_PDI_SIGNAL` | Signal direction when +DI crosses -DI. | `sell` |
+| `ADX_MDI_SIGNAL` | Signal direction when -DI crosses +DI. | `buy` |
 | `ENABLE_FEARGREED_STRATEGY` | Toggle Fear & Greed entry signal. | `false` |
+| `FG_FEAR_SIGNAL` | Signal direction during Fear. | `buy` |
+| `FG_GREED_SIGNAL` | Signal direction during Greed. | `sell` |
+| `FG_EXTREME_FEAR_SIGNAL` | Signal direction during Extreme Fear. | `none` |
+| `FG_EXTREME_GREED_SIGNAL` | Signal direction during Extreme Greed. | `none` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 
 ### Filters & Dynamic Thresholds
