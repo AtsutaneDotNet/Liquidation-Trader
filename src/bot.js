@@ -1011,11 +1011,11 @@ class TradingBot {
                             logger.info(`Lower Offset (-${cfg.OFFSET_LONG_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
 
                             if (currentPrice > upperOffsetValue) {
-                                vwapSide = 'sell';
-                                logger.info(`VWAP Condition met: Price ${currentPrice} > Upper VWAP ${upperOffsetValue.toFixed(4)}. Signal: SHORT.`);
+                                vwapSide = cfg.VWAP_UPPER_SIGNAL === 'none' ? null : cfg.VWAP_UPPER_SIGNAL;
+                                logger.info(`VWAP Condition met: Price ${currentPrice} > Upper VWAP ${upperOffsetValue.toFixed(4)}. Signal: ${vwapSide ? vwapSide.toUpperCase() : 'NONE'}.`);
                             } else if (currentPrice < lowerOffsetValue) {
-                                vwapSide = 'buy';
-                                logger.info(`VWAP Condition met: Price ${currentPrice} < Lower VWAP ${lowerOffsetValue.toFixed(4)}. Signal: LONG.`);
+                                vwapSide = cfg.VWAP_LOWER_SIGNAL === 'none' ? null : cfg.VWAP_LOWER_SIGNAL;
+                                logger.info(`VWAP Condition met: Price ${currentPrice} < Lower VWAP ${lowerOffsetValue.toFixed(4)}. Signal: ${vwapSide ? vwapSide.toUpperCase() : 'NONE'}.`);
                             } else {
                                 logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
                             }
@@ -1055,11 +1055,11 @@ class TradingBot {
                         if (rsi !== null) {
                             logger.info(`RSI (${period}, ${cfg.RSI_TIMEFRAME}): ${rsi.toFixed(2)}`);
                             if (rsi <= cfg.RSI_OVERSOLD) {
-                                rsiSide = 'buy';
-                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} <= Oversold (${cfg.RSI_OVERSOLD}). Signal: LONG.`);
+                                rsiSide = cfg.RSI_OVERSOLD_SIGNAL === 'none' ? null : cfg.RSI_OVERSOLD_SIGNAL;
+                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} <= Oversold (${cfg.RSI_OVERSOLD}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
                             } else if (rsi >= cfg.RSI_OVERBOUGHT) {
-                                rsiSide = 'sell';
-                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} >= Overbought (${cfg.RSI_OVERBOUGHT}). Signal: SHORT.`);
+                                rsiSide = cfg.RSI_OVERBOUGHT_SIGNAL === 'none' ? null : cfg.RSI_OVERBOUGHT_SIGNAL;
+                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} >= Overbought (${cfg.RSI_OVERBOUGHT}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
                             } else {
                                 logger.info(`RSI Condition: Value is neutral. No trade signal.`);
                             }
@@ -1099,18 +1099,19 @@ class TradingBot {
 
                         if (adxResult !== null) {
                             logger.info(`ADX (${period}, ${cfg.ADX_TIMEFRAME}): ${adxResult.adx.toFixed(2)} | +DI: ${adxResult.plusDI.toFixed(2)} | -DI: ${adxResult.minusDI.toFixed(2)}`);
-                            if (adxResult.adx <= threshold) {
+                            const isAdxConditionMet = cfg.ADX_THRESHOLD_DIR === 'above' ? (adxResult.adx >= threshold) : (adxResult.adx <= threshold);
+                            if (isAdxConditionMet) {
                                 if (adxResult.plusDI > adxResult.minusDI) {
-                                    adxSide = 'sell';
-                                    logger.info(`ADX Condition met: ADX <= ${threshold} and +DI > -DI. Signal: SHORT.`);
+                                    adxSide = cfg.ADX_PDI_SIGNAL === 'none' ? null : cfg.ADX_PDI_SIGNAL;
+                                    logger.info(`ADX Condition met: ADX ${cfg.ADX_THRESHOLD_DIR} ${threshold} and +DI > -DI. Signal: ${adxSide ? adxSide.toUpperCase() : 'NONE'}.`);
                                 } else if (adxResult.minusDI > adxResult.plusDI) {
-                                    adxSide = 'buy';
-                                    logger.info(`ADX Condition met: ADX <= ${threshold} and -DI > +DI. Signal: LONG.`);
+                                    adxSide = cfg.ADX_MDI_SIGNAL === 'none' ? null : cfg.ADX_MDI_SIGNAL;
+                                    logger.info(`ADX Condition met: ADX ${cfg.ADX_THRESHOLD_DIR} ${threshold} and -DI > +DI. Signal: ${adxSide ? adxSide.toUpperCase() : 'NONE'}.`);
                                 } else {
-                                    logger.info(`ADX Condition: Value is weak but DIs are equal. No trade signal.`);
+                                    logger.info(`ADX Condition: Value met threshold but DIs are equal. No trade signal.`);
                                 }
                             } else {
-                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is above threshold (${threshold}). No trade signal.`);
+                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is not ${cfg.ADX_THRESHOLD_DIR} threshold (${threshold}). No trade signal.`);
                             }
                             decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide };
                         }
@@ -1134,16 +1135,22 @@ class TradingBot {
                 } else if (this.fearAndGreed) {
                     const classification = (this.fearAndGreed.classification || '').toLowerCase();
                     if (classification === 'fear') {
-                        fgSide = 'buy';
-                        logger.info(`Fear & Greed Condition met: Fear. Signal: LONG.`);
+                        fgSide = cfg.FG_FEAR_SIGNAL === 'none' ? null : cfg.FG_FEAR_SIGNAL;
+                        logger.info(`Fear & Greed Condition met: Fear. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
                     } else if (classification === 'greed') {
-                        fgSide = 'sell';
-                        logger.info(`Fear & Greed Condition met: Greed. Signal: SHORT.`);
+                        fgSide = cfg.FG_GREED_SIGNAL === 'none' ? null : cfg.FG_GREED_SIGNAL;
+                        logger.info(`Fear & Greed Condition met: Greed. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
                     } else if (classification === 'neutral') {
                         fgSide = 'ignore';
                         logger.info(`Fear & Greed Condition met: Neutral. Ignoring F&G for confluence.`);
+                    } else if (classification === 'extreme fear') {
+                        fgSide = cfg.FG_EXTREME_FEAR_SIGNAL === 'none' ? null : cfg.FG_EXTREME_FEAR_SIGNAL;
+                        logger.info(`Fear & Greed Condition met: Extreme Fear. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
+                    } else if (classification === 'extreme greed') {
+                        fgSide = cfg.FG_EXTREME_GREED_SIGNAL === 'none' ? null : cfg.FG_EXTREME_GREED_SIGNAL;
+                        logger.info(`Fear & Greed Condition met: Extreme Greed. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
                     } else {
-                        // Extreme Fear or Extreme Greed keeps fgSide = null to block trade
+                        // Unknown or unexpected keeps fgSide = null
                         logger.info(`Fear & Greed Condition met: ${this.fearAndGreed.classification}. Signal: NONE (No trade).`);
                     }
                     decisionRecord.fearAndGreed = { classification: this.fearAndGreed.classification, signal: fgSide };

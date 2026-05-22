@@ -134,7 +134,18 @@ const defaults = {
     ENABLE_RUNAWAY_HELPER: 'false',
     RUNAWAY_HELPER_THRESHOLD: '-10',
     RAPIDAPI_KEY: '',
-    COIN_BLACKLIST: ''
+    COIN_BLACKLIST: '',
+    VWAP_UPPER_SIGNAL: 'short',
+    VWAP_LOWER_SIGNAL: 'long',
+    RSI_OVERBOUGHT_SIGNAL: 'short',
+    RSI_OVERSOLD_SIGNAL: 'long',
+    ADX_THRESHOLD_DIR: 'under',
+    ADX_PDI_SIGNAL: 'short',
+    ADX_MDI_SIGNAL: 'long',
+    FG_FEAR_SIGNAL: 'long',
+    FG_GREED_SIGNAL: 'short',
+    FG_EXTREME_FEAR_SIGNAL: 'none',
+    FG_EXTREME_GREED_SIGNAL: 'none'
 };
 
 const currentConfig = getConfig();

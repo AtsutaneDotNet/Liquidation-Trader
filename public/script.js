@@ -177,6 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Add Advance Strategy Settings manually since they are outside the form
+        const advInputs = [
+            'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL',
+            'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL',
+            'ADX_THRESHOLD_DIR', 'ADX_PDI_SIGNAL', 'ADX_MDI_SIGNAL',
+            'FG_FEAR_SIGNAL', 'FG_GREED_SIGNAL', 'FG_EXTREME_FEAR_SIGNAL', 'FG_EXTREME_GREED_SIGNAL'
+        ];
+        advInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) formData.set(id, el.value);
+        });
+
         const data = Object.fromEntries(formData.entries());
 
         fetch('/api/config', {
@@ -1349,6 +1361,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const x = e.pageX - tabsContainer.offsetLeft;
             const walk = (x - startX) * 1.6; // multiplier for fluid sensitivity
             tabsContainer.scrollLeft = scrollLeft - walk;
+        });
+    }
+
+    // ── Advance Strategy Modal Logic ──
+    const btnOpenAdvanceModal = document.getElementById('openAdvanceStrategyModal');
+    const advanceModal = document.getElementById('advanceStrategyModal');
+    const btnCloseAdvanceModal = document.getElementById('closeAdvanceModalBtn');
+    const btnSaveAdvanceModal = document.getElementById('saveAdvanceModalBtn');
+
+    if (btnOpenAdvanceModal && advanceModal) {
+        btnOpenAdvanceModal.addEventListener('click', (e) => {
+            e.preventDefault();
+            advanceModal.style.display = 'flex';
+        });
+
+        const closeModal = () => {
+            advanceModal.style.display = 'none';
+        };
+
+        if (btnCloseAdvanceModal) btnCloseAdvanceModal.addEventListener('click', closeModal);
+        if (btnSaveAdvanceModal) {
+            btnSaveAdvanceModal.addEventListener('click', () => {
+                closeModal();
+                showToast({
+                    title: 'Settings Applied Locally',
+                    message: 'Advance strategies applied locally. Save Configuration to commit changes.',
+                    type: 'info'
+                });
+            });
+        }
+
+        // Close on outside click
+        advanceModal.addEventListener('click', (e) => {
+            if (e.target === advanceModal) {
+                closeModal();
+            }
         });
     }
 

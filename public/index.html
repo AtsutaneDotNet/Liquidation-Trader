@@ -490,6 +490,12 @@
                                 <p class="info-msg" style="margin-bottom: 1.5rem; background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; padding: 10px; border-radius: 4px;">
                                     <strong>Confluence Rule:</strong> If multiple strategies are enabled simultaneously, all active indicators must align in the same direction to execute a trade.
                                 </p>
+                                <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                                    <a href="#" id="openAdvanceStrategyModal" style="color: #3b82f6; text-decoration: none; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; transition: color 0.2s;" onmouseover="this.style.color='#60a5fa'" onmouseout="this.style.color='#3b82f6'">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        Advance Strategy Settings
+                                    </a>
+                                </div>
 
                                 <!-- VWAP Sub-section -->
                                 <div class="page-subsection">
@@ -1109,6 +1115,142 @@
             </section>
         </main>
     </div>
+
+    <!-- Advance Strategy Modal -->
+    <div id="advanceStrategyModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content card">
+            <header style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Advance Strategy Settings
+                </h3>
+                <button id="closeAdvanceModalBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </header>
+            <div class="modal-body form-container" style="max-height: 70vh; overflow-y: auto; padding-right: 0.5rem;">
+                
+                <div class="page-subsection">
+                    <h4>VWAP Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Upper VWAP Signal</label>
+                            <select id="VWAP_UPPER_SIGNAL" class="styled-select">
+                                <option value="short">Short (Default)</option>
+                                <option value="long">Long</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Lower VWAP Signal</label>
+                            <select id="VWAP_LOWER_SIGNAL" class="styled-select">
+                                <option value="long">Long (Default)</option>
+                                <option value="short">Short</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-subsection">
+                    <h4>RSI Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Overbought Signal</label>
+                            <select id="RSI_OVERBOUGHT_SIGNAL" class="styled-select">
+                                <option value="short">Short (Default)</option>
+                                <option value="long">Long</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Oversold Signal</label>
+                            <select id="RSI_OVERSOLD_SIGNAL" class="styled-select">
+                                <option value="long">Long (Default)</option>
+                                <option value="short">Short</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-subsection">
+                    <h4>ADX Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>ADX Threshold Condition</label>
+                            <select id="ADX_THRESHOLD_DIR" class="styled-select">
+                                <option value="under">ADX <= Threshold (Default)</option>
+                                <option value="above">ADX >= Threshold</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>+DI > -DI Signal</label>
+                            <select id="ADX_PDI_SIGNAL" class="styled-select">
+                                <option value="short">Short (Default)</option>
+                                <option value="long">Long</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>-DI > +DI Signal</label>
+                            <select id="ADX_MDI_SIGNAL" class="styled-select">
+                                <option value="long">Long (Default)</option>
+                                <option value="short">Short</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-subsection">
+                    <h4>Fear & Greed Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Fear Signal</label>
+                            <select id="FG_FEAR_SIGNAL" class="styled-select">
+                                <option value="long">Long (Default)</option>
+                                <option value="short">Short</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Greed Signal</label>
+                            <select id="FG_GREED_SIGNAL" class="styled-select">
+                                <option value="short">Short (Default)</option>
+                                <option value="long">Long</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Extreme Fear Signal</label>
+                            <select id="FG_EXTREME_FEAR_SIGNAL" class="styled-select">
+                                <option value="none">None (Default)</option>
+                                <option value="long">Long</option>
+                                <option value="short">Short</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Extreme Greed Signal</label>
+                            <select id="FG_EXTREME_GREED_SIGNAL" class="styled-select">
+                                <option value="none">None (Default)</option>
+                                <option value="short">Short</option>
+                                <option value="long">Long</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <button id="saveAdvanceModalBtn" class="btn btn-primary">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification container -->
     <div id="toast-container"></div>
     <script src="script.js"></script>
