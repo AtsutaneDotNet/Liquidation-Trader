@@ -10,6 +10,8 @@ function getConfig() {
         API_KEY: dbConfig.API_KEY || '',
         API_SECRET: dbConfig.API_SECRET || '',
         ENABLE_VWAP_STRATEGY: dbConfig.ENABLE_VWAP_STRATEGY === 'true',
+        VWAP_PERIOD: parseInt(dbConfig.VWAP_PERIOD) || 14,
+        VWAP_TIMEFRAME: dbConfig.VWAP_TIMEFRAME || '1m',
         ENABLE_RSI_STRATEGY: dbConfig.ENABLE_RSI_STRATEGY === 'true',
         ENABLE_FEARGREED_STRATEGY: dbConfig.ENABLE_FEARGREED_STRATEGY === 'true',
         RSI_PERIOD: parseInt(dbConfig.RSI_PERIOD) || 14,

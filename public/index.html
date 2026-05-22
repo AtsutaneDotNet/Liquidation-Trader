@@ -437,6 +437,26 @@
                                             <input type="checkbox" id="ENABLE_VWAP_STRATEGY" name="ENABLE_VWAP_STRATEGY"
                                                 value="true" style="width: auto; margin: 0;"> Enable VWAP
                                         </label>
+                                        <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
+                                            When enabled, the bot calculates a Rolling VWAP over the specified timeframe and period. A <strong style="color: #00ff00;">LONG</strong> signal is generated when the price drops below the Lower Offset, and a <strong style="color: var(--danger);">SHORT</strong> signal when it rises above the Upper Offset.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label for="VWAP_PERIOD">VWAP Period</label>
+                                        <input type="number" id="VWAP_PERIOD" name="VWAP_PERIOD" step="1" min="1" placeholder="e.g. 14">
+                                    </div>
+                                    <div class="col">
+                                        <label for="VWAP_TIMEFRAME">VWAP Timeframe</label>
+                                        <select id="VWAP_TIMEFRAME" name="VWAP_TIMEFRAME"
+                                            style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                            <option value="1m">1m</option>
+                                            <option value="3m">3m</option>
+                                            <option value="5m">5m</option>
+                                            <option value="15m">15m</option>
+                                            <option value="1h">1h</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="form-group row">
@@ -463,6 +483,9 @@
                                             <input type="checkbox" id="ENABLE_RSI_STRATEGY" name="ENABLE_RSI_STRATEGY"
                                                 value="true" style="width: auto; margin: 0;"> Enable RSI
                                         </label>
+                                        <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
+                                            When enabled, the bot uses the RSI indicator to identify overbought or oversold conditions. A <strong style="color: #00ff00;">LONG</strong> signal is generated when RSI drops below the Oversold threshold, and a <strong style="color: var(--danger);">SHORT</strong> signal when RSI rises above the Overbought threshold.
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="form-group row">
@@ -686,6 +709,9 @@
                                                 name="ENABLE_TRAILING_PROFIT" value="true"
                                                 style="width: auto; margin: 0;"> Enable Trailing
                                         </label>
+                                        <p class="subtitle" style="margin-top: 10px; font-size: 12px;">
+                                            When enabled, the bot tracks your open positions and updates a trailing stop loss to lock in profits. Trailing starts when PnL reaches the <strong>Trailing Activation (%)</strong>, and follows the price at a distance of <strong>Trailing Profit Distance (%)</strong>.
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="form-group row">

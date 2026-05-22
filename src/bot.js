@@ -887,6 +887,28 @@ class TradingBot {
         };
     }
 
+    calculateVWAP(klines, period = 14) {
+        if (!klines || klines.length < period) return null;
+        
+        let cumulativeTPV = 0;
+        let cumulativeVolume = 0;
+        
+        const startIndex = klines.length - period;
+        for (let i = startIndex; i < klines.length; i++) {
+            const high = klines[i][2];
+            const low = klines[i][3];
+            const close = klines[i][4];
+            const volume = klines[i][5];
+            
+            const typicalPrice = (high + low + close) / 3;
+            cumulativeTPV += typicalPrice * volume;
+            cumulativeVolume += volume;
+        }
+        
+        if (cumulativeVolume === 0) return null;
+        return cumulativeTPV / cumulativeVolume;
+    }
+
     async evaluateTrade(symbol, currentPrice) {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
@@ -931,54 +953,84 @@ class TradingBot {
             let adxSide = null;
             let fgSide = null;
 
-            // --- 1. VWAP Strategy ---
-            if (cfg.ENABLE_VWAP_STRATEGY) {
-                const ticker = await this.tradeExchange.fetchTicker(symbol);
-                if (ticker && ticker.vwap) {
-                    const vwap = ticker.vwap;
-                    logger.info(`VWAP: ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
-                    const longOffsetMultiplier = cfg.OFFSET_LONG_PERCENTAGE / 100;
-                    const shortOffsetMultiplier = cfg.OFFSET_SHORT_PERCENTAGE / 100;
-                    const upperOffsetValue = vwap * (1 + shortOffsetMultiplier);
-                    const lowerOffsetValue = vwap * (1 - longOffsetMultiplier);
-
-                    logger.info(`Upper Offset (+${cfg.OFFSET_SHORT_PERCENTAGE}%): ${upperOffsetValue.toFixed(4)}`);
-                    logger.info(`Lower Offset (-${cfg.OFFSET_LONG_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
-
-                    if (currentPrice > upperOffsetValue) {
-                        vwapSide = 'sell';
-                        logger.info(`VWAP Condition met: Price ${currentPrice} > Upper VWAP ${upperOffsetValue.toFixed(4)}. Signal: SHORT.`);
-                    } else if (currentPrice < lowerOffsetValue) {
-                        vwapSide = 'buy';
-                        logger.info(`VWAP Condition met: Price ${currentPrice} < Lower VWAP ${lowerOffsetValue.toFixed(4)}. Signal: LONG.`);
-                    } else {
-                        logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
-                    }
-                    decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide };
-                } else {
-                    logger.info(`No VWAP data available from ticker for ${symbol}.`);
-                    decisionRecord.vwap = { error: 'No data' };
-                }
-            }
-
-            // --- 2. RSI & ADX Shared Data Fetching ---
+            // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
+            const vwapEnabled = cfg.ENABLE_VWAP_STRATEGY;
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
             const adxEnabled = cfg.ENABLE_ADX_STRATEGY;
 
-            if ((rsiEnabled || adxEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
-                // If both are enabled and share the same timeframe, fetch once with max limit
-                if (rsiEnabled && adxEnabled && cfg.RSI_TIMEFRAME === cfg.ADX_TIMEFRAME) {
-                    const rsiLimit = (parseInt(cfg.RSI_PERIOD) || 14) + 100;
-                    const adxLimit = (parseInt(cfg.ADX_PERIOD) || 14) * 2 + 100;
-                    const maxLimit = Math.max(rsiLimit, adxLimit);
+            if ((vwapEnabled || rsiEnabled || adxEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                const activeTimeframes = [];
+                if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
+                if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
+                if (adxEnabled) activeTimeframes.push(cfg.ADX_TIMEFRAME || '1m');
+
+                // Check if all active strategies share the exact same timeframe
+                const allSameTimeframe = activeTimeframes.length > 0 && activeTimeframes.every(tf => tf === activeTimeframes[0]);
+
+                if (activeTimeframes.length > 1 && allSameTimeframe) {
+                    const vLimit = vwapEnabled ? (parseInt(cfg.VWAP_PERIOD) || 14) + 100 : 0;
+                    const rLimit = rsiEnabled ? (parseInt(cfg.RSI_PERIOD) || 14) + 100 : 0;
+                    const aLimit = adxEnabled ? (parseInt(cfg.ADX_PERIOD) || 14) * 2 + 100 : 0;
+                    const maxLimit = Math.max(vLimit, rLimit, aLimit);
 
                     try {
-                        logger.info(`Fetching shared OHLCV for RSI & ADX (${cfg.RSI_TIMEFRAME}, limit: ${maxLimit})...`);
-                        sharedKlines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.RSI_TIMEFRAME, undefined, maxLimit);
+                        logger.info(`Fetching shared OHLCV for Technical Strategies (${activeTimeframes[0]}, limit: ${maxLimit})...`);
+                        sharedKlines = await this.tradeExchange.exchange.fetchOHLCV(symbol, activeTimeframes[0], undefined, maxLimit);
                     } catch (e) {
                         logger.error(`Error fetching shared OHLCV: ${e.message}`);
                     }
+                }
+            }
+
+            // --- 2. VWAP Strategy ---
+            if (vwapEnabled) {
+                if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                    const period = parseInt(cfg.VWAP_PERIOD) || 14;
+                    const tf = cfg.VWAP_TIMEFRAME || '1m';
+                    let klines = sharedKlines;
+
+                    if (!klines) {
+                        try {
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, tf, undefined, period + 100);
+                        } catch (e) {
+                            logger.error(`Error fetching VWAP OHLCV: ${e.message}`);
+                        }
+                    }
+
+                    if (klines && klines.length >= period) {
+                        const vwap = this.calculateVWAP(klines, period);
+                        if (vwap !== null) {
+                            logger.info(`VWAP (${period}, ${tf}): ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
+                            const longOffsetMultiplier = cfg.OFFSET_LONG_PERCENTAGE / 100;
+                            const shortOffsetMultiplier = cfg.OFFSET_SHORT_PERCENTAGE / 100;
+                            const upperOffsetValue = vwap * (1 + shortOffsetMultiplier);
+                            const lowerOffsetValue = vwap * (1 - longOffsetMultiplier);
+
+                            logger.info(`Upper Offset (+${cfg.OFFSET_SHORT_PERCENTAGE}%): ${upperOffsetValue.toFixed(4)}`);
+                            logger.info(`Lower Offset (-${cfg.OFFSET_LONG_PERCENTAGE}%): ${lowerOffsetValue.toFixed(4)}`);
+
+                            if (currentPrice > upperOffsetValue) {
+                                vwapSide = 'sell';
+                                logger.info(`VWAP Condition met: Price ${currentPrice} > Upper VWAP ${upperOffsetValue.toFixed(4)}. Signal: SHORT.`);
+                            } else if (currentPrice < lowerOffsetValue) {
+                                vwapSide = 'buy';
+                                logger.info(`VWAP Condition met: Price ${currentPrice} < Lower VWAP ${lowerOffsetValue.toFixed(4)}. Signal: LONG.`);
+                            } else {
+                                logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
+                            }
+                            decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide };
+                        } else {
+                            logger.info(`VWAP calculation returned null for ${symbol}.`);
+                            decisionRecord.vwap = { error: 'Calculation failed' };
+                        }
+                    } else {
+                        logger.info(`Not enough klines fetched for VWAP calculation for ${symbol}.`);
+                        decisionRecord.vwap = { error: 'Not enough klines' };
+                    }
+                } else {
+                    logger.info(`Exchange does not support fetchOHLCV for VWAP.`);
+                    decisionRecord.vwap = { error: 'Not supported' };
                 }
             }
 

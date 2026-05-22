@@ -99,6 +99,8 @@ const defaults = {
     WEBUI_USERNAME: 'admin',
     WEBUI_PASSWORD: 'admin',
     ENABLE_VWAP_STRATEGY: 'true',
+    VWAP_PERIOD: '14',
+    VWAP_TIMEFRAME: '1m',
     ENABLE_RSI_STRATEGY: 'false',
     RSI_PERIOD: '14',
     RSI_TIMEFRAME: '1m',
