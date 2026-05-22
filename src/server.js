@@ -122,6 +122,19 @@ class WebServer {
             }
         });
 
+        // Export config
+        this.app.get('/api/config/export', (req, res) => {
+            const currentConfig = config.get();
+            const exportConfig = { ...currentConfig };
+            const sensitiveKeys = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'RAPIDAPI_KEY', 'CMC_API_KEY'];
+            for (const key of sensitiveKeys) {
+                delete exportConfig[key];
+            }
+            res.setHeader('Content-disposition', 'attachment; filename=liquidation-trader-settings.json');
+            res.setHeader('Content-type', 'application/json');
+            res.send(JSON.stringify(exportConfig, null, 2));
+        });
+
         // Status
         this.app.get('/api/status', (req, res) => {
             const db = require('./db');

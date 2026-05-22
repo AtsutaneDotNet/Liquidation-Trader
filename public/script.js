@@ -1189,4 +1189,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ── Import / Export Settings ─────────────────────────────────
+    const btnExport = document.getElementById('btn-export');
+    const btnImport = document.getElementById('btn-import');
+    const importFileInput = document.getElementById('import-file-input');
+
+    if (btnExport) {
+        btnExport.addEventListener('click', () => {
+            fetch('/api/config/export')
+                .then(res => res.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'liquidation-trader-settings.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(err => {
+                    console.error('Export failed:', err);
+                    showToast({
+                        title: 'Export Failed',
+                        message: 'Could not export settings. Check console for details.',
+                        type: 'error'
+                    });
+                });
+        });
+    }
+
+    if (btnImport && importFileInput) {
+        btnImport.addEventListener('click', () => {
+            importFileInput.click();
+        });
+
+        importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const importedConfig = JSON.parse(evt.target.result);
+                    
+                    fetch('/api/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(importedConfig)
+                    })
+                        .then(res => res.json())
+                        .then(result => {
+                            showToast({
+                                title: 'Settings Imported',
+                                message: result.success ? 'Configuration imported successfully. Restart the engine if it is currently running.' : result.message,
+                                type: result.success ? 'success' : 'error'
+                            });
+                            if (result.success) {
+                                loadConfig(); // Reload UI settings
+                            }
+                        });
+                } catch (err) {
+                    console.error('Import parse error:', err);
+                    showToast({
+                        title: 'Import Failed',
+                        message: 'Invalid JSON file format.',
+                        type: 'error'
+                    });
+                } finally {
+                    importFileInput.value = ''; // Reset file input
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
 });

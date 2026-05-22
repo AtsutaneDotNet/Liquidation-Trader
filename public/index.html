@@ -793,9 +793,11 @@
                             </div>
                         </div>
 
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" style="min-width: 200px;">Save
-                                Configuration</button>
+                        <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                            <button type="button" id="btn-export" class="btn" style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">Export Settings</button>
+                            <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                            <button type="button" id="btn-import" class="btn" style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">Import Settings</button>
+                            <button type="submit" class="btn btn-primary" style="min-width: 200px;">Save Configuration</button>
                         </div>
                     </form>
                 </div>
