@@ -882,7 +882,6 @@ class TradingBot {
 
         return {
             adx: adx[adx.length - 1],
-            prevAdx: adx.length > 1 ? adx[adx.length - 2] : adx[adx.length - 1],
             plusDI: plusDIList[plusDIList.length - 1],
             minusDI: minusDIList[minusDIList.length - 1]
         };
@@ -1049,21 +1048,19 @@ class TradingBot {
                         if (adxResult !== null) {
                             logger.info(`ADX (${period}, ${cfg.ADX_TIMEFRAME}): ${adxResult.adx.toFixed(2)} | +DI: ${adxResult.plusDI.toFixed(2)} | -DI: ${adxResult.minusDI.toFixed(2)}`);
                             if (adxResult.adx >= threshold) {
-                                if (adxResult.adx > adxResult.prevAdx) {
-                                    logger.info(`ADX Condition failed: ADX is rising (Current: ${adxResult.adx.toFixed(2)} > Prev: ${adxResult.prevAdx.toFixed(2)}). No trade signal.`);
-                                } else if (adxResult.plusDI > adxResult.minusDI) {
+                                if (adxResult.plusDI > adxResult.minusDI) {
                                     adxSide = 'sell';
-                                    logger.info(`ADX Condition met: ADX >= ${threshold}, ADX is flattening/declining, and +DI > -DI. Signal: SHORT.`);
+                                    logger.info(`ADX Condition met: ADX >= ${threshold} and +DI > -DI. Signal: SHORT.`);
                                 } else if (adxResult.minusDI > adxResult.plusDI) {
                                     adxSide = 'buy';
-                                    logger.info(`ADX Condition met: ADX >= ${threshold}, ADX is flattening/declining, and -DI > +DI. Signal: LONG.`);
+                                    logger.info(`ADX Condition met: ADX >= ${threshold} and -DI > +DI. Signal: LONG.`);
                                 } else {
                                     logger.info(`ADX Condition: Value is weak but DIs are equal. No trade signal.`);
                                 }
                             } else {
                                 logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is below threshold (${threshold}). No trade signal.`);
                             }
-                            decisionRecord.adx = { value: adxResult.adx, prevAdx: adxResult.prevAdx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide };
+                            decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide };
                         }
                     } else {
                         logger.info(`Not enough klines fetched for ADX calculation for ${symbol}.`);
