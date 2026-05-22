@@ -13,11 +13,11 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 -   **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, and **Lighter** using the unified **CCXT Pro** engine.
 -   **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events.
 -   **Advanced Strategies**:
-    -   **Dual VWAP Offset**: Trade based on price deviations from the Volume Weighted Average Price, utilizing independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
+    -   **Dual VWAP Offset**: Trade based on price deviations from a rolling Volume Weighted Average Price calculated dynamically from historical OHLCV data. Supports configurable timeframes (`VWAP_TIMEFRAME`) and period lengths (`VWAP_PERIOD`), with independent long and short offset percentages (`OFFSET_LONG_PERCENTAGE` and `OFFSET_SHORT_PERCENTAGE`) to fine-tune entries.
     -   **RSI (Relative Strength Index)**: Identify overbought or oversold conditions.
-    -   **ADX (Average Directional Index)**: Detect trend strength and potential reversals/exhaustion.
+    -   **ADX (Average Directional Index)**: Detect trend strength and exhaustion. Generates entry signals only when the ADX value is below or equal to the configured threshold (indicating trend weakness/exhaustion or consolidation), using -DI and +DI crossovers.
     -   **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Fear gives LONG, Greed gives SHORT, Extreme states halt trading.
-    -   **Confluence Mode**: Require multiple signals (VWAP, RSI, ADX, Fear & Greed) to align before executing a trade for higher precision.
+    -   **Confluence Mode**: Require all enabled strategies (VWAP, RSI, ADX, Fear & Greed) to align in the same direction before executing a trade for maximum precision.
     -   **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 -   **Intelligent Filtering**:
     -   **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
@@ -29,6 +29,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
     -   **Native Trailing Stop**: Lock in gains during strong trends with exchange-native trailing stops and activation prices.
     -   **Unified PnL Tracking**: Calculate and display daily, weekly, monthly, yearly, and total PnL statistics across Bybit, Binance, OKX, BitMEX, and Lighter exchanges.
     -   Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
+    -   **Max Leverage Safeguard**: Automatically checks the maximum allowed leverage on the exchange for the specific symbol (via market limit cache or `fetchLeverageTiers` API) and skips the trade if the configured `TRADE_LEVERAGE` exceeds it, preventing API errors and protecting account health.
     -   **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
 -   **Premium Web UI**:
     -   **Glassmorphism Design**: A modern, sleek, and responsive interface.
@@ -121,6 +122,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
 | `TRADE_AMOUNT_PERCENTAGE` | % of wallet balance used per trade. | `5%` |
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
+| `VWAP_TIMEFRAME` | Timeframe for VWAP calculation (e.g., `1m`, `5m`). | `1m` |
+| `VWAP_PERIOD` | Number of candles for VWAP calculation. | `14` |
 | `OFFSET_LONG_PERCENTAGE` | Price deviation from VWAP required for LONG entry. | `0.5%` |
 | `OFFSET_SHORT_PERCENTAGE` | Price deviation from VWAP required for SHORT entry. | `0.5%` |
 | `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
@@ -131,7 +134,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |
 | `ADX_TIMEFRAME` | Timeframe for ADX calculation (e.g., `1m`, `5m`). | `1m` |
 | `ADX_PERIOD` | Number of candles for ADX calculation. | `14` |
-| `ADX_THRESHOLD` | ADX strength threshold to trigger trade signals. | `25` |
+| `ADX_THRESHOLD` | ADX strength threshold (trade is only considered if ADX is below or equal to threshold). | `25` |
 | `ENABLE_FEARGREED_STRATEGY` | Toggle Fear & Greed entry signal. | `false` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 
