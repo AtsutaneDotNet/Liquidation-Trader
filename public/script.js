@@ -1264,4 +1264,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── Settings Section Tab Switching Logic ───────────────────
+    const settingsTabBtns = document.querySelectorAll('.settings-tab-btn');
+    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+
+    if (settingsTabBtns.length > 0) {
+        settingsTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                settingsTabBtns.forEach(b => b.classList.remove('active'));
+                settingsTabContents.forEach(c => c.classList.remove('active'));
+
+                btn.classList.add('active');
+                const tabTarget = btn.dataset.settingsTab;
+                const contentEl = document.getElementById(`settings-tab-${tabTarget}`);
+                if (contentEl) {
+                    contentEl.classList.add('active');
+                }
+            });
+        });
+    }
+
 });
+

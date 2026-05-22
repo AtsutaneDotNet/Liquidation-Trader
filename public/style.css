@@ -1105,3 +1105,165 @@ canvas#pnl-chart {
 .search-input:focus + .search-icon {
     color: var(--accent);
 }
+
+/* ── Settings Redesign Tab Navigation ── */
+.settings-tabs-container {
+    width: 100%;
+    margin-bottom: 28px;
+    border-bottom: 1.5px solid var(--border-color);
+    padding-bottom: 4px;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+.settings-tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Webkit */
+}
+
+.settings-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    color: var(--text-muted);
+    font-family: var(--font-fam);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.settings-tab-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.settings-tab-btn.active {
+    color: var(--accent);
+    background: rgba(0, 230, 118, 0.05);
+}
+
+.settings-tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -5.5px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: transparent;
+    border-radius: 3px 3px 0 0;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-tab-btn.active::after {
+    background-color: var(--accent);
+    box-shadow: 0 -2px 10px var(--accent-glow);
+}
+
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+    animation: settingsTabFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes settingsTabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Coming Soon Placeholder ── */
+.coming-soon-card {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 48px 32px;
+    text-align: center;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+}
+
+.coming-soon-badge {
+    display: inline-block;
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(0, 230, 118, 0.2);
+}
+
+.coming-soon-card h4 {
+    font-size: 18px;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.coming-soon-card p {
+    color: var(--text-muted);
+    font-size: 14px;
+    max-width: 460px;
+    margin: 0 auto 24px;
+    line-height: 1.6;
+}
+
+.coming-soon-features {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.feature-tag {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.feature-tag:hover {
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Tooltips or Item Descriptions ── */
+.form-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: -2px;
+    margin-bottom: 4px;
+}
+
+.form-desc strong {
+    color: var(--text-main);
+}
