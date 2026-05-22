@@ -1063,11 +1063,11 @@ class TradingBot {
                             if (cfg.RSI_OVERBOUGHT_DIR === 'under') overboughtMet = rsi <= cfg.RSI_OVERBOUGHT;
                             else overboughtMet = rsi >= cfg.RSI_OVERBOUGHT;
 
-                            if (oversoldMet) {
+                            if (oversoldMet && rsi < 50) {
                                 rsiSide = cfg.RSI_OVERSOLD_SIGNAL === 'none' ? null : cfg.RSI_OVERSOLD_SIGNAL;
                                 const op = cfg.RSI_OVERSOLD_DIR === 'above' ? '>=' : '<=';
                                 logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Oversold (${cfg.RSI_OVERSOLD}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
-                            } else if (overboughtMet) {
+                            } else if (overboughtMet && rsi > 50) {
                                 rsiSide = cfg.RSI_OVERBOUGHT_SIGNAL === 'none' ? null : cfg.RSI_OVERBOUGHT_SIGNAL;
                                 const op = cfg.RSI_OVERBOUGHT_DIR === 'under' ? '<=' : '>=';
                                 logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Overbought (${cfg.RSI_OVERBOUGHT}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
