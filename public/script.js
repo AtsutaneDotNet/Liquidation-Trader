@@ -1392,6 +1392,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        const btnResetAdvanceModal = document.getElementById('resetAdvanceModalBtn');
+        if (btnResetAdvanceModal) {
+            btnResetAdvanceModal.addEventListener('click', () => {
+                const defaults = {
+                    VWAP_UPPER_SIGNAL: 'sell',
+                    VWAP_LOWER_SIGNAL: 'buy',
+                    RSI_OVERBOUGHT_SIGNAL: 'sell',
+                    RSI_OVERSOLD_SIGNAL: 'buy',
+                    ADX_THRESHOLD_DIR: 'under',
+                    ADX_PDI_SIGNAL: 'sell',
+                    ADX_MDI_SIGNAL: 'buy',
+                    FG_FEAR_SIGNAL: 'buy',
+                    FG_GREED_SIGNAL: 'sell',
+                    FG_EXTREME_FEAR_SIGNAL: 'none',
+                    FG_EXTREME_GREED_SIGNAL: 'none'
+                };
+                for (const [id, value] of Object.entries(defaults)) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = value;
+                }
+                showToast({
+                    title: 'Reset to Default',
+                    message: 'Advance strategies reset to default locally. Save Configuration to commit changes.',
+                    type: 'info'
+                });
+            });
+        }
+
         // Close on outside click
         advanceModal.addEventListener('click', (e) => {
             if (e.target === advanceModal) {

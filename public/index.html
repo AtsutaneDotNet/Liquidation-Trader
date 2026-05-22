@@ -1138,7 +1138,7 @@
                             <select id="VWAP_UPPER_SIGNAL" class="styled-select">
                                 <option value="sell">SELL (Default)</option>
                                 <option value="buy">BUY</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                         <div class="col">
@@ -1146,7 +1146,7 @@
                             <select id="VWAP_LOWER_SIGNAL" class="styled-select">
                                 <option value="buy">BUY (Default)</option>
                                 <option value="sell">SELL</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                     </div>
@@ -1160,7 +1160,7 @@
                             <select id="RSI_OVERBOUGHT_SIGNAL" class="styled-select">
                                 <option value="sell">SELL (Default)</option>
                                 <option value="buy">BUY</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                         <div class="col">
@@ -1168,7 +1168,7 @@
                             <select id="RSI_OVERSOLD_SIGNAL" class="styled-select">
                                 <option value="buy">BUY (Default)</option>
                                 <option value="sell">SELL</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                     </div>
@@ -1191,7 +1191,7 @@
                             <select id="ADX_PDI_SIGNAL" class="styled-select">
                                 <option value="sell">SELL (Default)</option>
                                 <option value="buy">BUY</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                         <div class="col">
@@ -1199,7 +1199,7 @@
                             <select id="ADX_MDI_SIGNAL" class="styled-select">
                                 <option value="buy">BUY (Default)</option>
                                 <option value="sell">SELL</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                     </div>
@@ -1213,7 +1213,7 @@
                             <select id="FG_FEAR_SIGNAL" class="styled-select">
                                 <option value="buy">BUY (Default)</option>
                                 <option value="sell">SELL</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                         <div class="col">
@@ -1221,7 +1221,7 @@
                             <select id="FG_GREED_SIGNAL" class="styled-select">
                                 <option value="sell">SELL (Default)</option>
                                 <option value="buy">BUY</option>
-                                <option value="none">None</option>
+                                <option value="none">NONE</option>
                             </select>
                         </div>
                     </div>
@@ -1229,7 +1229,7 @@
                         <div class="col">
                             <label>Extreme Fear Signal</label>
                             <select id="FG_EXTREME_FEAR_SIGNAL" class="styled-select">
-                                <option value="none">None (Default)</option>
+                                <option value="none">NONE (Default)</option>
                                 <option value="buy">BUY</option>
                                 <option value="sell">SELL</option>
                             </select>
@@ -1237,7 +1237,7 @@
                         <div class="col">
                             <label>Extreme Greed Signal</label>
                             <select id="FG_EXTREME_GREED_SIGNAL" class="styled-select">
-                                <option value="none">None (Default)</option>
+                                <option value="none">NONE (Default)</option>
                                 <option value="sell">SELL</option>
                                 <option value="buy">BUY</option>
                             </select>
@@ -1245,7 +1245,8 @@
                     </div>
                 </div>
             </div>
-            <div style="margin-top: 1.5rem; text-align: right;">
+            <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <button id="resetAdvanceModalBtn" class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-color); transition: all 0.2s;" onmouseover="this.style.background='var(--border-color)'" onmouseout="this.style.background='transparent'">Reset to Default</button>
                 <button id="saveAdvanceModalBtn" class="btn btn-primary">Apply Settings</button>
             </div>
         </div>
