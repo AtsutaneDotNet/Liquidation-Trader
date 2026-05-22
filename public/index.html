@@ -1156,6 +1156,22 @@
                     <h4>RSI Strategy</h4>
                     <div class="form-group row">
                         <div class="col">
+                            <label>Overbought Condition</label>
+                            <select id="RSI_OVERBOUGHT_DIR" class="styled-select">
+                                <option value="above">RSI &gt;= Threshold (Default)</option>
+                                <option value="under">RSI &lt;= Threshold</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Oversold Condition</label>
+                            <select id="RSI_OVERSOLD_DIR" class="styled-select">
+                                <option value="under">RSI &lt;= Threshold (Default)</option>
+                                <option value="above">RSI &gt;= Threshold</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col">
                             <label>Overbought Signal</label>
                             <select id="RSI_OVERBOUGHT_SIGNAL" class="styled-select">
                                 <option value="sell">SELL (Default)</option>

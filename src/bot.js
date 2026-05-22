@@ -1054,12 +1054,23 @@ class TradingBot {
                         const rsi = this.calculateRSI(closes, period);
                         if (rsi !== null) {
                             logger.info(`RSI (${period}, ${cfg.RSI_TIMEFRAME}): ${rsi.toFixed(2)}`);
-                            if (rsi <= cfg.RSI_OVERSOLD) {
+
+                            let oversoldMet = false;
+                            if (cfg.RSI_OVERSOLD_DIR === 'above') oversoldMet = rsi >= cfg.RSI_OVERSOLD;
+                            else oversoldMet = rsi <= cfg.RSI_OVERSOLD;
+
+                            let overboughtMet = false;
+                            if (cfg.RSI_OVERBOUGHT_DIR === 'under') overboughtMet = rsi <= cfg.RSI_OVERBOUGHT;
+                            else overboughtMet = rsi >= cfg.RSI_OVERBOUGHT;
+
+                            if (oversoldMet) {
                                 rsiSide = cfg.RSI_OVERSOLD_SIGNAL === 'none' ? null : cfg.RSI_OVERSOLD_SIGNAL;
-                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} <= Oversold (${cfg.RSI_OVERSOLD}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
-                            } else if (rsi >= cfg.RSI_OVERBOUGHT) {
+                                const op = cfg.RSI_OVERSOLD_DIR === 'above' ? '>=' : '<=';
+                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Oversold (${cfg.RSI_OVERSOLD}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
+                            } else if (overboughtMet) {
                                 rsiSide = cfg.RSI_OVERBOUGHT_SIGNAL === 'none' ? null : cfg.RSI_OVERBOUGHT_SIGNAL;
-                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} >= Overbought (${cfg.RSI_OVERBOUGHT}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
+                                const op = cfg.RSI_OVERBOUGHT_DIR === 'under' ? '<=' : '>=';
+                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Overbought (${cfg.RSI_OVERBOUGHT}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
                             } else {
                                 logger.info(`RSI Condition: Value is neutral. No trade signal.`);
                             }

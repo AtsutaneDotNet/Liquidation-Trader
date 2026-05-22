@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add Advance Strategy Settings manually since they are outside the form
         const advInputs = [
             'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL',
+            'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL',
             'ADX_THRESHOLD_DIR', 'ADX_PDI_SIGNAL', 'ADX_MDI_SIGNAL',
             'FG_FEAR_SIGNAL', 'FG_GREED_SIGNAL', 'FG_EXTREME_FEAR_SIGNAL', 'FG_EXTREME_GREED_SIGNAL'
@@ -1398,6 +1399,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const defaults = {
                     VWAP_UPPER_SIGNAL: 'sell',
                     VWAP_LOWER_SIGNAL: 'buy',
+                    RSI_OVERBOUGHT_DIR: 'above',
+                    RSI_OVERSOLD_DIR: 'under',
                     RSI_OVERBOUGHT_SIGNAL: 'sell',
                     RSI_OVERSOLD_SIGNAL: 'buy',
                     ADX_THRESHOLD_DIR: 'under',
