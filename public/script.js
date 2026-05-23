@@ -111,11 +111,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (hiddenEl) hiddenEl.value = data[key];
                     }
                 }
+                // Toggle VWAP fields on load
+                const vwapTypeEl = document.getElementById('VWAP_TYPE');
+                if (vwapTypeEl) {
+                    const type = vwapTypeEl.value;
+                    const sessionCol = document.getElementById('vwap-session-type-col');
+                    const periodCol = document.getElementById('vwap-period-col');
+                    if (sessionCol) sessionCol.style.display = type === 'session' ? 'block' : 'none';
+                    if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'block';
+                }
             })
             .catch(console.error);
     }
 
     loadConfig();
+
+    const vwapTypeEl = document.getElementById('VWAP_TYPE');
+    if (vwapTypeEl) {
+        vwapTypeEl.addEventListener('change', (e) => {
+            const type = e.target.value;
+            const sessionCol = document.getElementById('vwap-session-type-col');
+            const periodCol = document.getElementById('vwap-period-col');
+            if (sessionCol) sessionCol.style.display = type === 'session' ? 'block' : 'none';
+            if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'block';
+        });
+    }
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -794,6 +814,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let details = '';
         if (name === 'VWAP') {
             details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
+            if (strat.type) {
+                details += ` | Type: ${strat.type}`;
+            }
         } else if (name === 'RSI') {
             details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
         } else if (name === 'ADX') {

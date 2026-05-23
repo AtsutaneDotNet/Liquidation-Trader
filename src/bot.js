@@ -887,13 +887,14 @@ class TradingBot {
         };
     }
 
-    calculateVWAP(klines, period = 14) {
-        if (!klines || klines.length < period) return null;
+    calculateVWAP(klines, period = 14, isSession = false) {
+        if (!klines) return null;
+        if (!isSession && klines.length < period) return null;
         
         let cumulativeTPV = 0;
         let cumulativeVolume = 0;
         
-        const startIndex = klines.length - period;
+        const startIndex = isSession ? 0 : klines.length - period;
         for (let i = startIndex; i < klines.length; i++) {
             const high = klines[i][2];
             const low = klines[i][3];
@@ -986,22 +987,45 @@ class TradingBot {
             // --- 2. VWAP Strategy ---
             if (vwapEnabled) {
                 if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                    const vwapType = cfg.VWAP_TYPE || 'rolling';
                     const period = parseInt(cfg.VWAP_PERIOD) || 14;
                     const tf = cfg.VWAP_TIMEFRAME || '1m';
                     let klines = sharedKlines;
 
-                    if (!klines) {
+                    if (vwapType === 'session') {
+                        const sessionType = cfg.VWAP_SESSION_TYPE || 'daily';
+                        const now = new Date();
+                        let since = null;
+                        
+                        if (sessionType === 'monthly') {
+                            since = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0);
+                        } else if (sessionType === 'weekly') {
+                            const day = now.getUTCDay();
+                            const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1);
+                            since = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), diff, 0, 0, 0, 0);
+                        } else {
+                            since = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
+                        }
+                        
                         try {
-                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, tf, undefined, period + 100);
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, tf, since, 1000);
                         } catch (e) {
-                            logger.error(`Error fetching VWAP OHLCV: ${e.message}`);
+                            logger.error(`Error fetching Session VWAP OHLCV: ${e.message}`);
+                        }
+                    } else {
+                        if (!klines) {
+                            try {
+                                klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, tf, undefined, period + 100);
+                            } catch (e) {
+                                logger.error(`Error fetching VWAP OHLCV: ${e.message}`);
+                            }
                         }
                     }
 
-                    if (klines && klines.length >= period) {
-                        const vwap = this.calculateVWAP(klines, period);
+                    if (klines && (vwapType === 'session' ? klines.length > 0 : klines.length >= period)) {
+                        const vwap = this.calculateVWAP(klines, period, vwapType === 'session');
                         if (vwap !== null) {
-                            logger.info(`VWAP (${period}, ${tf}): ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
+                            logger.info(`VWAP (${vwapType === 'session' ? 'session' : period}, ${tf}): ${vwap.toFixed(4)} | Current Price: ${currentPrice}`);
                             const longOffsetMultiplier = cfg.OFFSET_LONG_PERCENTAGE / 100;
                             const shortOffsetMultiplier = cfg.OFFSET_SHORT_PERCENTAGE / 100;
                             const upperOffsetValue = vwap * (1 + shortOffsetMultiplier);
@@ -1019,7 +1043,7 @@ class TradingBot {
                             } else {
                                 logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
                             }
-                            decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide };
+                            decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide, type: vwapType };
                         } else {
                             logger.info(`VWAP calculation returned null for ${symbol}.`);
                             decisionRecord.vwap = { error: 'Calculation failed' };

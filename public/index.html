@@ -512,6 +512,23 @@
                                     </div>
                                     <div class="form-group row">
                                         <div class="col">
+                                            <label for="VWAP_TYPE">VWAP Type</label>
+                                            <select id="VWAP_TYPE" name="VWAP_TYPE" style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                                <option value="rolling">Rolling (Default)</option>
+                                                <option value="session">Session</option>
+                                            </select>
+                                        </div>
+                                        <div class="col" id="vwap-session-type-col" style="display: none;">
+                                            <label for="VWAP_SESSION_TYPE">Session Type</label>
+                                            <select id="VWAP_SESSION_TYPE" name="VWAP_SESSION_TYPE" style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                                <option value="daily">Daily</option>
+                                                <option value="weekly">Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col" id="vwap-period-col">
                                             <label for="VWAP_PERIOD">VWAP Period</label>
                                             <input type="number" id="VWAP_PERIOD" name="VWAP_PERIOD" step="1" min="1" placeholder="e.g. 14">
                                         </div>
