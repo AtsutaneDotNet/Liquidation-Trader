@@ -858,11 +858,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const upperStr = formatTokenPrice(strat.upper);
             const lowerStr = formatTokenPrice(strat.lower);
             const typeStr = strat.type ? (strat.type.charAt(0).toUpperCase() + strat.type.slice(1)) : 'Rolling';
+            const tfStr = strat.timeframe || 'N/A';
 
             tooltipHTML = `
                 <div class="tooltip-header">VWAP Strategy</div>
                 <div class="tooltip-grid">
                     <div class="tooltip-row"><span>Type</span><span>${typeStr}</span></div>
+                    <div class="tooltip-row"><span>Timeframe</span><span>${tfStr}</span></div>
                     <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
                     <div class="tooltip-row"><span>Upper Band</span><span>${upperStr}</span></div>
                     <div class="tooltip-row"><span>Lower Band</span><span>${lowerStr}</span></div>
@@ -873,10 +875,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
             const obStr = strat.overbought !== undefined ? strat.overbought : 'N/A';
             const osStr = strat.oversold !== undefined ? strat.oversold : 'N/A';
+            const tfStr = strat.timeframe || 'N/A';
 
             tooltipHTML = `
                 <div class="tooltip-header">RSI Strategy</div>
                 <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Timeframe</span><span>${tfStr}</span></div>
                     <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
                     <div class="tooltip-row"><span>Overbought</span><span>${obStr}</span></div>
                     <div class="tooltip-row"><span>Oversold</span><span>${osStr}</span></div>
@@ -888,10 +892,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const pDiStr = typeof strat.plusDI === 'number' ? strat.plusDI.toFixed(2) : 'N/A';
             const mDiStr = typeof strat.minusDI === 'number' ? strat.minusDI.toFixed(2) : 'N/A';
             const thresholdStr = strat.threshold !== undefined ? strat.threshold : 'N/A';
+            const tfStr = strat.timeframe || 'N/A';
 
             tooltipHTML = `
                 <div class="tooltip-header">ADX Strategy</div>
                 <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Timeframe</span><span>${tfStr}</span></div>
                     <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
                     <div class="tooltip-row"><span>+DI</span><span>${pDiStr}</span></div>
                     <div class="tooltip-row"><span>-DI</span><span>${mDiStr}</span></div>

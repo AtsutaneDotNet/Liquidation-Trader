@@ -1043,7 +1043,7 @@ class TradingBot {
                             } else {
                                 logger.info(`VWAP Condition: Price is within offset bounds. No trade signal.`);
                             }
-                            decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide, type: vwapType };
+                            decisionRecord.vwap = { value: vwap, upper: upperOffsetValue, lower: lowerOffsetValue, signal: vwapSide, type: vwapType, timeframe: tf };
                         } else {
                             logger.info(`VWAP calculation returned null for ${symbol}.`);
                             decisionRecord.vwap = { error: 'Calculation failed' };
@@ -1098,7 +1098,7 @@ class TradingBot {
                             } else {
                                 logger.info(`RSI Condition: Value is neutral. No trade signal.`);
                             }
-                            decisionRecord.rsi = { value: rsi, oversold: cfg.RSI_OVERSOLD, overbought: cfg.RSI_OVERBOUGHT, signal: rsiSide };
+                            decisionRecord.rsi = { value: rsi, oversold: cfg.RSI_OVERSOLD, overbought: cfg.RSI_OVERBOUGHT, signal: rsiSide, timeframe: cfg.RSI_TIMEFRAME };
                         }
                     } else {
                         logger.info(`Not enough klines fetched for RSI calculation for ${symbol}.`);
@@ -1148,7 +1148,7 @@ class TradingBot {
                             } else {
                                 logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is not ${cfg.ADX_THRESHOLD_DIR} threshold (${threshold}). No trade signal.`);
                             }
-                            decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide };
+                            decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide, timeframe: cfg.ADX_TIMEFRAME };
                         }
                     } else {
                         logger.info(`Not enough klines fetched for ADX calculation for ${symbol}.`);
