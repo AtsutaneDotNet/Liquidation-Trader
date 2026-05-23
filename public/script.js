@@ -45,6 +45,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let cachedDynamicThresholds = [];
     let cachedTradeDecisions = [];
 
+    // Interactive Tooltip Touch & Click Delegation Handler
+    document.addEventListener('click', (e) => {
+        const container = e.target.closest('.strategy-badge-container');
+        
+        // Remove active class from all other containers
+        document.querySelectorAll('.strategy-badge-container').forEach(el => {
+            if (el !== container) {
+                el.classList.remove('active');
+            }
+        });
+        
+        // Toggle active class on current container if clicked
+        if (container) {
+            container.classList.toggle('active');
+        }
+    });
+
     // Sidebar Toggle
     const sidebar = document.getElementById('sidebar');
 
@@ -805,29 +822,92 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbodyDashboardTradeDecisions = document.getElementById('dashboard-trade-decisions-tbody');
 
     const formatStrategy = (strat, name) => {
-        if (!strat) return `<span style="color: var(--text-muted)">Disabled</span>`;
-        if (strat.error) return `<span style="color: var(--danger)">${strat.error}</span>`;
-
-        const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
-        const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : '');
-
-        let details = '';
-        if (name === 'VWAP') {
-            details = `V: ${strat.value.toFixed(2)} | U: ${strat.upper.toFixed(2)} | L: ${strat.lower.toFixed(2)}`;
-            if (strat.type) {
-                details += ` | Type: ${strat.type}`;
-            }
-        } else if (name === 'RSI') {
-            details = `V: ${strat.value.toFixed(2)} | OB: ${strat.overbought} | OS: ${strat.oversold}`;
-        } else if (name === 'ADX') {
-            details = `V: ${strat.value.toFixed(2)} | +DI: ${strat.plusDI.toFixed(2)} | -DI: ${strat.minusDI.toFixed(2)}`;
-        } else if (name === 'F&G') {
-            details = `State: ${strat.classification}`;
+        // Disabled State
+        if (!strat) {
+            return `<div class="strategy-badge-container">
+                <span class="strategy-signal side-none" style="font-weight: bold; opacity: 0.5;">DISABLED</span>
+            </div>`;
         }
 
-        return `<div style="font-size: 0.85em;">
-            <span class="${signalClz}" style="font-weight: bold;">${signal}</span><br>
-            <span style="color: var(--text-muted)">${details}</span>
+        // Error State
+        if (strat.error) {
+            return `<div class="strategy-badge-container">
+                <span class="strategy-signal side-sell" style="font-weight: bold;">ERROR</span>
+                <div class="strategy-tooltip error-tooltip">
+                    <div class="tooltip-header text-danger" style="color: var(--danger)">Strategy Error</div>
+                    <div class="tooltip-desc">${strat.error}</div>
+                </div>
+            </div>`;
+        }
+
+        const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
+        const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : 'side-none');
+        const activeSignalClz = strat.signal === 'buy' ? 'signal-buy' : (strat.signal === 'sell' ? 'signal-sell' : '');
+
+        let tooltipHTML = '';
+        if (name === 'VWAP') {
+            const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
+            const upperStr = typeof strat.upper === 'number' ? strat.upper.toFixed(2) : 'N/A';
+            const lowerStr = typeof strat.lower === 'number' ? strat.lower.toFixed(2) : 'N/A';
+            const typeStr = strat.type ? (strat.type.charAt(0).toUpperCase() + strat.type.slice(1)) : 'Rolling';
+
+            tooltipHTML = `
+                <div class="tooltip-header">VWAP Strategy</div>
+                <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Type</span><span>${typeStr}</span></div>
+                    <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
+                    <div class="tooltip-row"><span>Upper Band</span><span>${upperStr}</span></div>
+                    <div class="tooltip-row"><span>Lower Band</span><span>${lowerStr}</span></div>
+                    <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
+                </div>
+            `;
+        } else if (name === 'RSI') {
+            const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
+            const obStr = strat.overbought !== undefined ? strat.overbought : 'N/A';
+            const osStr = strat.oversold !== undefined ? strat.oversold : 'N/A';
+
+            tooltipHTML = `
+                <div class="tooltip-header">RSI Strategy</div>
+                <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
+                    <div class="tooltip-row"><span>Overbought</span><span>${obStr}</span></div>
+                    <div class="tooltip-row"><span>Oversold</span><span>${osStr}</span></div>
+                    <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
+                </div>
+            `;
+        } else if (name === 'ADX') {
+            const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
+            const pDiStr = typeof strat.plusDI === 'number' ? strat.plusDI.toFixed(2) : 'N/A';
+            const mDiStr = typeof strat.minusDI === 'number' ? strat.minusDI.toFixed(2) : 'N/A';
+            const thresholdStr = strat.threshold !== undefined ? strat.threshold : 'N/A';
+
+            tooltipHTML = `
+                <div class="tooltip-header">ADX Strategy</div>
+                <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
+                    <div class="tooltip-row"><span>+DI</span><span>${pDiStr}</span></div>
+                    <div class="tooltip-row"><span>-DI</span><span>${mDiStr}</span></div>
+                    <div class="tooltip-row"><span>Threshold</span><span>${thresholdStr}</span></div>
+                    <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
+                </div>
+            `;
+        } else if (name === 'F&G') {
+            const stateStr = strat.classification || 'N/A';
+
+            tooltipHTML = `
+                <div class="tooltip-header">Fear & Greed Index</div>
+                <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>State</span><span>${stateStr}</span></div>
+                    <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
+                </div>
+            `;
+        }
+
+        return `<div class="strategy-badge-container">
+            <span class="strategy-signal ${signalClz}" style="font-weight: bold;">${signal}</span>
+            <div class="strategy-tooltip">
+                ${tooltipHTML}
+            </div>
         </div>`;
     };
 

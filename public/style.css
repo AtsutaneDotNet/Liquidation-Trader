@@ -1346,4 +1346,161 @@ canvas#pnl-chart {
 .styled-select:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.1);
+}
+
+/* ── Premium Tooltips for Trade Decisions ── */
+.strategy-badge-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.strategy-signal {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+/* Hover effects for badges */
+.strategy-badge-container:hover .strategy-signal {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+}
+
+.strategy-signal.side-buy {
+    color: var(--accent);
+    background: rgba(0, 230, 118, 0.08);
+    border-color: rgba(0, 230, 118, 0.2);
+}
+.strategy-signal.side-buy:hover {
+    background: rgba(0, 230, 118, 0.15);
+    box-shadow: 0 0 12px rgba(0, 230, 118, 0.25);
+}
+
+.strategy-signal.side-sell {
+    color: var(--danger);
+    background: rgba(255, 59, 59, 0.08);
+    border-color: rgba(255, 59, 59, 0.2);
+}
+.strategy-signal.side-sell:hover {
+    background: rgba(255, 59, 59, 0.15);
+    box-shadow: 0 0 12px rgba(255, 59, 59, 0.25);
+}
+
+.strategy-signal.side-none {
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+.strategy-signal.side-none:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Tooltip popup box style */
+.strategy-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    z-index: 1000;
+    
+    width: 220px;
+    padding: 12px;
+    border-radius: 10px;
+    
+    background: rgba(20, 23, 31, 0.95);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: normal;
+    color: var(--text-main);
+}
+
+/* Triangle arrow pointing down */
+.strategy-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(20, 23, 31, 0.95) transparent transparent transparent;
+}
+
+/* Triggering tooltip state */
+.strategy-badge-container:hover .strategy-tooltip,
+.strategy-badge-container.active .strategy-tooltip {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Inner elements styling */
+.tooltip-header {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 4px;
+}
+
+.tooltip-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tooltip-row span:first-child {
+    color: var(--text-muted);
+}
+
+.tooltip-row span:last-child {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Highlight specific types */
+.tooltip-row .signal-buy {
+    color: var(--accent) !important;
+}
+
+.tooltip-row .signal-sell {
+    color: var(--danger) !important;
+}
+
+/* Error tooltip style override */
+.error-tooltip {
+    border-color: rgba(255, 59, 59, 0.3);
+}
+
+.tooltip-desc {
+    color: var(--text-muted);
+    font-size: 11px;
+    word-break: break-word;
 }
