@@ -117,8 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const type = vwapTypeEl.value;
                     const sessionCol = document.getElementById('vwap-session-type-col');
                     const periodCol = document.getElementById('vwap-period-col');
-                    if (sessionCol) sessionCol.style.display = type === 'session' ? 'block' : 'none';
-                    if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'block';
+                    if (sessionCol) sessionCol.style.display = type === 'session' ? 'flex' : 'none';
+                    if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'flex';
                 }
             })
             .catch(console.error);
@@ -132,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const type = e.target.value;
             const sessionCol = document.getElementById('vwap-session-type-col');
             const periodCol = document.getElementById('vwap-period-col');
-            if (sessionCol) sessionCol.style.display = type === 'session' ? 'block' : 'none';
-            if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'block';
+            if (sessionCol) sessionCol.style.display = type === 'session' ? 'flex' : 'none';
+            if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'flex';
         });
     }
 
