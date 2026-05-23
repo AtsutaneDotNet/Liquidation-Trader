@@ -320,6 +320,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function formatTokenPrice(priceUsd) {
+        if (priceUsd === undefined || priceUsd === null || isNaN(priceUsd)) return 'N/A';
+        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+        const symbol = currencySymbols[cur] || '$';
+        const converted = convertFromUsd(priceUsd);
+        return symbol + parseFloat(converted).toFixed(cur === 'BTC' ? 6 : (cur === 'JPY' ? 0 : 4));
+    }
+
     function updateBtcRateAndReRender() {
         if (currentBtcPrice > 0) {
             exchangeRates.BTC = 1 / currentBtcPrice;
@@ -846,9 +854,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let tooltipHTML = '';
         if (name === 'VWAP') {
-            const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
-            const upperStr = typeof strat.upper === 'number' ? strat.upper.toFixed(2) : 'N/A';
-            const lowerStr = typeof strat.lower === 'number' ? strat.lower.toFixed(2) : 'N/A';
+            const valStr = formatTokenPrice(strat.value);
+            const upperStr = formatTokenPrice(strat.upper);
+            const lowerStr = formatTokenPrice(strat.lower);
             const typeStr = strat.type ? (strat.type.charAt(0).toUpperCase() + strat.type.slice(1)) : 'Rolling';
 
             tooltipHTML = `
@@ -916,10 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const confluenceText = record.confluence ? (record.confluence.matched ? `<span class="side-${record.confluence.side}">${record.confluence.side.toUpperCase()}</span>` : `<span style="color: var(--danger)">MISSED</span>`) : 'N/A';
         const outcomeClz = record.reason === 'Trade Executed' ? 'pnl-positive' : (record.reason.startsWith('Error') ? 'pnl-negative' : '');
 
-        const cur = localStorage.getItem('selectedCurrency') || 'USD';
-        const symbol = currencySymbols[cur] || '$';
-        const convertedPrice = convertFromUsd(record.price || 0);
-        const priceFormatted = symbol + parseFloat(convertedPrice).toFixed(cur === 'BTC' ? 6 : (cur === 'JPY' ? 0 : 4));
+        const priceFormatted = formatTokenPrice(record.price);
 
         return `<tr>
             <td style="color: var(--text-muted);">${timeStr}</td>
