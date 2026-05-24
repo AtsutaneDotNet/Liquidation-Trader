@@ -1503,4 +1503,26 @@ canvas#pnl-chart {
     color: var(--text-muted);
     font-size: 11px;
     word-break: break-word;
+}
+
+/* Prevent clipping on the first two rows by displaying tooltips downwards */
+tr:nth-child(1) .strategy-tooltip,
+tr:nth-child(2) .strategy-tooltip {
+    bottom: auto;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-4px);
+}
+
+tr:nth-child(1) .strategy-tooltip::after,
+tr:nth-child(2) .strategy-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent rgba(20, 23, 31, 0.95) transparent;
+}
+
+tr:nth-child(1) .strategy-badge-container:hover .strategy-tooltip,
+tr:nth-child(1) .strategy-badge-container.active .strategy-tooltip,
+tr:nth-child(2) .strategy-badge-container:hover .strategy-tooltip,
+tr:nth-child(2) .strategy-badge-container.active .strategy-tooltip {
+    transform: translateX(-50%) translateY(0);
 }
