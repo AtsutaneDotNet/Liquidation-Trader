@@ -430,7 +430,9 @@ input:focus {
 /* Data Tables */
 .table-responsive {
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    min-height: 320px; /* Prevents vertical scrollbars from scrollbar thickness and accommodates tooltips */
 }
 
 .data-table {
