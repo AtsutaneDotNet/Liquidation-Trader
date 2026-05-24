@@ -21,7 +21,7 @@ class OkxExchange extends BaseExchange {
             ccxtConfig.secret = cfg.API_SECRET;
             // OKX requires password (passphrase) in CCXT
             if (cfg.API_PASSPHRASE) {
-                 ccxtConfig.password = cfg.API_PASSPHRASE;
+                ccxtConfig.password = cfg.API_PASSPHRASE;
             }
         }
 
@@ -178,7 +178,7 @@ class OkxExchange extends BaseExchange {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
-            
+
             await this.exchange.createOrder(symbol, 'take_profit', oppositeSide, size, undefined, {
                 stopPrice: tpStr,
                 reduceOnly: true
@@ -200,6 +200,7 @@ class OkxExchange extends BaseExchange {
             logger.info(`[OKX] TP/SL independently bound to ${symbol}.`);
         } catch (e) {
             logger.error(`[OKX] Post-fill exit condition error for ${symbol}: ${e.message}`);
+            throw e;
         }
     }
 }

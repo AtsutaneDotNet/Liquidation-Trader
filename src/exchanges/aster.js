@@ -61,7 +61,7 @@ class AsterExchange extends BaseExchange {
             logger.debug(`[Aster] watchLiquidations not explicitly supported in CCXT for ${symbol}. Streams might not start.`);
             // Proceeding anyway in case it works or gets added.
         }
-        
+
         while (isRunningCheck()) {
             try {
                 const liquidations = await this.exchange.watchLiquidations(symbol);
@@ -128,7 +128,7 @@ class AsterExchange extends BaseExchange {
             }
         } else {
             logger.info('[Aster] CCXT watchPositions not available. Using REST polling fallback every 5 seconds.');
-            
+
             if (this.positionPollInterval) clearInterval(this.positionPollInterval);
 
             this.positionPollInterval = setInterval(async () => {
@@ -196,7 +196,7 @@ class AsterExchange extends BaseExchange {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
-            
+
             await this.exchange.createOrder(symbol, 'take_profit', oppositeSide, size, undefined, {
                 stopPrice: tpStr,
                 reduceOnly: true
@@ -210,6 +210,7 @@ class AsterExchange extends BaseExchange {
             logger.info(`[Aster] TP/SL independently bound to ${symbol}.`);
         } catch (e) {
             logger.error(`[Aster] Post-fill exit condition error for ${symbol}: ${e.message}`);
+            throw e;
         }
     }
 }

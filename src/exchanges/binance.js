@@ -276,6 +276,7 @@ class BinanceExchange extends BaseExchange {
             logger.info(`[Binance] Conditional exit parameters independently bound to ${symbol}.`);
         } catch (e) {
             logger.error(`[Binance] Post-fill exit condition error for ${symbol}: ${e.message}`);
+            throw e;
         }
     }
 }

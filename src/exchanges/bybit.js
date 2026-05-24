@@ -214,6 +214,7 @@ class BybitExchange extends BaseExchange {
             logger.info(`[Bybit] Conditional limits securely attached onto ${symbol} position.`);
         } catch (e) {
             logger.error(`[Bybit] Post-fill conditional logic failure for ${symbol}: ${e.message}`);
+            throw e;
         }
     }
 }

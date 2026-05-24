@@ -105,7 +105,7 @@ class LighterExchange extends BaseExchange {
     async watchPrivatePositions(callback, isRunningCheck, errorCallback) {
         // Lighter CCXT Pro doesn't support watchPositions. We implement REST polling fallback.
         logger.info('[Lighter] CCXT watchPositions not available. Using REST polling fallback every 5 seconds.');
-        
+
         if (this.positionPollInterval) clearInterval(this.positionPollInterval);
 
         this.positionPollInterval = setInterval(async () => {
@@ -172,7 +172,7 @@ class LighterExchange extends BaseExchange {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
-            
+
             await this.exchange.createOrder(symbol, 'take_profit', oppositeSide, size, undefined, {
                 stopPrice: tpStr,
                 reduceOnly: true
@@ -186,6 +186,7 @@ class LighterExchange extends BaseExchange {
             logger.info(`[Lighter] TP/SL independently bound to ${symbol}.`);
         } catch (e) {
             logger.error(`[Lighter] Post-fill exit condition error for ${symbol}: ${e.message}`);
+            throw e;
         }
     }
 }

@@ -105,7 +105,7 @@ class BitmexExchange extends BaseExchange {
     async watchPrivatePositions(callback, isRunningCheck, errorCallback) {
         // BitMEX CCXT Pro doesn't support watchPositions. We implement REST polling fallback.
         logger.info('[BitMEX] CCXT watchPositions not available. Using REST polling fallback every 5 seconds.');
-        
+
         if (this.positionPollInterval) clearInterval(this.positionPollInterval);
 
         this.positionPollInterval = setInterval(async () => {
@@ -172,7 +172,7 @@ class BitmexExchange extends BaseExchange {
             const tpStr = this.exchange.priceToPrecision(symbol, takeProfit);
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
-            
+
             await this.exchange.createOrder(symbol, 'StopLimit', oppositeSide, size, tpStr, {
                 stopPx: tpStr,
                 execInst: 'Close,LastPrice'
@@ -186,6 +186,7 @@ class BitmexExchange extends BaseExchange {
             logger.info(`[BitMEX] TP/SL independently bound to ${symbol}.`);
         } catch (e) {
             logger.error(`[BitMEX] Post-fill exit condition error for ${symbol}: ${e.message}`);
+            throw e;
         }
     }
 }
