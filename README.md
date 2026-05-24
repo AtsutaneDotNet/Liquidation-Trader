@@ -13,7 +13,7 @@ Liquidation-Trader is a high-performance, automated cryptocurrency trading bot d
 Here is a visual preview of the premium, responsive Glassmorphism Web interface built for **Liquidation-Trader**:
 
 ### 1. Bot Overview & Controls
-Manage engine states dynamically and monitor real-time indicators (Fear & Greed index, active/max positions, margin utilization, loaded trading pairs) alongside the high-value liquidation stream.
+Manage engine states dynamically and monitor real-time indicators (Market Sentiment, active/max positions, margin utilization, loaded trading pairs) alongside the high-value liquidation stream.
 ![Bot Overview](assets/bot_overview.png)
 
 ### 2. Active Positions & Risk Tracking
@@ -44,12 +44,12 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
     - **Session VWAP**: Track price deviations against a session-anchored Volume Weighted Average Price (Daily, Weekly, Monthly) which resets cumulative calculations at the start of each session timeframe.
   - **RSI (Relative Strength Index)**: Identify overbought or oversold conditions. Configure advanced threshold directions (`above`/`under`) and custom signal actions, complete with guards requiring RSI values to align logically (e.g., oversold signals are restricted below 50, overbought above 50).
   - **ADX (Average Directional Index)**: Detect trend strength and exhaustion. Generates entry signals based on customizable threshold direction (`above`/`under`) and DI crossover logic.
-  - **Fear & Greed**: Trade alongside or against market sentiment using CoinMarketCap's index. Custom mapping for Extreme Fear, Fear, Greed, and Extreme Greed signals.
-  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, ADX, Fear & Greed) to align in the same direction before executing a trade for maximum precision.
+  - **Market Sentiment**: Trade alongside or against market sentiment using CoinMarketCap's index. Custom mapping for Bullish/Bearish and Extreme Fear/Greed signals.
+  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, ADX, Market Sentiment) to align in the same direction before executing a trade for maximum precision.
   - **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 - **Intelligent Filtering**:
   - **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
-  - **Fear & Greed Index**: Integrate real-time market sentiment into decision-making and dashboard visibility.
+  - **Market Sentiment**: Integrate real-time market sentiment into decision-making and dashboard visibility.
   - **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
   - **Value Threshold**: Filter liquidations by USD or BTC value.
 - **Robust Risk Management**:
@@ -82,7 +82,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 - **Database**: SQLite (via `better-sqlite3`) with encryption.
 - **API Integration**: [CCXT Pro](https://ccxt.pro/) for unified exchange WebSocket and REST connectivity.
 - **Frontend**: Vanilla HTML/JS with a premium CSS design system (Glassmorphism).
-- **Indicator Source**: [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) for dynamic thresholds & Fear & Greed Index.
+- **Indicator Source**: [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) for dynamic thresholds & Market Sentiment.
 
 ---
 
@@ -93,7 +93,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - API Keys for your preferred exchanges.
 - (Optional) [CoinMarketCap API Key](https://coinmarketcap.com/api/) for symbol filtering.
-- (Optional) [RapidAPI Key](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) for Dynamic Thresholds & Fear & Greed Index.
+- (Optional) [RapidAPI Key](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) for Dynamic Thresholds & Market Sentiment.
 
 ### Installation
 
@@ -174,11 +174,11 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ADX_THRESHOLD_DIR` | Condition for ADX threshold (`above`/`under`). | `under` |
 | `ADX_PDI_SIGNAL` | Signal direction when +DI crosses -DI (`sell`, `buy`, `none`). | `sell` |
 | `ADX_MDI_SIGNAL` | Signal direction when -DI crosses +DI (`buy`, `sell`, `none`). | `buy` |
-| `ENABLE_FEARGREED_STRATEGY` | Toggle Fear & Greed entry signal. | `false` |
-| `FG_FEAR_SIGNAL` | Signal direction during Fear. | `buy` |
-| `FG_GREED_SIGNAL` | Signal direction during Greed. | `sell` |
-| `FG_EXTREME_FEAR_SIGNAL` | Signal direction during Extreme Fear. | `none` |
-| `FG_EXTREME_GREED_SIGNAL` | Signal direction during Extreme Greed. | `none` |
+| `ENABLE_MARKET_SENTIMENT_STRATEGY` | Toggle Market Sentiment entry signal. | `false` |
+| `MS_BULLISH_SIGNAL` | Signal direction during Bullish + Fear/Greed. | `buy` |
+| `MS_BEARISH_SIGNAL` | Signal direction during Bearish + Fear/Greed. | `sell` |
+| `MS_EXTREME_FEAR_SIGNAL` | Signal direction during Extreme Fear. | `none` |
+| `MS_EXTREME_GREED_SIGNAL` | Signal direction during Extreme Greed. | `none` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 
 ### Filters & Dynamic Thresholds

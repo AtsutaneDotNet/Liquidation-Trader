@@ -155,7 +155,7 @@ class WebServer {
                 openPositionsCount: positions.length,
                 maxOpenPositions: parseInt(currentConfig.MAX_OPEN_POSITIONS) || 0,
                 usedMarginPercent: usedMarginPercent,
-                fearAndGreed: this.bot.fearAndGreed
+                marketSentiment: this.bot.marketSentiment
             });
         });
 

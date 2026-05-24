@@ -31,8 +31,8 @@ class TradingBot {
         this.dynamicThresholds = {};
         this.dynamicInterval = null;
 
-        this.fearAndGreed = null;
-        this.fearAndGreedInterval = null;
+        this.marketSentiment = null;
+        this.marketSentimentInterval = null;
 
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
@@ -78,8 +78,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_ADX_STRATEGY && !cfg.ENABLE_FEARGREED_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, ADX, or Fear & Greed strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_ADX_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, ADX, or Market Sentiment strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -192,12 +192,12 @@ class TradingBot {
             this.updatePnL(); // Fetch once initially
             this.updateBtcPrice(); // Fetch once initially
             this.fetchDynamicThresholds(); // Fetch once initially
-            this.updateFearAndGreed(); // Fetch once initially
+            this.updateMarketSentiment(); // Fetch once initially
 
             this.pnlInterval = setInterval(() => this.updatePnL(), 600000); // Every 10 mins
             this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
             this.dynamicInterval = setInterval(() => this.fetchDynamicThresholds(), 3600000); // Every hour
-            this.fearAndGreedInterval = setInterval(() => this.updateFearAndGreed(), 3600000); // Every hour
+            this.marketSentimentInterval = setInterval(() => this.updateMarketSentiment(), 3600000); // Every hour
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
@@ -225,7 +225,7 @@ class TradingBot {
         clearInterval(this.cmcInterval);
         clearInterval(this.btcInterval);
         clearInterval(this.dynamicInterval);
-        clearInterval(this.fearAndGreedInterval);
+        clearInterval(this.marketSentimentInterval);
     }
 
     async refreshCmcRankings() {
@@ -681,11 +681,11 @@ class TradingBot {
         }
     }
 
-    async updateFearAndGreed() {
+    async updateMarketSentiment() {
         if (!this.isRunning) return;
         const cfg = this.config.get();
         if (!cfg.RAPIDAPI_KEY) {
-            this.fearAndGreed = null;
+            this.marketSentiment = null;
             return;
         }
 
@@ -703,17 +703,20 @@ class TradingBot {
 
             const json = await response.json();
             if (json && json.data && json.data.market && json.data.market.fear_greed) {
-                const fg = json.data.market.fear_greed;
-                this.fearAndGreed = {
-                    value: fg.value,
-                    classification: fg.label
+                const market = json.data.market;
+                const fg = market.fear_greed;
+                this.marketSentiment = {
+                    fgValue: fg.value,
+                    fgClassification: fg.label,
+                    marketScore: market.score,
+                    marketLabel: market.label
                 };
-                logger.debug(`Updated Fear and Greed Index: ${fg.value} (${fg.label})`);
+                logger.debug(`Updated Market Sentiment: ${market.label} (Score: ${market.score}) | F&G: ${fg.value} (${fg.label})`);
             } else {
-                this.fearAndGreed = null;
+                this.marketSentiment = null;
             }
         } catch (e) {
-            logger.warn(`Failed to update Fear and Greed Index: ${e.message}`);
+            logger.warn(`Failed to update Market Sentiment: ${e.message}`);
         }
     }
 
@@ -957,7 +960,7 @@ class TradingBot {
             let vwapSide = null;
             let rsiSide = null;
             let adxSide = null;
-            let fgSide = null;
+            let msSide = null;
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
@@ -1165,38 +1168,43 @@ class TradingBot {
                 }
             }
 
-            // --- 5. Fear & Greed Strategy ---
-            if (cfg.ENABLE_FEARGREED_STRATEGY) {
+            // --- 5. Market Sentiment Strategy ---
+            if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
                 if (openPosition) {
                     const posSide = (openPosition.side || '').toLowerCase();
-                    fgSide = 'ignore';
-                    logger.info(`Bypassing Fear & Greed strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
-                    decisionRecord.fearAndGreed = { classification: 'Bypassed (Open Position)', signal: fgSide };
-                } else if (this.fearAndGreed) {
-                    const classification = (this.fearAndGreed.classification || '').toLowerCase();
-                    if (classification === 'fear') {
-                        fgSide = cfg.FG_FEAR_SIGNAL === 'none' ? null : cfg.FG_FEAR_SIGNAL;
-                        logger.info(`Fear & Greed Condition met: Fear. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
-                    } else if (classification === 'greed') {
-                        fgSide = cfg.FG_GREED_SIGNAL === 'none' ? null : cfg.FG_GREED_SIGNAL;
-                        logger.info(`Fear & Greed Condition met: Greed. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
-                    } else if (classification === 'neutral') {
-                        fgSide = 'ignore';
-                        logger.info(`Fear & Greed Condition met: Neutral. Ignoring F&G for confluence.`);
-                    } else if (classification === 'extreme fear') {
-                        fgSide = cfg.FG_EXTREME_FEAR_SIGNAL === 'none' ? null : cfg.FG_EXTREME_FEAR_SIGNAL;
-                        logger.info(`Fear & Greed Condition met: Extreme Fear. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
-                    } else if (classification === 'extreme greed') {
-                        fgSide = cfg.FG_EXTREME_GREED_SIGNAL === 'none' ? null : cfg.FG_EXTREME_GREED_SIGNAL;
-                        logger.info(`Fear & Greed Condition met: Extreme Greed. Signal: ${fgSide ? fgSide.toUpperCase() : 'NONE'}.`);
+                    msSide = 'ignore';
+                    logger.info(`Bypassing Market Sentiment strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
+                    decisionRecord.marketSentiment = { classification: 'Bypassed (Open Position)', signal: msSide };
+                } else if (this.marketSentiment) {
+                    const fgClass = (this.marketSentiment.fgClassification || '').toLowerCase();
+                    const mktLabel = (this.marketSentiment.marketLabel || '').toLowerCase();
+                    
+                    if (fgClass === 'extreme fear') {
+                        msSide = cfg.MS_EXTREME_FEAR_SIGNAL === 'none' ? null : cfg.MS_EXTREME_FEAR_SIGNAL;
+                        logger.info(`Market Sentiment Condition met: Extreme Fear. Signal: ${msSide ? msSide.toUpperCase() : 'NONE'}.`);
+                    } else if (fgClass === 'extreme greed') {
+                        msSide = cfg.MS_EXTREME_GREED_SIGNAL === 'none' ? null : cfg.MS_EXTREME_GREED_SIGNAL;
+                        logger.info(`Market Sentiment Condition met: Extreme Greed. Signal: ${msSide ? msSide.toUpperCase() : 'NONE'}.`);
+                    } else if (fgClass === 'neutral' || mktLabel === 'neutral') {
+                        msSide = 'ignore';
+                        logger.info(`Market Sentiment Condition met: F&G ${fgClass}, Market ${mktLabel}. Ignoring for confluence.`);
                     } else {
-                        // Unknown or unexpected keeps fgSide = null
-                        logger.info(`Fear & Greed Condition met: ${this.fearAndGreed.classification}. Signal: NONE (No trade).`);
+                        // fgClass is fear or greed, mktLabel is bullish or bearish
+                        if (mktLabel === 'bullish') {
+                            msSide = cfg.MS_BULLISH_SIGNAL === 'none' ? null : cfg.MS_BULLISH_SIGNAL;
+                            logger.info(`Market Sentiment Condition met: Bullish + ${fgClass}. Signal: ${msSide ? msSide.toUpperCase() : 'NONE'}.`);
+                        } else if (mktLabel === 'bearish') {
+                            msSide = cfg.MS_BEARISH_SIGNAL === 'none' ? null : cfg.MS_BEARISH_SIGNAL;
+                            logger.info(`Market Sentiment Condition met: Bearish + ${fgClass}. Signal: ${msSide ? msSide.toUpperCase() : 'NONE'}.`);
+                        } else {
+                            msSide = null;
+                            logger.info(`Market Sentiment Condition met: Unknown label (${mktLabel}). Signal: NONE.`);
+                        }
                     }
-                    decisionRecord.fearAndGreed = { classification: this.fearAndGreed.classification, signal: fgSide };
+                    decisionRecord.marketSentiment = { fgClassification: this.marketSentiment.fgClassification, marketLabel: this.marketSentiment.marketLabel, signal: msSide };
                 } else {
-                    logger.info(`No Fear & Greed data available.`);
-                    decisionRecord.fearAndGreed = { error: 'No data' };
+                    logger.info(`No Market Sentiment data available.`);
+                    decisionRecord.marketSentiment = { error: 'No data' };
                 }
             }
 
@@ -1206,8 +1214,8 @@ class TradingBot {
             if (cfg.ENABLE_VWAP_STRATEGY) activeStrategies.push({ name: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY) activeStrategies.push({ name: 'RSI', side: rsiSide });
             if (cfg.ENABLE_ADX_STRATEGY) activeStrategies.push({ name: 'ADX', side: adxSide });
-            if (cfg.ENABLE_FEARGREED_STRATEGY && fgSide !== 'ignore') {
-                activeStrategies.push({ name: 'Fear&Greed', side: fgSide });
+            if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide !== 'ignore') {
+                activeStrategies.push({ name: 'MarketSentiment', side: msSide });
             }
 
             if (activeStrategies.length > 0) {

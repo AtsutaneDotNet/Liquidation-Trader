@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_FEARGREED_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -197,8 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const adxCb = document.getElementById('ENABLE_ADX_STRATEGY');
         if (adxCb) formData.set('ENABLE_ADX_STRATEGY', adxCb.checked ? 'true' : 'false');
 
-        const fgCb = document.getElementById('ENABLE_FEARGREED_STRATEGY');
-        if (fgCb) formData.set('ENABLE_FEARGREED_STRATEGY', fgCb.checked ? 'true' : 'false');
+        const fgCb = document.getElementById('ENABLE_MARKET_SENTIMENT_STRATEGY');
+        if (fgCb) formData.set('ENABLE_MARKET_SENTIMENT_STRATEGY', fgCb.checked ? 'true' : 'false');
 
         const isVwapChecked = vwapCb && vwapCb.checked;
         const isRsiChecked = rsiCb && rsiCb.checked;
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL',
             'ADX_THRESHOLD_DIR', 'ADX_PDI_SIGNAL', 'ADX_MDI_SIGNAL',
-            'FG_FEAR_SIGNAL', 'FG_GREED_SIGNAL', 'FG_EXTREME_FEAR_SIGNAL', 'FG_EXTREME_GREED_SIGNAL'
+            'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL'
         ];
         advInputs.forEach(id => {
             const el = document.getElementById(id);
@@ -257,6 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxPositionsCount = document.getElementById('max-positions-count');
     const usedMarginPercent = document.getElementById('used-margin-percent');
     const fearGreedValue = document.getElementById('fear-greed-value');
+    const marketSentimentValue = document.getElementById('market-sentiment-value');
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
 
@@ -379,10 +380,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (maxPositionsCount) maxPositionsCount.textContent = data.maxOpenPositions || 0;
                 if (usedMarginPercent) usedMarginPercent.textContent = (data.usedMarginPercent || 0).toFixed(2) + '%';
 
-                if (fearGreedValue) {
-                    if (data.fearAndGreed) {
-                        const val = parseInt(data.fearAndGreed.value) || 0;
-                        const classif = data.fearAndGreed.classification || '';
+                if (marketSentimentValue && fearGreedValue) {
+                    if (data.marketSentiment) {
+                        const val = parseInt(data.marketSentiment.fgValue) || 0;
+                        const classif = data.marketSentiment.fgClassification || '';
                         fearGreedValue.textContent = `${val} (${classif})`;
 
                         // Dynamic color styling
@@ -391,9 +392,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         else if (val < 60) fearGreedValue.style.color = 'var(--text-muted)';
                         else if (val < 80) fearGreedValue.style.color = 'var(--accent)';
                         else fearGreedValue.style.color = '#00ff00';
+
+                        const mktScore = parseFloat(data.marketSentiment.marketScore) || 0;
+                        const mktLabel = data.marketSentiment.marketLabel || '';
+                        marketSentimentValue.textContent = `${mktScore.toFixed(2)} (${mktLabel})`;
+                        if (mktLabel.toLowerCase() === 'bullish') marketSentimentValue.style.color = '#00ff00';
+                        else if (mktLabel.toLowerCase() === 'bearish') marketSentimentValue.style.color = 'var(--danger)';
+                        else marketSentimentValue.style.color = 'var(--text-muted)';
                     } else {
                         fearGreedValue.textContent = 'N/A';
                         fearGreedValue.style.color = 'var(--text-muted)';
+                        marketSentimentValue.textContent = 'N/A';
+                        marketSentimentValue.style.color = 'var(--text-muted)';
                     }
                 }
             });
@@ -905,11 +915,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
                 </div>
             `;
-        } else if (name === 'F&G') {
-            const stateStr = strat.classification || 'N/A';
+        } else if (name === 'M.Sentiment') {
+            let stateStr = 'N/A';
+            if (strat.classification) {
+                stateStr = strat.classification;
+            } else if (strat.marketLabel && strat.fgClassification) {
+                stateStr = `${strat.marketLabel} + ${strat.fgClassification}`;
+            }
 
             tooltipHTML = `
-                <div class="tooltip-header">Fear & Greed Index</div>
+                <div class="tooltip-header">Market Sentiment</div>
                 <div class="tooltip-grid">
                     <div class="tooltip-row"><span>State</span><span>${stateStr}</span></div>
                     <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
@@ -939,7 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td>${formatStrategy(record.vwap, 'VWAP')}</td>
             <td>${formatStrategy(record.rsi, 'RSI')}</td>
             <td>${formatStrategy(record.adx, 'ADX')}</td>
-            <td>${formatStrategy(record.fearAndGreed, 'F&G')}</td>
+            <td>${formatStrategy(record.marketSentiment, 'M.Sentiment')}</td>
             <td>${confluenceText}</td>
             <td><span class="${outcomeClz}">${record.reason}</span></td>
         </tr>`;
@@ -1520,10 +1535,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ADX_THRESHOLD_DIR: 'under',
                     ADX_PDI_SIGNAL: 'sell',
                     ADX_MDI_SIGNAL: 'buy',
-                    FG_FEAR_SIGNAL: 'buy',
-                    FG_GREED_SIGNAL: 'sell',
-                    FG_EXTREME_FEAR_SIGNAL: 'none',
-                    FG_EXTREME_GREED_SIGNAL: 'none'
+                    MS_BULLISH_SIGNAL: 'buy',
+                    MS_BEARISH_SIGNAL: 'sell',
+                    MS_EXTREME_FEAR_SIGNAL: 'none',
+                    MS_EXTREME_GREED_SIGNAL: 'none'
                 };
                 for (const [id, value] of Object.entries(defaults)) {
                     const el = document.getElementById(id);
