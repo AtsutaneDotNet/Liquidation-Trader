@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL',
             'ADX_THRESHOLD_DIR', 'ADX_PDI_SIGNAL', 'ADX_MDI_SIGNAL', 'ADX_BYPASS_ON_POSITION',
-            'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL'
+            'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL', 'MS_BYPASS_ON_POSITION'
         ];
         advInputs.forEach(id => {
             const el = document.getElementById(id);
@@ -1542,7 +1542,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     MS_BULLISH_SIGNAL: 'buy',
                     MS_BEARISH_SIGNAL: 'sell',
                     MS_EXTREME_FEAR_SIGNAL: 'none',
-                    MS_EXTREME_GREED_SIGNAL: 'none'
+                    MS_EXTREME_GREED_SIGNAL: 'none',
+                    MS_BYPASS_ON_POSITION: 'false'
                 };
                 for (const [id, value] of Object.entries(defaults)) {
                     const el = document.getElementById(id);

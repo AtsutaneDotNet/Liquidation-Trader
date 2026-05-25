@@ -150,7 +150,8 @@ const defaults = {
     FG_FEAR_SIGNAL: 'buy',
     FG_GREED_SIGNAL: 'sell',
     FG_EXTREME_FEAR_SIGNAL: 'none',
-    FG_EXTREME_GREED_SIGNAL: 'none'
+    FG_EXTREME_GREED_SIGNAL: 'none',
+    MS_BYPASS_ON_POSITION: 'false'
 };
 
 const currentConfig = getConfig();

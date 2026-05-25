@@ -1228,7 +1228,7 @@ class TradingBot {
 
             // --- 5. Market Sentiment Strategy ---
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
-                if (openPosition) {
+                if (cfg.MS_BYPASS_ON_POSITION === 'true' && openPosition) {
                     const posSide = (openPosition.side || '').toLowerCase();
                     msSide = 'ignore';
                     logger.info(`Bypassing Market Sentiment strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
