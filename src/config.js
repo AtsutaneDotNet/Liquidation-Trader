@@ -57,6 +57,7 @@ function getConfig() {
         ADX_THRESHOLD_DIR: dbConfig.ADX_THRESHOLD_DIR || 'under',
         ADX_PDI_SIGNAL: dbConfig.ADX_PDI_SIGNAL || 'sell',
         ADX_MDI_SIGNAL: dbConfig.ADX_MDI_SIGNAL || 'buy',
+        ADX_BYPASS_ON_POSITION: dbConfig.ADX_BYPASS_ON_POSITION || 'false',
         MS_BULLISH_SIGNAL: dbConfig.MS_BULLISH_SIGNAL || 'buy',
         MS_BEARISH_SIGNAL: dbConfig.MS_BEARISH_SIGNAL || 'sell',
         MS_EXTREME_FEAR_SIGNAL: dbConfig.MS_EXTREME_FEAR_SIGNAL || 'none',

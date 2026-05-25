@@ -146,6 +146,7 @@ const defaults = {
     ADX_THRESHOLD_DIR: 'under',
     ADX_PDI_SIGNAL: 'sell',
     ADX_MDI_SIGNAL: 'buy',
+    ADX_BYPASS_ON_POSITION: 'false',
     FG_FEAR_SIGNAL: 'buy',
     FG_GREED_SIGNAL: 'sell',
     FG_EXTREME_FEAR_SIGNAL: 'none',
