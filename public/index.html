@@ -984,22 +984,36 @@
                                     </svg>
                                     Fund Management
                                 </h3>
-                                <p class="subtitle" style="margin-bottom: 2rem;">Incorporate multi-exchange asset
-                                    allocation, automated portfolio balancing, and yield hedging.</p>
+                                <p class="subtitle" style="margin-bottom: 2rem;">Automatically manage your profits with smart internal transfers to secure your gains.</p>
 
-                                <div class="coming-soon-card">
-                                    <div class="coming-soon-badge">🌟 FUTURE UPGRADE</div>
-                                    <h3>Automated Portfolio Allocation & Rebalancing</h3>
-                                    <p>Our upcoming Fund Management upgrade will allow you to dynamically balance
-                                        trading capital across exchange sub-accounts, hedge collateral volatility, and
-                                        automatically allocate reserves based on real-time APY rates and risk factors.
-                                    </p>
-
-                                    <div class="coming-soon-features">
-                                        <div class="feature-tag">Smart Rebalancing</div>
-                                        <div class="feature-tag">Volatility-Adjusted Weights</div>
-                                        <div class="feature-tag">Multi-Asset Collateral</div>
-                                        <div class="feature-tag">Treasury Sourcing</div>
+                                <div class="page-subsection">
+                                    <h4>Automatic Internal Transfer (Take Profit)</h4>
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label
+                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                                <input type="checkbox" id="ENABLE_AUTO_TRANSFER"
+                                                    name="ENABLE_AUTO_TRANSFER" value="true"
+                                                    style="width: auto; margin: 0;"> Enable Auto Transfer
+                                            </label>
+                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                                Automatically takes profit by making an internal transfer from the trading account to the funding account when your total wallet value exceeds the minimum threshold.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label for="MIN_BALANCE_THRESHOLD">Min Balance Required ($)</label>
+                                            <input type="number" id="MIN_BALANCE_THRESHOLD" name="MIN_BALANCE_THRESHOLD" step="0.01"
+                                                placeholder="e.g. 1000">
+                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The base capital to keep in the trading account.</p>
+                                        </div>
+                                        <div class="col">
+                                            <label for="TRANSFER_PERCENTAGE_THRESHOLD">Transfer Trigger Threshold (%)</label>
+                                            <input type="number" id="TRANSFER_PERCENTAGE_THRESHOLD" name="TRANSFER_PERCENTAGE_THRESHOLD" step="0.01"
+                                                placeholder="e.g. 5">
+                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Transfer will trigger if profit % exceeds this value.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

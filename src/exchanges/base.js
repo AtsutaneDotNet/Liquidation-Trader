@@ -179,6 +179,35 @@ class BaseExchange {
             margin_used: used
         };
     }
+
+    /**
+     * Execute internal transfer between accounts
+     * @param {string} code - Currency code (e.g. USDT)
+     * @param {number} amount - Amount to transfer
+     * @param {string} fromAccount - Origin account
+     * @param {string} toAccount - Destination account
+     */
+    async internalTransfer(code, amount, fromAccount, toAccount) {
+        if (!this.exchange || !this.exchange.has['transfer']) {
+            if (require('../logger')) {
+                require('../logger').warn(`[BaseExchange] Transfer not supported by this exchange or ccxt wrapper`);
+            }
+            return false;
+        }
+        
+        try {
+            await this.exchange.transfer(code, amount, fromAccount, toAccount);
+            if (require('../logger')) {
+                require('../logger').info(`[BaseExchange] Successfully transferred ${amount} ${code} from ${fromAccount} to ${toAccount}`);
+            }
+            return true;
+        } catch (e) {
+            if (require('../logger')) {
+                require('../logger').error(`[BaseExchange] Internal transfer failed: ${e.message}`);
+            }
+            return false;
+        }
+    }
 }
 
 module.exports = BaseExchange;

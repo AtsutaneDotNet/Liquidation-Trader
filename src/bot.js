@@ -622,8 +622,61 @@ class TradingBot {
             const aggregated = db.calculateAggregatedPnl();
             db.updateAccountState(aggregated);
             logger.debug(`Aggregated PnL updated. Daily: $${aggregated.daily_pnl.toFixed(2)}`);
+
+            // Execute automatic internal transfer (take profit) check
+            await this.checkAutoTransfer();
         } catch (e) {
             logger.error(`Failed to update PnL loop: ${e.message}`);
+        }
+    }
+
+    async checkAutoTransfer() {
+        if (!this.isRunning) return;
+        const cfg = this.config.get();
+        if (!cfg.ENABLE_AUTO_TRANSFER) return;
+
+        try {
+            const state = db.getAccountState();
+            if (!state) return;
+            const walletValue = state.total_value || 0;
+            const minBalance = parseFloat(cfg.MIN_BALANCE_THRESHOLD) || 0;
+            const thresholdPercent = parseFloat(cfg.TRANSFER_PERCENTAGE_THRESHOLD) || 0;
+
+            if (walletValue > minBalance && minBalance > 0) {
+                const diff = walletValue - minBalance;
+                const diffPercentage = (diff / walletValue) * 100;
+
+                if (diffPercentage >= thresholdPercent) {
+                    logger.info(`Auto Transfer Triggered: Wallet Value ($${walletValue.toFixed(2)}) is ${diffPercentage.toFixed(2)}% above minimum balance ($${minBalance.toFixed(2)}).`);
+                    
+                    let fromAccount = 'contract';
+                    let toAccount = 'fund';
+                    const exName = cfg.TRADE_EXCHANGE.toLowerCase();
+                    
+                    if (exName === 'bybit') {
+                        fromAccount = 'unified';
+                        toAccount = 'fund';
+                    } else if (exName === 'binance') {
+                        fromAccount = 'future';
+                        toAccount = 'funding';
+                    } else if (exName === 'okx') {
+                        fromAccount = 'trading';
+                        toAccount = 'funding';
+                    }
+                    
+                    if (this.tradeExchange && typeof this.tradeExchange.internalTransfer === 'function') {
+                        const amountToTransfer = Math.floor(diff * 100) / 100; // Transfer exact diff rounded down to 2 decimals
+                        const success = await this.tradeExchange.internalTransfer('USDT', amountToTransfer, fromAccount, toAccount);
+                        if (success) {
+                            logger.info(`Auto Transfer Completed: Moved $${amountToTransfer} USDT from ${fromAccount} to ${toAccount}.`);
+                        }
+                    } else {
+                        logger.warn('Auto Transfer failed: internalTransfer method not supported by the current exchange implementation.');
+                    }
+                }
+            }
+        } catch (e) {
+            logger.error(`Failed during Auto Transfer check: ${e.message}`);
         }
     }
 

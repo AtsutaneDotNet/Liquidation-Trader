@@ -59,6 +59,8 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
   - **Max Leverage Safeguard**: Automatically checks the maximum allowed leverage on the exchange for the specific symbol (via market limit cache or `fetchLeverageTiers` API) and skips the trade if the configured `TRADE_LEVERAGE` exceeds it, preventing API errors and protecting account health.
   - **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
+- **Fund Management**:
+  - **Automatic Internal Transfer**: Automatically takes profit by transferring a specified percentage of profit from the trading account to the funding account when the wallet value exceeds a predefined threshold.
 - **Premium Web UI**:
   - **Modern 6-Tab Interface**: A fully responsive, premium 6-tab configuration system with detailed descriptions, desktop drag-to-scroll swipe gestures, and glassmorphism design.
   - **Import/Export Settings**: Seamlessly backup and restore your strategy configurations without exposing sensitive API keys.
@@ -204,6 +206,13 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `MAX_OPEN_POSITIONS` | Maximum number of simultaneous trades. | `3` |
 | `ENABLE_RUNAWAY_HELPER` | Rescue stale positions with deep negative PnL% via averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 | `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (negative) to trigger rescue. | `-10` |
+
+### Fund Management
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `ENABLE_AUTO_TRANSFER` | Automatically transfer profit to funding account. | `false` |
+| `MIN_BALANCE_THRESHOLD` | Minimum base capital to keep in the trading account ($). | `1000` |
+| `TRANSFER_PERCENTAGE_THRESHOLD` | % profit relative to wallet value required to trigger transfer. | `5` |
 
 ---
 
