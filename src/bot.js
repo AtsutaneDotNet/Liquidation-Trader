@@ -1120,7 +1120,12 @@ class TradingBot {
 
             // --- 4. ADX Strategy ---
             if (adxEnabled) {
-                if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                if (cfg.ADX_BYPASS_ON_POSITION === 'true' && openPosition) {
+                    const posSide = (openPosition.side || '').toLowerCase();
+                    adxSide = 'ignore';
+                    logger.info(`Bypassing ADX strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
+                    decisionRecord.adx = { classification: 'Bypassed (Open Position)', signal: adxSide };
+                } else if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                     const period = parseInt(cfg.ADX_PERIOD) || 14;
                     const threshold = parseFloat(cfg.ADX_THRESHOLD) || 25;
                     let klines = sharedKlines;
@@ -1213,7 +1218,9 @@ class TradingBot {
             const activeStrategies = [];
             if (cfg.ENABLE_VWAP_STRATEGY) activeStrategies.push({ name: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY) activeStrategies.push({ name: 'RSI', side: rsiSide });
-            if (cfg.ENABLE_ADX_STRATEGY) activeStrategies.push({ name: 'ADX', side: adxSide });
+            if (cfg.ENABLE_ADX_STRATEGY && adxSide !== 'ignore') {
+                activeStrategies.push({ name: 'ADX', side: adxSide });
+            }
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide !== 'ignore') {
                 activeStrategies.push({ name: 'MarketSentiment', side: msSide });
             }
