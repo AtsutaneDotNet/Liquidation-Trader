@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -184,6 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dcaCb = document.getElementById('ENABLE_DCA_MARTINGALE');
         if (dcaCb) formData.set('ENABLE_DCA_MARTINGALE', dcaCb.checked ? 'true' : 'false');
+
+        const isolationCb = document.getElementById('ENABLE_ISOLATION_MODE');
+        if (isolationCb) formData.set('ENABLE_ISOLATION_MODE', isolationCb.checked ? 'true' : 'false');
 
         const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
         if (dynamicCb) formData.set('ENABLE_DYNAMIC_THRESHOLDS', dynamicCb.checked ? 'true' : 'false');
@@ -261,6 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const usedMarginPercent = document.getElementById('used-margin-percent');
     const fearGreedValue = document.getElementById('fear-greed-value');
     const marketSentimentValue = document.getElementById('market-sentiment-value');
+    const isolationStatusDot = document.getElementById('isolation-status-indicator')?.querySelector('.dot');
+    const isolationStatusText = document.getElementById('isolation-status-text');
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
 
@@ -371,6 +376,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     tradeStatusDot.className = 'dot';
                     tradeStatusText.textContent = 'Idle';
+                }
+
+                if (!data.isRunning) {
+                    if (isolationStatusDot) isolationStatusDot.className = 'dot';
+                    if (isolationStatusText) isolationStatusText.textContent = 'Stopped';
+                } else if (data.isolationMode) {
+                    if (isolationStatusDot) isolationStatusDot.className = 'dot error'; // Red/Orange pulse
+                    if (isolationStatusText) isolationStatusText.textContent = 'Isolation';
+                } else {
+                    if (isolationStatusDot) isolationStatusDot.className = 'dot running'; // Green pulse
+                    if (isolationStatusText) isolationStatusText.textContent = 'Normal';
                 }
 
                 pairsCount.textContent = data.pairsLoaded;

@@ -59,6 +59,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
   - **Max Leverage Safeguard**: Automatically checks the maximum allowed leverage on the exchange for the specific symbol (via market limit cache or `fetchLeverageTiers` API) and skips the trade if the configured `TRADE_LEVERAGE` exceeds it, preventing API errors and protecting account health.
   - **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
+  - **Isolation Trading System**: Automatically stop opening new positions when margin usage exceeds a safe threshold, reserving capital to manage current open positions.
 - **Fund Management**:
   - **Automatic Internal Transfer**: Automatically takes profit by transferring a specified percentage of profit from the trading account to the funding account when the wallet value exceeds a predefined threshold.
 - **Premium Web UI**:
@@ -204,6 +205,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `TRAILING_PROFIT_PERCENTAGE` | Trailing distance for the stop loss. | `0.2%` |
 | `TRAILING_ACTIVATION_PERCENTAGE` | Price deviation to activate trailing stop. | `0.0%` |
 | `MAX_OPEN_POSITIONS` | Maximum number of simultaneous trades. | `3` |
+| `ENABLE_ISOLATION_MODE` | Stop opening new positions if margin usage exceeds threshold. | `false` |
+| `ISOLATION_MARGIN_THRESHOLD` | The maximum used margin percentage before isolation mode activates. | `10` |
 | `ENABLE_RUNAWAY_HELPER` | Rescue stale positions with deep negative PnL% via averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 | `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (negative) to trigger rescue. | `-10` |
 

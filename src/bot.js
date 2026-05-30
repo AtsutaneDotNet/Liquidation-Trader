@@ -1308,6 +1308,17 @@ class TradingBot {
                 return;
             }
 
+            if (!hasPosition && cfg.ENABLE_ISOLATION_MODE) {
+                const state = db.getAccountState();
+                const usedMarginPercent = (state && state.total_value > 0) ? (state.margin_used / state.total_value) * 100 : 0;
+                const threshold = parseFloat(cfg.ISOLATION_MARGIN_THRESHOLD) || 10;
+                if (usedMarginPercent >= threshold) {
+                    logger.info(`Isolation Mode active (used margin ${usedMarginPercent.toFixed(2)}% >= ${threshold}%). Holding bot from opening new position for ${symbol}.`);
+                    pushDecision('Isolation Mode Active');
+                    return;
+                }
+            }
+
             await this.executeTrade(symbol, finalSide, currentPrice, cfg);
             pushDecision('Trade Executed', finalSide);
 
