@@ -268,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isolationStatusText = document.getElementById('isolation-status-text');
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
+    let lastIsolationMode = null;
 
     // ── Currency Switcher Setup ──────────────────────────────
     const currencySymbols = {
@@ -387,6 +388,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     if (isolationStatusDot) isolationStatusDot.className = 'dot running'; // Green pulse
                     if (isolationStatusText) isolationStatusText.textContent = 'Normal';
+                }
+
+                // Track and notify on Isolation Mode changes
+                if (data.isRunning) {
+                    if (lastIsolationMode !== null) {
+                        if (!lastIsolationMode && data.isolationMode) {
+                            showToast({
+                                title: 'Trading Status Changed',
+                                message: 'Bot has entered ISOLATION MODE. Used margin has exceeded the threshold. No new positions will be opened.',
+                                type: 'error'
+                            });
+                        } else if (lastIsolationMode && !data.isolationMode) {
+                            showToast({
+                                title: 'Trading Status Changed',
+                                message: 'Bot has returned to NORMAL trading mode. Used margin has dropped below the threshold.',
+                                type: 'success'
+                            });
+                        }
+                    }
+                    lastIsolationMode = data.isolationMode;
+                } else {
+                    lastIsolationMode = null;
                 }
 
                 pairsCount.textContent = data.pairsLoaded;
