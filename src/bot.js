@@ -199,7 +199,7 @@ class TradingBot {
             this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
             this.dynamicInterval = setInterval(() => this.fetchDynamicThresholds(), 3600000); // Every hour
             this.marketSentimentInterval = setInterval(() => this.updateMarketSentiment(), 3600000); // Every hour
-            this.anonReportInterval = setInterval(() => this.sendAnonReport(), 3600000); // Every hour
+            this.anonReportInterval = setInterval(() => this.sendAnonReport(), 900000); // Every 15 mins
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
