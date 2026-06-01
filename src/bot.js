@@ -779,7 +779,7 @@ class TradingBot {
     async sendAnonReport() {
         if (!this.isRunning) return;
         const cfg = this.config.get();
-        if (cfg.ENABLE_ANON_REPORTING !== 'true') return;
+        if (!cfg.ENABLE_ANON_REPORTING) return;
         
         try {
             const aggregated = db.calculateAggregatedPnl();
