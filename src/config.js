@@ -68,6 +68,8 @@ function getConfig() {
         MS_EXTREME_FEAR_SIGNAL: dbConfig.MS_EXTREME_FEAR_SIGNAL || 'none',
         MS_EXTREME_GREED_SIGNAL: dbConfig.MS_EXTREME_GREED_SIGNAL || 'none',
         MS_BYPASS_ON_POSITION: dbConfig.MS_BYPASS_ON_POSITION || 'false',
+        ENABLE_ANON_REPORTING: dbConfig.ENABLE_ANON_REPORTING === 'true',
+        ANON_UID: dbConfig.ANON_UID || '',
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
         WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,
         WEB_HOST: process.env.WEB_HOST || 'localhost'
