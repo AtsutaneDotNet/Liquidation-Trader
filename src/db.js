@@ -151,7 +151,9 @@ const defaults = {
     FG_GREED_SIGNAL: 'sell',
     FG_EXTREME_FEAR_SIGNAL: 'none',
     FG_EXTREME_GREED_SIGNAL: 'none',
-    MS_BYPASS_ON_POSITION: 'false'
+    MS_BYPASS_ON_POSITION: 'false',
+    ENABLE_ANON_REPORTING: 'false',
+    ANON_UID: ''
 };
 
 const currentConfig = getConfig();
@@ -199,7 +201,14 @@ if (finalConfig['RAPIDAPI_KEY']) {
 for (const [k, v] of Object.entries(defaults)) {
     if (currentConfig[k] === undefined) {
         setConfig(k, v);
+        currentConfig[k] = v;
     }
+}
+
+if (!currentConfig['ANON_UID']) {
+    const uid = require('crypto').randomBytes(4).toString('hex');
+    setConfig('ANON_UID', uid);
+    currentConfig['ANON_UID'] = uid;
 }
 
 function updateAccountState(data) {

@@ -1081,6 +1081,20 @@
                                 <p class="subtitle" style="font-size: 11px; margin-top: -10px;">Receive browser
                                     notification overlays instantly on your computer whenever critical liquidation
                                     signals are logged or positions are managed.</p>
+                                <div class="form-group row" style="margin-top: 1rem;">
+                                    <div class="col">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                            <input type="checkbox" id="ENABLE_ANON_REPORTING" name="ENABLE_ANON_REPORTING" value="true"
+                                                style="width: auto; margin: 0;"> Enable Anonymous Reporting
+                                        </label>
+                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Periodically sends anonymous aggregated PnL stats (Daily, Weekly, Monthly, Yearly, Total), UID, and Exchange to liquidation.report to help build community data.</p>
+                                    </div>
+                                    <div class="col">
+                                        <label for="ANON_UID">Your Anonymous UID</label>
+                                        <input type="text" id="ANON_UID" name="ANON_UID" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: not-allowed;">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

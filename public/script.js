@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'ENABLE_ANON_REPORTING'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -205,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const fgCb = document.getElementById('ENABLE_MARKET_SENTIMENT_STRATEGY');
         if (fgCb) formData.set('ENABLE_MARKET_SENTIMENT_STRATEGY', fgCb.checked ? 'true' : 'false');
+
+        const anonCb = document.getElementById('ENABLE_ANON_REPORTING');
+        if (anonCb) formData.set('ENABLE_ANON_REPORTING', anonCb.checked ? 'true' : 'false');
 
         const isVwapChecked = vwapCb && vwapCb.checked;
         const isRsiChecked = rsiCb && rsiCb.checked;

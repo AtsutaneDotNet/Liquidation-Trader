@@ -193,11 +193,13 @@ class TradingBot {
             this.updateBtcPrice(); // Fetch once initially
             this.fetchDynamicThresholds(); // Fetch once initially
             this.updateMarketSentiment(); // Fetch once initially
+            this.sendAnonReport(); // Fetch once initially
 
             this.pnlInterval = setInterval(() => this.updatePnL(), 600000); // Every 10 mins
             this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
             this.dynamicInterval = setInterval(() => this.fetchDynamicThresholds(), 3600000); // Every hour
             this.marketSentimentInterval = setInterval(() => this.updateMarketSentiment(), 3600000); // Every hour
+            this.anonReportInterval = setInterval(() => this.sendAnonReport(), 3600000); // Every hour
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
@@ -226,6 +228,7 @@ class TradingBot {
         clearInterval(this.btcInterval);
         clearInterval(this.dynamicInterval);
         clearInterval(this.marketSentimentInterval);
+        clearInterval(this.anonReportInterval);
     }
 
     async refreshCmcRankings() {
@@ -773,7 +776,40 @@ class TradingBot {
         }
     }
 
+    async sendAnonReport() {
+        if (!this.isRunning) return;
+        const cfg = this.config.get();
+        if (cfg.ENABLE_ANON_REPORTING !== 'true') return;
+        
+        try {
+            const aggregated = db.calculateAggregatedPnl();
+            const payload = {
+                uid: cfg.ANON_UID || 'unknown',
+                exchange: cfg.TRADE_EXCHANGE || 'unknown',
+                daily: aggregated.daily_pnl || 0,
+                weekly: aggregated.weekly_pnl || 0,
+                monthly: aggregated.monthly_pnl || 0,
+                yearly: aggregated.yearly_pnl || 0,
+                total: aggregated.total_pnl || 0
+            };
 
+            const response = await fetch('https://liquidation.report/api/trader', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                logger.debug(`Failed to send anonymous report. Status: ${response.status}`);
+            } else {
+                logger.debug(`Anonymous report sent successfully for UID: ${payload.uid}`);
+            }
+        } catch (e) {
+            logger.debug(`Error sending anonymous report: ${e.message}`);
+        }
+    }
 
     async onLiquidation(liquidation, exName) {
         if (this.isTrading || !this.isRunning) return;

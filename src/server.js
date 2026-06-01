@@ -129,7 +129,7 @@ class WebServer {
             const excludedKeys = [
                 'API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 
                 'RAPIDAPI_KEY', 'CMC_API_KEY', 'WEBUI_AUTH_ENABLED', 
-                'LOG_LEVEL', 'WEB_PORT', 'WEB_HOST'
+                'LOG_LEVEL', 'WEB_PORT', 'WEB_HOST', 'ANON_UID'
             ];
             for (const key of excludedKeys) {
                 delete exportConfig[key];
