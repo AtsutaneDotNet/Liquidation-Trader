@@ -43,9 +43,9 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
     - **Rolling VWAP**: Trade based on price deviations from a rolling Volume Weighted Average Price calculated dynamically from historical OHLCV data. Supports configurable timeframes (`VWAP_TIMEFRAME`) and period lengths (`VWAP_PERIOD`), with independent long and short offset percentages.
     - **Session VWAP**: Track price deviations against a session-anchored Volume Weighted Average Price (Daily, Weekly, Monthly) which resets cumulative calculations at the start of each session timeframe.
   - **RSI (Relative Strength Index)**: Identify overbought or oversold conditions. Configure advanced threshold directions (`above`/`under`) and custom signal actions, complete with guards requiring RSI values to align logically (e.g., oversold signals are restricted below 50, overbought above 50).
-  - **ADX (Average Directional Index)**: Detect trend strength and exhaustion. Generates entry signals based on customizable threshold direction (`above`/`under`) and DI crossover logic.
+  - **DMI (Directional Movement Index)**: Detect trend strength and exhaustion. Generates entry signals based on customizable threshold direction (`above`/`under`) and DI crossover logic.
   - **Market Sentiment**: Trade alongside or against market sentiment using CoinMarketCap's index. Custom mapping for Bullish/Bearish and Extreme Fear/Greed signals.
-  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, ADX, Market Sentiment) to align in the same direction before executing a trade for maximum precision.
+  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment) to align in the same direction before executing a trade for maximum precision.
   - **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 - **Intelligent Filtering**:
   - **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
@@ -67,7 +67,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **Import/Export Settings**: Seamlessly backup and restore your strategy configurations without exposing sensitive API keys.
   - **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
   - **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
-  - **Trade Decisions Page**: A dedicated log of every trade evaluation, showing detailed indicators and values via interactive tooltips (timeframe, formatted bands matching selected display currencies and precision, RSI, ADX, DI).
+  - **Trade Decisions Page**: A dedicated log of every trade evaluation, showing detailed indicators and values via interactive tooltips (timeframe, formatted bands matching selected display currencies and precision, RSI, DMI, DI).
   - **Desktop & Browser Notifications**: Real-time system-level notifications for instant updates on executed orders and trade entries.
   - **Toast Notifications & Auto-Sync**: Toast alerts for order executions with automated database cleanups that instantly clear closed positions from the SQLite state, keeping the dashboard highly responsive.
   - **Live Logs**: View bot terminal output directly in the browser.
@@ -170,13 +170,13 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `RSI_OVERBOUGHT_SIGNAL` | Signal direction when overbought (`sell`, `buy`, `none`). | `sell` |
 | `RSI_OVERSOLD_DIR` | Condition for RSI oversold (`above`/`under`). | `under` |
 | `RSI_OVERSOLD_SIGNAL` | Signal direction when oversold (`buy`, `sell`, `none`). | `buy` |
-| `ENABLE_ADX_STRATEGY` | Toggle ADX-based entry signal. | `false` |
-| `ADX_TIMEFRAME` | Timeframe for ADX calculation (e.g., `1m`, `5m`). | `1m` |
-| `ADX_PERIOD` | Number of candles for ADX calculation. | `14` |
-| `ADX_THRESHOLD` | ADX strength threshold. | `25` |
-| `ADX_THRESHOLD_DIR` | Condition for ADX threshold (`above`/`under`). | `under` |
-| `ADX_PDI_SIGNAL` | Signal direction when +DI crosses -DI (`sell`, `buy`, `none`). | `sell` |
-| `ADX_MDI_SIGNAL` | Signal direction when -DI crosses +DI (`buy`, `sell`, `none`). | `buy` |
+| `ENABLE_DMI_STRATEGY` | Toggle DMI-based entry signal. | `false` |
+| `DMI_TIMEFRAME` | Timeframe for DMI calculation (e.g., `1m`, `5m`). | `1m` |
+| `DMI_PERIOD` | Number of candles for DMI calculation. | `14` |
+| `DMI_THRESHOLD` | DMI strength threshold. | `25` |
+| `DMI_THRESHOLD_DIR` | Condition for DMI threshold (`above`/`under`). | `under` |
+| `DMI_PDI_SIGNAL` | Signal direction when +DI crosses -DI (`sell`, `buy`, `none`). | `sell` |
+| `DMI_MDI_SIGNAL` | Signal direction when -DI crosses +DI (`buy`, `sell`, `none`). | `buy` |
 | `ENABLE_MARKET_SENTIMENT_STRATEGY` | Toggle Market Sentiment entry signal. | `false` |
 | `MS_BULLISH_SIGNAL` | Signal direction during Bullish + Fear/Greed. | `buy` |
 | `MS_BEARISH_SIGNAL` | Signal direction during Bearish + Fear/Greed. | `sell` |

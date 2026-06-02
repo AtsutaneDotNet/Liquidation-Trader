@@ -260,7 +260,7 @@
                                     <th>Price</th>
                                     <th>VWAP</th>
                                     <th>RSI</th>
-                                    <th>ADX</th>
+                                    <th>DMI</th>
                                     <th>MS</th>
                                     <th>Confluence</th>
                                     <th>Outcome</th>
@@ -733,19 +733,19 @@
                                     </div>
                                 </div>
 
-                                <!-- ADX Sub-section -->
+                                <!-- DMI Sub-section -->
                                 <div class="page-subsection">
-                                    <h4>ADX Strategy</h4>
+                                    <h4>DMI Strategy</h4>
                                     <div class="form-group row">
                                         <div class="col">
                                             <label
                                                 style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_ADX_STRATEGY"
-                                                    name="ENABLE_ADX_STRATEGY" value="true"
-                                                    style="width: auto; margin: 0;"> Enable ADX Strategy
+                                                <input type="checkbox" id="ENABLE_DMI_STRATEGY"
+                                                    name="ENABLE_DMI_STRATEGY" value="true"
+                                                    style="width: auto; margin: 0;"> Enable DMI Strategy
                                             </label>
                                             <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Evaluates trend strength. Trade is blocked if ADX is above the threshold
+                                                Evaluates trend strength. Trade is blocked if DMI is above the threshold
                                                 (ensuring mean reversion entries only). Direction dictated by DI
                                                 components.
                                             </p>
@@ -753,12 +753,12 @@
                                     </div>
                                     <div class="form-group row">
                                         <div class="col">
-                                            <label for="ADX_PERIOD">ADX Period</label>
-                                            <input type="number" id="ADX_PERIOD" name="ADX_PERIOD" step="1" min="1">
+                                            <label for="DMI_PERIOD">DMI Period</label>
+                                            <input type="number" id="DMI_PERIOD" name="DMI_PERIOD" step="1" min="1">
                                         </div>
                                         <div class="col">
-                                            <label for="ADX_TIMEFRAME">ADX Timeframe</label>
-                                            <select id="ADX_TIMEFRAME" name="ADX_TIMEFRAME"
+                                            <label for="DMI_TIMEFRAME">DMI Timeframe</label>
+                                            <select id="DMI_TIMEFRAME" name="DMI_TIMEFRAME"
                                                 style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
                                                 <option value="1m">1m</option>
                                                 <option value="3m">3m</option>
@@ -770,8 +770,8 @@
                                     </div>
                                     <div class="form-group row">
                                         <div class="col">
-                                            <label for="ADX_THRESHOLD">ADX Threshold</label>
-                                            <input type="number" id="ADX_THRESHOLD" name="ADX_THRESHOLD" step="1"
+                                            <label for="DMI_THRESHOLD">DMI Threshold</label>
+                                            <input type="number" id="DMI_THRESHOLD" name="DMI_THRESHOLD" step="1"
                                                 placeholder="e.g. 25">
                                         </div>
                                     </div>
@@ -1348,7 +1348,7 @@
                                     <th>Price</th>
                                     <th>VWAP</th>
                                     <th>RSI</th>
-                                    <th>ADX</th>
+                                    <th>DMI</th>
                                     <th>MS</th>
                                     <th>Confluence</th>
                                     <th>Outcome</th>
@@ -1499,20 +1499,20 @@
                 </div>
 
                 <div class="page-subsection">
-                    <h4>ADX Strategy</h4>
+                    <h4>DMI Strategy</h4>
                     <div class="form-group row">
                         <div class="col">
-                            <label>ADX Threshold Condition</label>
-                            <select id="ADX_THRESHOLD_DIR" class="styled-select">
-                                <option value="under">ADX <= Threshold (Default)</option>
-                                <option value="above">ADX >= Threshold</option>
+                            <label>DMI Threshold Condition</label>
+                            <select id="DMI_THRESHOLD_DIR" class="styled-select">
+                                <option value="under">DMI <= Threshold (Default)</option>
+                                <option value="above">DMI >= Threshold</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-group row">
                         <div class="col">
                             <label>+DI > -DI Signal</label>
-                            <select id="ADX_PDI_SIGNAL" class="styled-select">
+                            <select id="DMI_PDI_SIGNAL" class="styled-select">
                                 <option value="sell">SELL (Default)</option>
                                 <option value="buy">BUY</option>
                                 <option value="none">NONE</option>
@@ -1520,7 +1520,7 @@
                         </div>
                         <div class="col">
                             <label>-DI > +DI Signal</label>
-                            <select id="ADX_MDI_SIGNAL" class="styled-select">
+                            <select id="DMI_MDI_SIGNAL" class="styled-select">
                                 <option value="buy">BUY (Default)</option>
                                 <option value="sell">SELL</option>
                                 <option value="none">NONE</option>
@@ -1530,7 +1530,7 @@
                     <div class="form-group row">
                         <div class="col">
                             <label>Bypass if Open Position</label>
-                            <select id="ADX_BYPASS_ON_POSITION" class="styled-select">
+                            <select id="DMI_BYPASS_ON_POSITION" class="styled-select">
                                 <option value="false">NO (Default)</option>
                                 <option value="true">YES</option>
                             </select>

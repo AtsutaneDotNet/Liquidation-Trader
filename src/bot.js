@@ -78,8 +78,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_ADX_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, ADX, or Market Sentiment strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, or Market Sentiment strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -917,7 +917,7 @@ class TradingBot {
         return 100 - (100 / (1 + rs));
     }
 
-    calculateADX(highs, lows, closes, period = 14) {
+    calculateDMI(highs, lows, closes, period = 14) {
         if (!highs || highs.length < period * 2) return null;
 
         let tr = [];
@@ -1017,7 +1017,7 @@ class TradingBot {
             price: currentPrice,
             vwap: null,
             rsi: null,
-            adx: null,
+            dmi: null,
             confluence: null,
             reason: 'Evaluated',
             side: null
@@ -1048,20 +1048,20 @@ class TradingBot {
 
             let vwapSide = null;
             let rsiSide = null;
-            let adxSide = null;
+            let dmiSide = null;
             let msSide = null;
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
             const vwapEnabled = cfg.ENABLE_VWAP_STRATEGY;
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
-            const adxEnabled = cfg.ENABLE_ADX_STRATEGY;
+            const dmiEnabled = cfg.ENABLE_DMI_STRATEGY;
 
-            if ((vwapEnabled || rsiEnabled || adxEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+            if ((vwapEnabled || rsiEnabled || dmiEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                 const activeTimeframes = [];
                 if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
                 if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
-                if (adxEnabled) activeTimeframes.push(cfg.ADX_TIMEFRAME || '1m');
+                if (dmiEnabled) activeTimeframes.push(cfg.DMI_TIMEFRAME || '1m');
 
                 // Check if all active strategies share the exact same timeframe
                 const allSameTimeframe = activeTimeframes.length > 0 && activeTimeframes.every(tf => tf === activeTimeframes[0]);
@@ -1069,7 +1069,7 @@ class TradingBot {
                 if (activeTimeframes.length > 1 && allSameTimeframe) {
                     const vLimit = vwapEnabled ? (parseInt(cfg.VWAP_PERIOD) || 14) + 100 : 0;
                     const rLimit = rsiEnabled ? (parseInt(cfg.RSI_PERIOD) || 14) + 100 : 0;
-                    const aLimit = adxEnabled ? (parseInt(cfg.ADX_PERIOD) || 14) * 2 + 100 : 0;
+                    const aLimit = dmiEnabled ? (parseInt(cfg.DMI_PERIOD) || 14) * 2 + 100 : 0;
                     const maxLimit = Math.max(vLimit, rLimit, aLimit);
 
                     try {
@@ -1207,24 +1207,24 @@ class TradingBot {
                 }
             }
 
-            // --- 4. ADX Strategy ---
-            if (adxEnabled) {
-                if (cfg.ADX_BYPASS_ON_POSITION === 'true' && openPosition) {
+            // --- 4. DMI Strategy ---
+            if (dmiEnabled) {
+                if (cfg.DMI_BYPASS_ON_POSITION === 'true' && openPosition) {
                     const posSide = (openPosition.side || '').toLowerCase();
-                    adxSide = 'ignore';
-                    logger.info(`Bypassing ADX strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
-                    decisionRecord.adx = { classification: 'Bypassed (Open Position)', signal: adxSide };
+                    dmiSide = 'ignore';
+                    logger.info(`Bypassing DMI strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
+                    decisionRecord.dmi = { classification: 'Bypassed (Open Position)', signal: dmiSide };
                 } else if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
-                    const period = parseInt(cfg.ADX_PERIOD) || 14;
-                    const threshold = parseFloat(cfg.ADX_THRESHOLD) || 25;
+                    const period = parseInt(cfg.DMI_PERIOD) || 14;
+                    const threshold = parseFloat(cfg.DMI_THRESHOLD) || 25;
                     let klines = sharedKlines;
 
                     // Fetch if not shared or shared fetch failed
                     if (!klines) {
                         try {
-                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.ADX_TIMEFRAME, undefined, period * 2 + 100);
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cfg.DMI_TIMEFRAME, undefined, period * 2 + 100);
                         } catch (e) {
-                            logger.error(`Error fetching ADX OHLCV: ${e.message}`);
+                            logger.error(`Error fetching DMI OHLCV: ${e.message}`);
                         }
                     }
 
@@ -1232,33 +1232,33 @@ class TradingBot {
                         const highs = klines.map(k => k[2]);
                         const lows = klines.map(k => k[3]);
                         const closes = klines.map(k => k[4]);
-                        const adxResult = this.calculateADX(highs, lows, closes, period);
+                        const dmiResult = this.calculateDMI(highs, lows, closes, period);
 
-                        if (adxResult !== null) {
-                            logger.info(`ADX (${period}, ${cfg.ADX_TIMEFRAME}): ${adxResult.adx.toFixed(2)} | +DI: ${adxResult.plusDI.toFixed(2)} | -DI: ${adxResult.minusDI.toFixed(2)}`);
-                            const isAdxConditionMet = cfg.ADX_THRESHOLD_DIR === 'above' ? (adxResult.adx >= threshold) : (adxResult.adx <= threshold);
-                            if (isAdxConditionMet) {
-                                if (adxResult.plusDI > adxResult.minusDI) {
-                                    adxSide = cfg.ADX_PDI_SIGNAL === 'none' ? null : cfg.ADX_PDI_SIGNAL;
-                                    logger.info(`ADX Condition met: ADX ${cfg.ADX_THRESHOLD_DIR} ${threshold} and +DI > -DI. Signal: ${adxSide ? adxSide.toUpperCase() : 'NONE'}.`);
-                                } else if (adxResult.minusDI > adxResult.plusDI) {
-                                    adxSide = cfg.ADX_MDI_SIGNAL === 'none' ? null : cfg.ADX_MDI_SIGNAL;
-                                    logger.info(`ADX Condition met: ADX ${cfg.ADX_THRESHOLD_DIR} ${threshold} and -DI > +DI. Signal: ${adxSide ? adxSide.toUpperCase() : 'NONE'}.`);
+                        if (dmiResult !== null) {
+                            logger.info(`DMI (${period}, ${cfg.DMI_TIMEFRAME}): ${dmiResult.adx.toFixed(2)} | +DI: ${dmiResult.plusDI.toFixed(2)} | -DI: ${dmiResult.minusDI.toFixed(2)}`);
+                            const isDmiConditionMet = cfg.DMI_THRESHOLD_DIR === 'above' ? (dmiResult.adx >= threshold) : (dmiResult.adx <= threshold);
+                            if (isDmiConditionMet) {
+                                if (dmiResult.plusDI > dmiResult.minusDI) {
+                                    dmiSide = cfg.DMI_PDI_SIGNAL === 'none' ? null : cfg.DMI_PDI_SIGNAL;
+                                    logger.info(`DMI Condition met: DMI ${cfg.DMI_THRESHOLD_DIR} ${threshold} and +DI > -DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
+                                } else if (dmiResult.minusDI > dmiResult.plusDI) {
+                                    dmiSide = cfg.DMI_MDI_SIGNAL === 'none' ? null : cfg.DMI_MDI_SIGNAL;
+                                    logger.info(`DMI Condition met: DMI ${cfg.DMI_THRESHOLD_DIR} ${threshold} and -DI > +DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
                                 } else {
-                                    logger.info(`ADX Condition: Value met threshold but DIs are equal. No trade signal.`);
+                                    logger.info(`DMI Condition: Value met threshold but DIs are equal. No trade signal.`);
                                 }
                             } else {
-                                logger.info(`ADX Condition: ADX (${adxResult.adx.toFixed(2)}) is not ${cfg.ADX_THRESHOLD_DIR} threshold (${threshold}). No trade signal.`);
+                                logger.info(`DMI Condition: DMI (${dmiResult.adx.toFixed(2)}) is not ${cfg.DMI_THRESHOLD_DIR} threshold (${threshold}). No trade signal.`);
                             }
-                            decisionRecord.adx = { value: adxResult.adx, plusDI: adxResult.plusDI, minusDI: adxResult.minusDI, threshold: threshold, signal: adxSide, timeframe: cfg.ADX_TIMEFRAME };
+                            decisionRecord.dmi = { value: dmiResult.adx, plusDI: dmiResult.plusDI, minusDI: dmiResult.minusDI, threshold: threshold, signal: dmiSide, timeframe: cfg.DMI_TIMEFRAME };
                         }
                     } else {
-                        logger.info(`Not enough klines fetched for ADX calculation for ${symbol}.`);
-                        decisionRecord.adx = { error: 'Not enough klines' };
+                        logger.info(`Not enough klines fetched for DMI calculation for ${symbol}.`);
+                        decisionRecord.dmi = { error: 'Not enough klines' };
                     }
                 } else {
-                    logger.info(`Exchange does not support fetchOHLCV for ADX.`);
-                    decisionRecord.adx = { error: 'Not supported' };
+                    logger.info(`Exchange does not support fetchOHLCV for DMI.`);
+                    decisionRecord.dmi = { error: 'Not supported' };
                 }
             }
 
@@ -1307,8 +1307,8 @@ class TradingBot {
             const activeStrategies = [];
             if (cfg.ENABLE_VWAP_STRATEGY) activeStrategies.push({ name: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY) activeStrategies.push({ name: 'RSI', side: rsiSide });
-            if (cfg.ENABLE_ADX_STRATEGY && adxSide !== 'ignore') {
-                activeStrategies.push({ name: 'ADX', side: adxSide });
+            if (cfg.ENABLE_DMI_STRATEGY && dmiSide !== 'ignore') {
+                activeStrategies.push({ name: 'DMI', side: dmiSide });
             }
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide !== 'ignore') {
                 activeStrategies.push({ name: 'MarketSentiment', side: msSide });

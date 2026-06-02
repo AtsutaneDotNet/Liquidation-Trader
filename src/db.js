@@ -108,10 +108,10 @@ const defaults = {
     RSI_TIMEFRAME: '1m',
     RSI_OVERBOUGHT: '70',
     RSI_OVERSOLD: '30',
-    ENABLE_ADX_STRATEGY: 'false',
-    ADX_PERIOD: '14',
-    ADX_TIMEFRAME: '1m',
-    ADX_THRESHOLD: '25',
+    ENABLE_DMI_STRATEGY: 'false',
+    DMI_PERIOD: '14',
+    DMI_TIMEFRAME: '1m',
+    DMI_THRESHOLD: '25',
     ENABLE_FEARGREED_STRATEGY: 'false',
     LIQUIDATION_VALUE_CURRENCY: 'USD',
     LIQUIDATION_VALUE_THRESHOLD: '1000',
@@ -143,10 +143,10 @@ const defaults = {
     RSI_OVERBOUGHT_SIGNAL: 'sell',
     RSI_OVERSOLD_DIR: 'under',
     RSI_OVERSOLD_SIGNAL: 'buy',
-    ADX_THRESHOLD_DIR: 'under',
-    ADX_PDI_SIGNAL: 'sell',
-    ADX_MDI_SIGNAL: 'buy',
-    ADX_BYPASS_ON_POSITION: 'false',
+    DMI_THRESHOLD_DIR: 'under',
+    DMI_PDI_SIGNAL: 'sell',
+    DMI_MDI_SIGNAL: 'buy',
+    DMI_BYPASS_ON_POSITION: 'false',
     FG_FEAR_SIGNAL: 'buy',
     FG_GREED_SIGNAL: 'sell',
     FG_EXTREME_FEAR_SIGNAL: 'none',
@@ -196,6 +196,36 @@ if (finalConfig['RAPIDAPI_KEY']) {
             console.error('[Migration] Failed to decrypt double-encrypted RAPIDAPI_KEY:', e.message);
         }
     }
+}
+
+// Migration: ADX -> DMI strategy keys
+const adxDmiMap = {
+    ENABLE_ADX_STRATEGY: 'ENABLE_DMI_STRATEGY',
+    ADX_PERIOD: 'DMI_PERIOD',
+    ADX_TIMEFRAME: 'DMI_TIMEFRAME',
+    ADX_THRESHOLD: 'DMI_THRESHOLD',
+    ADX_THRESHOLD_DIR: 'DMI_THRESHOLD_DIR',
+    ADX_PDI_SIGNAL: 'DMI_PDI_SIGNAL',
+    ADX_MDI_SIGNAL: 'DMI_MDI_SIGNAL',
+    ADX_BYPASS_ON_POSITION: 'DMI_BYPASS_ON_POSITION'
+};
+
+let migratedCount = 0;
+for (const [oldKey, newKey] of Object.entries(adxDmiMap)) {
+    if (currentConfig[oldKey] !== undefined) {
+        setConfig(newKey, currentConfig[oldKey]);
+        try {
+            db.prepare("DELETE FROM config WHERE key = ?").run(oldKey);
+            migratedCount++;
+        } catch (e) {
+            console.error(`[Migration] Failed to delete old key ${oldKey}:`, e.message);
+        }
+        currentConfig[newKey] = currentConfig[oldKey];
+        delete currentConfig[oldKey];
+    }
+}
+if (migratedCount > 0) {
+    console.log(`[Migration] Successfully migrated ${migratedCount} ADX config settings to DMI settings in SQLite.`);
 }
 
 for (const [k, v] of Object.entries(defaults)) {

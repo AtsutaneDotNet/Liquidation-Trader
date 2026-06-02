@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_ADX_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'ENABLE_ANON_REPORTING'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'ENABLE_ANON_REPORTING'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -200,8 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const autoTransferCb = document.getElementById('ENABLE_AUTO_TRANSFER');
         if (autoTransferCb) formData.set('ENABLE_AUTO_TRANSFER', autoTransferCb.checked ? 'true' : 'false');
 
-        const adxCb = document.getElementById('ENABLE_ADX_STRATEGY');
-        if (adxCb) formData.set('ENABLE_ADX_STRATEGY', adxCb.checked ? 'true' : 'false');
+        const dmiCb = document.getElementById('ENABLE_DMI_STRATEGY');
+        if (dmiCb) formData.set('ENABLE_DMI_STRATEGY', dmiCb.checked ? 'true' : 'false');
 
         const fgCb = document.getElementById('ENABLE_MARKET_SENTIMENT_STRATEGY');
         if (fgCb) formData.set('ENABLE_MARKET_SENTIMENT_STRATEGY', fgCb.checked ? 'true' : 'false');
@@ -211,10 +211,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isVwapChecked = vwapCb && vwapCb.checked;
         const isRsiChecked = rsiCb && rsiCb.checked;
-        const isAdxChecked = adxCb && adxCb.checked;
+        const isDmiChecked = dmiCb && dmiCb.checked;
         const isFgChecked = fgCb && fgCb.checked;
 
-        if (!isVwapChecked && !isRsiChecked && !isAdxChecked && !isFgChecked) {
+        if (!isVwapChecked && !isRsiChecked && !isDmiChecked && !isFgChecked) {
             showToast({
                 title: 'Configuration Error',
                 message: 'At least one strategy must be enabled.',
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL',
             'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL',
-            'ADX_THRESHOLD_DIR', 'ADX_PDI_SIGNAL', 'ADX_MDI_SIGNAL', 'ADX_BYPASS_ON_POSITION',
+            'DMI_THRESHOLD_DIR', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
             'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL', 'MS_BYPASS_ON_POSITION'
         ];
         advInputs.forEach(id => {
@@ -942,7 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
                 </div>
             `;
-        } else if (name === 'ADX') {
+        } else if (name === 'DMI') {
             const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
             const pDiStr = typeof strat.plusDI === 'number' ? strat.plusDI.toFixed(2) : 'N/A';
             const mDiStr = typeof strat.minusDI === 'number' ? strat.minusDI.toFixed(2) : 'N/A';
@@ -950,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tfStr = strat.timeframe || 'N/A';
 
             tooltipHTML = `
-                <div class="tooltip-header">ADX Strategy</div>
+                <div class="tooltip-header">DMI Strategy</div>
                 <div class="tooltip-grid">
                     <div class="tooltip-row"><span>Timeframe</span><span>${tfStr}</span></div>
                     <div class="tooltip-row"><span>Value</span><span>${valStr}</span></div>
@@ -998,7 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td>${priceFormatted}</td>
             <td>${formatStrategy(record.vwap, 'VWAP')}</td>
             <td>${formatStrategy(record.rsi, 'RSI')}</td>
-            <td>${formatStrategy(record.adx, 'ADX')}</td>
+            <td>${formatStrategy(record.dmi, 'DMI')}</td>
             <td>${formatStrategy(record.marketSentiment, 'M.Sentiment')}</td>
             <td>${confluenceText}</td>
             <td><span class="${outcomeClz}">${record.reason}</span></td>
@@ -1577,10 +1577,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     RSI_OVERSOLD_DIR: 'under',
                     RSI_OVERBOUGHT_SIGNAL: 'sell',
                     RSI_OVERSOLD_SIGNAL: 'buy',
-                    ADX_THRESHOLD_DIR: 'under',
-                    ADX_PDI_SIGNAL: 'sell',
-                    ADX_MDI_SIGNAL: 'buy',
-                    ADX_BYPASS_ON_POSITION: 'false',
+                    DMI_THRESHOLD_DIR: 'under',
+                    DMI_PDI_SIGNAL: 'sell',
+                    DMI_MDI_SIGNAL: 'buy',
+                    DMI_BYPASS_ON_POSITION: 'false',
                     MS_BULLISH_SIGNAL: 'buy',
                     MS_BEARISH_SIGNAL: 'sell',
                     MS_EXTREME_FEAR_SIGNAL: 'none',
