@@ -291,10 +291,45 @@
                         Bot Telemetry
                     </h3>
                     <div class="card terminal-panel">
-                        <p class="subtitle" style="margin-bottom: 1rem;">Real-time streams of backend execution and
-                            routing telemetry.</p>
-                        <div class="terminal" id="log-terminal"
-                            style="border-color: var(--accent-glow); box-shadow: 0 0 10px var(--accent-glow);">
+                        <!-- Terminal Controls Bar -->
+                        <div class="terminal-controls-bar">
+                            <div class="terminal-search-wrapper">
+                                <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                <input type="text" id="log-search" class="terminal-search" placeholder="Filter logs...">
+                            </div>
+                            
+                            <div class="terminal-filters">
+                                <button class="filter-chip active" data-level="all">All</button>
+                                <button class="filter-chip" data-level="info">Info</button>
+                                <button class="filter-chip" data-level="warn">Warning</button>
+                                <button class="filter-chip" data-level="error">Error</button>
+                                <button class="filter-chip" data-level="debug">Debug</button>
+                            </div>
+                            
+                            <div class="terminal-actions">
+                                <label class="toggle-autoscroll">
+                                    <input type="checkbox" id="log-autoscroll" checked>
+                                    <span>Auto-scroll</span>
+                                </label>
+                                <button id="btn-clear-logs" class="btn-secondary-terminal" title="Clear viewport logs">Clear</button>
+                                <button id="btn-download-logs" class="btn-secondary-terminal" title="Download logs text file">Download</button>
+                            </div>
+                        </div>
+
+                        <!-- macOS Terminal Chrome -->
+                        <div class="terminal-chrome">
+                            <div class="terminal-chrome-dots">
+                                <span class="chrome-dot dot-close"></span>
+                                <span class="chrome-dot dot-minimize"></span>
+                                <span class="chrome-dot dot-expand"></span>
+                            </div>
+                            <div class="terminal-chrome-title">telemetry@liquidation-trader: ~</div>
+                        </div>
+
+                        <div class="terminal" id="log-terminal">
                             <!-- Logs inject here -->
                         </div>
                     </div>

@@ -485,7 +485,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Terminal Logs Live Stream
     const logTerminal = document.getElementById('log-terminal');
-    let lastLogCount = 0;
+    let cachedLogs = [];
+    let logsSearchQuery = '';
+    let logsLevelFilter = 'all';
+    let isAutoScrollEnabled = true;
+
+    function renderLogs() {
+        if (!logTerminal) return;
+        
+        let filtered = cachedLogs;
+        
+        // 1. Filter by Level
+        if (logsLevelFilter !== 'all') {
+            filtered = filtered.filter(l => l.type === logsLevelFilter);
+        }
+        
+        // 2. Filter by Search Query
+        if (logsSearchQuery) {
+            const query = logsSearchQuery.toLowerCase();
+            filtered = filtered.filter(l => 
+                (l.msg && l.msg.toLowerCase().includes(query)) || 
+                (l.time && l.time.toLowerCase().includes(query)) ||
+                (l.type && l.type.toLowerCase().includes(query))
+            );
+        }
+        
+        if (filtered.length === 0) {
+            logTerminal.innerHTML = `<div class="empty-terminal-msg">&mdash; No matching logs found &mdash;</div>`;
+            return;
+        }
+        
+        logTerminal.innerHTML = filtered.map(l => {
+            const badgeClass = `badge-${l.type}`;
+            const textClass = `log-${l.type}`;
+            return `<div class="log-row"><span class="log-time">[${l.time}]</span><span class="log-badge ${badgeClass}">${l.type.toUpperCase()}</span><span class="${textClass}">${l.msg}</span></div>`;
+        }).join('');
+        
+        // Auto-scroll
+        if (isAutoScrollEnabled) {
+            logTerminal.scrollTop = logTerminal.scrollHeight;
+        }
+    }
 
     function fetchLogs() {
         if (!logTerminal) return;
@@ -494,26 +534,119 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/logs')
             .then(res => res.json())
             .then(logs => {
-                // Determine if we need to update DOM
-                if (logs.length !== lastLogCount || logs.length >= 500) {
-                    const isBottom = logTerminal.scrollHeight - logTerminal.clientHeight <= logTerminal.scrollTop + 50;
-
-                    logTerminal.innerHTML = logs.map(l => {
-                        return `<div class="log-row"><span class="log-time">[${l.time}]</span><span class="log-${l.type}">${l.msg}</span></div>`;
-                    }).join('');
-
-                    // Auto-scroll to adhere to UX if user hasn't explicitly scrolled up
-                    if (isBottom || lastLogCount === 0) {
-                        logTerminal.scrollTop = logTerminal.scrollHeight;
+                const logsChanged = logs.length !== cachedLogs.length || 
+                    (logs.length > 0 && cachedLogs.length > 0 && logs[logs.length - 1].time !== cachedLogs[cachedLogs.length - 1].time);
+                
+                if (logsChanged) {
+                    const isAtBottom = logTerminal.scrollHeight - logTerminal.clientHeight <= logTerminal.scrollTop + 50;
+                    if (!isAtBottom && cachedLogs.length > 0) {
+                        const autoScrollCb = document.getElementById('log-autoscroll');
+                        if (autoScrollCb && autoScrollCb.checked) {
+                            autoScrollCb.checked = false;
+                            isAutoScrollEnabled = false;
+                        }
                     }
-                    lastLogCount = logs.length;
+
+                    cachedLogs = logs;
+                    renderLogs();
                 }
             })
             .catch(console.error);
     }
 
-    setInterval(fetchLogs, 2000);
-    fetchLogs();
+    if (logTerminal) {
+        // Search Input
+        const logSearchInput = document.getElementById('log-search');
+        if (logSearchInput) {
+            logSearchInput.addEventListener('input', (e) => {
+                logsSearchQuery = e.target.value;
+                renderLogs();
+            });
+        }
+
+        // Level Filters
+        const filterChips = document.querySelectorAll('.filter-chip');
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                filterChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                logsLevelFilter = chip.getAttribute('data-level');
+                renderLogs();
+            });
+        });
+
+        // Auto-scroll Toggle
+        const autoScrollCb = document.getElementById('log-autoscroll');
+        if (autoScrollCb) {
+            autoScrollCb.addEventListener('change', (e) => {
+                isAutoScrollEnabled = e.target.checked;
+                if (isAutoScrollEnabled) {
+                    logTerminal.scrollTop = logTerminal.scrollHeight;
+                }
+            });
+        }
+
+        // Clear Viewport Logs
+        const btnClearLogs = document.getElementById('btn-clear-logs');
+        if (btnClearLogs) {
+            btnClearLogs.addEventListener('click', () => {
+                cachedLogs = [];
+                renderLogs();
+            });
+        }
+
+        // Download Logs
+        const btnDownloadLogs = document.getElementById('btn-download-logs');
+        if (btnDownloadLogs) {
+            btnDownloadLogs.addEventListener('click', () => {
+                if (cachedLogs.length === 0) {
+                    showToast({
+                        title: 'Export Failed',
+                        message: 'No logs available to export.',
+                        type: 'error'
+                    });
+                    return;
+                }
+                
+                const logText = cachedLogs.map(l => `[${l.time}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
+                const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                
+                const timestampStr = new Date().toISOString().slice(0, 19).replace(/T|:/g, '-');
+                a.href = url;
+                a.download = `liquidation_trader_logs_${timestampStr}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showToast({
+                    title: 'Export Successful',
+                    message: 'Logs downloaded successfully.',
+                    type: 'success'
+                });
+            });
+        }
+
+        // Monitor scroll to detect manual scrolling up
+        logTerminal.addEventListener('scroll', () => {
+            const isAtBottom = logTerminal.scrollHeight - logTerminal.clientHeight <= logTerminal.scrollTop + 50;
+            const autoScrollCb = document.getElementById('log-autoscroll');
+            if (autoScrollCb) {
+                if (isAtBottom && !isAutoScrollEnabled) {
+                    autoScrollCb.checked = true;
+                    isAutoScrollEnabled = true;
+                } else if (!isAtBottom && isAutoScrollEnabled) {
+                    autoScrollCb.checked = false;
+                    isAutoScrollEnabled = false;
+                }
+            }
+        });
+
+        setInterval(fetchLogs, 2000);
+        fetchLogs();
+    }
 
     // Account and Positions Live Stream
     const elAccTotal = document.getElementById('acc-total-value');
