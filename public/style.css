@@ -542,14 +542,14 @@ input:focus {
     padding: 10px 16px;
     display: flex;
     align-items: center;
-    position: relative;
+    justify-content: space-between;
 }
 
 .terminal-chrome-dots {
     display: flex;
     gap: 8px;
-    position: absolute;
-    left: 16px;
+    flex-shrink: 0;
+    width: 100px;
 }
 
 .chrome-dot {
@@ -564,11 +564,23 @@ input:focus {
 .dot-expand { background-color: #27c93f; }
 
 .terminal-chrome-title {
-    margin: 0 auto;
     font-size: 12px;
     color: var(--text-muted);
     font-family: var(--font-fam);
     font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 10px;
+    flex: 1;
+}
+
+.terminal-chrome-actions {
+    flex-shrink: 0;
+    width: 100px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 /* Terminal Content styling */
@@ -1770,4 +1782,124 @@ tr:nth-child(1) .strategy-badge-container.active .strategy-tooltip,
 tr:nth-child(2) .strategy-badge-container:hover .strategy-tooltip,
 tr:nth-child(2) .strategy-badge-container.active .strategy-tooltip {
     transform: translateX(-50%) translateY(0);
+}
+
+/* Mobile Optimizations for System Logs Page */
+@media (max-width: 600px) {
+    .content {
+        padding: 12px;
+    }
+
+    #logs-page.page.active {
+        padding: 0;
+    }
+    
+    #logs-page.page.active header {
+        margin-bottom: 4px;
+    }
+    
+    #logs-page.page.active header h2 {
+        font-size: 20px;
+    }
+    
+    #logs-page.page.active .page-section h3 {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+    
+    #logs-page.page.active .terminal-panel {
+        margin-top: 8px;
+    }
+
+    /* Controls Bar Mobile Grid Layout */
+    .terminal-controls-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+
+    .terminal-search-wrapper {
+        order: 1;
+        flex: 1 1 calc(100% - 140px); /* Fill space, leaving room for buttons */
+        max-width: none;
+    }
+
+    .terminal-actions {
+        order: 2;
+        flex: 0 0 130px; /* Actions take up right side */
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .terminal-filters {
+        order: 3;
+        flex: 1 1 100%; /* Spans full width on row 2 */
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        margin-top: 4px;
+        
+        /* Hide scrollbars but allow touch scrolling */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .terminal-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-chip {
+        flex-shrink: 0;
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+
+    .btn-secondary-terminal {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    /* Compact Terminal Chrome */
+    .terminal-chrome-title {
+        display: none; /* Hide purely decorative title to prevent text collisions */
+    }
+
+    .terminal-chrome-dots {
+        width: 60px;
+    }
+    
+    .terminal-chrome-actions {
+        width: 100px;
+    }
+
+    .toggle-autoscroll {
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    /* Compact Terminal Logs Output */
+    .terminal {
+        padding: 10px;
+    }
+
+    .terminal .log-row {
+        font-size: 11px;
+        margin-bottom: 4px;
+        padding-bottom: 2px;
+        line-height: 1.4;
+    }
+
+    .terminal .log-time {
+        margin-right: 6px;
+        font-size: 9px;
+    }
+
+    .terminal .log-badge {
+        margin-right: 6px;
+        padding: 1px 4px;
+        font-size: 8px;
+    }
 }
