@@ -113,6 +113,18 @@ class TradingBot {
             logger.info('Fetching linear market instruments...');
             let allSymbols = await this.tradeExchange.getLinearSymbols();
 
+            // Filter out blacklisted symbols
+            const blacklistStr = cfg.COIN_BLACKLIST || '';
+            const blacklist = blacklistStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+            if (blacklist.length > 0) {
+                const originalCount = allSymbols.length;
+                allSymbols = allSymbols.filter(symbol => {
+                    const symUpper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    return !blacklist.some(b => symUpper.startsWith(b));
+                });
+                logger.info(`Blacklist filter active: Removed ${originalCount - allSymbols.length} blacklisted pairs. ${allSymbols.length} pairs remaining.`);
+            }
+
             if (cfg.CMC_FILTER_ENABLED) {
                 const originalCount = allSymbols.length;
                 this.symbols = allSymbols.filter(s => cmc.isSymbolInTop(s));

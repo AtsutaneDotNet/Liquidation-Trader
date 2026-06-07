@@ -255,7 +255,7 @@ class BinanceExchange extends BaseExchange {
                 closePosition: true
             });
 
-            await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
+            await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, undefined, undefined, {
                 stopPrice: slStr,
                 closePosition: true
             });
