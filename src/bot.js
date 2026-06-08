@@ -530,7 +530,7 @@ class TradingBot {
             this._lastTpSlSet = this._lastTpSlSet || {};
             const key = `${symbol}_${orderSide}`;
             const lastTime = this._lastTpSlSet[key] || 0;
-            if (Date.now() - lastTime < 10000) return; // Prevent updating faster than 10s
+            if (Date.now() - lastTime < 1000) return; // Prevent updating faster than 1s
             this._lastTpSlSet[key] = Date.now();
 
             let logMsg = `Updating TP/SL for ${symbol}. Entry: ${entryPrice.toFixed(4)}. Current TP: ${currentTp}, SL: ${currentSl} -> Target TP: ${formattedTp}, Target SL: ${formattedSl}`;
@@ -579,11 +579,11 @@ class TradingBot {
             }
 
             let shouldClose = false;
-            
+
             if (orderSide === 'buy') {
                 const passedTp = currentPrice >= formattedTp;
                 const passedTrailing = (trailingPercent > 0 && targetTrailingActivationPrice > 0) ? (currentPrice >= targetTrailingActivationPrice) : false;
-                
+
                 if (passedTp || passedTrailing) {
                     if (pnlPercent >= targetThresholdPercent) {
                         shouldClose = true;
@@ -594,7 +594,7 @@ class TradingBot {
             } else if (orderSide === 'sell') {
                 const passedTp = currentPrice <= formattedTp;
                 const passedTrailing = (trailingPercent > 0 && targetTrailingActivationPrice > 0) ? (currentPrice <= targetTrailingActivationPrice) : false;
-                
+
                 if (passedTp || passedTrailing) {
                     if (pnlPercent >= targetThresholdPercent) {
                         shouldClose = true;
@@ -607,7 +607,7 @@ class TradingBot {
             if (shouldClose) {
                 logger.info(`Market volatility fallback triggered! Closing position for ${symbol} at Market. Pnl%: ${pnlPercent.toFixed(2)}% >= Target Threshold: ${targetThresholdPercent}%`);
                 const closeSide = orderSide === 'buy' ? 'sell' : 'buy';
-                
+
                 // Market close with reduceOnly
                 await this.tradeExchange.exchange.createOrder(
                     symbol,
@@ -663,11 +663,11 @@ class TradingBot {
 
                 if (diffPercentage >= thresholdPercent) {
                     logger.info(`Auto Transfer Triggered: Wallet Value ($${walletValue.toFixed(2)}) is ${diffPercentage.toFixed(2)}% above minimum balance ($${minBalance.toFixed(2)}).`);
-                    
+
                     let fromAccount = 'contract';
                     let toAccount = 'fund';
                     const exName = cfg.TRADE_EXCHANGE.toLowerCase();
-                    
+
                     if (exName === 'bybit') {
                         fromAccount = 'unified';
                         toAccount = 'fund';
@@ -678,7 +678,7 @@ class TradingBot {
                         fromAccount = 'trading';
                         toAccount = 'funding';
                     }
-                    
+
                     if (this.tradeExchange && typeof this.tradeExchange.internalTransfer === 'function') {
                         const amountToTransfer = Math.floor(diff * 100) / 100; // Transfer exact diff rounded down to 2 decimals
                         const success = await this.tradeExchange.internalTransfer('USDT', amountToTransfer, fromAccount, toAccount);
@@ -792,7 +792,7 @@ class TradingBot {
         if (!this.isRunning) return;
         const cfg = this.config.get();
         if (!cfg.ENABLE_ANON_REPORTING) return;
-        
+
         try {
             const aggregated = db.calculateAggregatedPnl();
             const payload = {
@@ -999,22 +999,22 @@ class TradingBot {
     calculateVWAP(klines, period = 14, isSession = false) {
         if (!klines) return null;
         if (!isSession && klines.length < period) return null;
-        
+
         let cumulativeTPV = 0;
         let cumulativeVolume = 0;
-        
+
         const startIndex = isSession ? 0 : klines.length - period;
         for (let i = startIndex; i < klines.length; i++) {
             const high = klines[i][2];
             const low = klines[i][3];
             const close = klines[i][4];
             const volume = klines[i][5];
-            
+
             const typicalPrice = (high + low + close) / 3;
             cumulativeTPV += typicalPrice * volume;
             cumulativeVolume += volume;
         }
-        
+
         if (cumulativeVolume === 0) return null;
         return cumulativeTPV / cumulativeVolume;
     }
@@ -1105,7 +1105,7 @@ class TradingBot {
                         const sessionType = cfg.VWAP_SESSION_TYPE || 'daily';
                         const now = new Date();
                         let since = null;
-                        
+
                         if (sessionType === 'monthly') {
                             since = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0);
                         } else if (sessionType === 'weekly') {
@@ -1115,7 +1115,7 @@ class TradingBot {
                         } else {
                             since = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
                         }
-                        
+
                         try {
                             klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, tf, since, 1000);
                         } catch (e) {
@@ -1284,7 +1284,7 @@ class TradingBot {
                 } else if (this.marketSentiment) {
                     const fgClass = (this.marketSentiment.fgClassification || '').toLowerCase();
                     const mktLabel = (this.marketSentiment.marketLabel || '').toLowerCase();
-                    
+
                     if (fgClass === 'extreme fear') {
                         msSide = cfg.MS_EXTREME_FEAR_SIGNAL === 'none' ? null : cfg.MS_EXTREME_FEAR_SIGNAL;
                         logger.info(`Market Sentiment Condition met: Extreme Fear. Signal: ${msSide ? msSide.toUpperCase() : 'NONE'}.`);
