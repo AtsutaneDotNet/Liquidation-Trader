@@ -267,10 +267,11 @@ class BinanceExchange extends BaseExchange {
                     reduceOnly: true
                 };
                 if (trailingActivationPrice > 0) {
-                    trailingParams.activationPrice = this.exchange.priceToPrecision(symbol, trailingActivationPrice);
+                    trailingParams.activatePrice = this.exchange.priceToPrecision(symbol, trailingActivationPrice);
                 }
-                logger.info(`[Binance] Configuring native Trailing Stop with callbackRate ${clampedPercent}%${trailingActivationPrice > 0 ? ' and activationPrice ' + trailingParams.activationPrice : ''}`);
-                await this.exchange.createOrder(symbol, 'TRAILING_STOP_MARKET', oppositeSide, size, undefined, trailingParams);
+                logger.info(`[Binance] Configuring native Trailing Stop with callbackRate ${clampedPercent}%${trailingActivationPrice > 0 ? ' and activationPrice ' + trailingParams.activatePrice : ''}`);
+                const traillog = await this.exchange.createOrder(symbol, 'TRAILING_STOP_MARKET', oppositeSide, size, undefined, trailingParams);
+                logger.debug(`[Binance] Trailing Stop created for ${symbol}: ${JSON.stringify(traillog)}`);
             }
 
             logger.info(`[Binance] Conditional exit parameters independently bound to ${symbol}.`);
