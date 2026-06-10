@@ -186,7 +186,7 @@ class BinanceExchange extends BaseExchange {
             const income = await this.exchange.fapiPrivateGetIncome({ incomeType: 'REALIZED_PNL', limit: 100 });
 
             if (Array.isArray(income)) {
-                return income.map(inc => {
+                const pnls = income.map(inc => {
                     return {
                         id: inc.tranId || `${inc.symbol}_${inc.time}`,
                         symbol: inc.symbol || 'UNKNOWN',
@@ -198,6 +198,48 @@ class BinanceExchange extends BaseExchange {
                         timestamp: parseInt(inc.time || 0)
                     };
                 });
+
+                // Enrich with fetchMyTrades
+                const tradesBySymbol = {};
+                for (const pnl of pnls) {
+                    if (pnl.symbol !== 'UNKNOWN') {
+                        try {
+                            if (!tradesBySymbol[pnl.symbol]) {
+                                tradesBySymbol[pnl.symbol] = await this.exchange.fetchMyTrades(pnl.symbol);
+                            }
+                            const trades = tradesBySymbol[pnl.symbol];
+                            
+                            let bestMatch = null;
+                            let minDiff = Infinity;
+
+                            for (const trade of trades) {
+                                // Try to match by exact PnL if available in trade.info
+                                const tradePnl = trade.info && trade.info.realizedPnl !== undefined ? parseFloat(trade.info.realizedPnl) : null;
+                                if (tradePnl !== null && Math.abs(tradePnl - pnl.pnl) < 0.0001 && Math.abs(trade.timestamp - pnl.timestamp) < 60000) {
+                                    bestMatch = trade;
+                                    break;
+                                }
+                                
+                                // Fallback to closest timestamp
+                                const diff = Math.abs(trade.timestamp - pnl.timestamp);
+                                if (diff < minDiff) {
+                                    minDiff = diff;
+                                    bestMatch = trade;
+                                }
+                            }
+
+                            if (bestMatch && (minDiff < 60000 || bestMatch)) { // Use bestMatch if matched by PnL or within 60s
+                                if (!pnl.side || pnl.side === 'N/A') pnl.side = bestMatch.side ? bestMatch.side.toUpperCase() : 'N/A';
+                                if (!pnl.size || pnl.size === 0) pnl.size = bestMatch.amount;
+                                if (!pnl.close_price || pnl.close_price === 0) pnl.close_price = bestMatch.price;
+                            }
+                        } catch (e) {
+                            logger.error(`[Binance] Failed to fetch trades for ${pnl.symbol}: ${e.message}`);
+                        }
+                    }
+                }
+
+                return pnls;
             }
             return [];
         } catch (e) {
