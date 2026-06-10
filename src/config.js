@@ -4,6 +4,7 @@ const db = require('./db');
 function getConfig() {
     const dbConfig = db.getConfig();
     return {
+        BOT_RUNNING_STATE: dbConfig.BOT_RUNNING_STATE || 'false',
         WEBUI_AUTH_ENABLED: dbConfig.WEBUI_AUTH_ENABLED === 'true',
         WEBUI_USERNAME: dbConfig.WEBUI_USERNAME || 'admin',
         WEBUI_PASSWORD: dbConfig.WEBUI_PASSWORD || 'admin',
