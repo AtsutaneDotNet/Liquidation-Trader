@@ -833,6 +833,9 @@ class TradingBot {
                 value: value,
                 timestamp: liquidation.timestamp || Date.now()
             });
+            
+            // Log for 24h statistics
+            db.logBotEvent({ event_type: 'LIQUIDATION_RECEIVED', symbol: symbol, side: unifiedSide, value: value });
 
             let thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD;
             if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {

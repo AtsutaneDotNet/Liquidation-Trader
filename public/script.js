@@ -1561,7 +1561,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/statistics/24h')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('stats-liquidations-count').innerText = data.liquidations || 0;
+                const matched = data.liquidations || 0;
+                const total = data.totalLiquidations || 0;
+                const percent = total > 0 ? ((matched / total) * 100).toFixed(2) : '0.00';
+                
+                document.getElementById('stats-liquidations-count').innerText = `${matched} / ${total}`;
+                
+                const percentEl = document.getElementById('stats-liquidations-percent');
+                if (percentEl) percentEl.innerText = `${percent}%`;
                 
                 if (tradesChartInst && data.trades) {
                     const buy = data.trades['BUY'] || 0;

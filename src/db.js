@@ -385,11 +385,13 @@ function get24HourStatistics() {
     
     // Aggregation queries
     const liquidations = db.prepare(`SELECT COUNT(*) as count FROM bot_events WHERE event_type = 'LIQUIDATION_MATCH' AND timestamp >= ?`).get(cutoff);
+    const totalLiquidations = db.prepare(`SELECT COUNT(*) as count FROM bot_events WHERE event_type = 'LIQUIDATION_RECEIVED' AND timestamp >= ?`).get(cutoff);
     const trades = db.prepare(`SELECT side, COUNT(*) as count FROM bot_events WHERE event_type = 'TRADE_EXECUTE' AND timestamp >= ? GROUP BY side`).all(cutoff);
     const strategies = db.prepare(`SELECT strategy, side, COUNT(*) as count FROM bot_events WHERE event_type = 'STRATEGY_MATCH' AND timestamp >= ? GROUP BY strategy, side`).all(cutoff);
     
     const stats = {
         liquidations: liquidations.count,
+        totalLiquidations: totalLiquidations.count,
         trades: { BUY: 0, SELL: 0 },
         strategies: {}
     };
