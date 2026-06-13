@@ -1832,7 +1832,7 @@ tr:nth-child(2) .strategy-badge-container.active .strategy-tooltip {
     align-items: center;
 }
 
-.chart-container {
+.stat-chart-container {
     position: relative;
     width: 100%;
     max-width: 200px;
