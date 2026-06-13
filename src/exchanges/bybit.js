@@ -44,7 +44,7 @@ class BybitExchange extends BaseExchange {
             return;
         }
 
-        logger.info(`[Bybit] Starting to watch liquidations for: ${symbols.join(', ')}`);
+        logger.info(`[Bybit] Starting to watch liquidations for ${symbols.length} symbols...`);
         for (const symbol of symbols) {
             this._watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback);
         }

@@ -44,7 +44,7 @@ class BinanceExchange extends BaseExchange {
             return;
         }
 
-        logger.info(`[Binance] Starting to watch liquidations for: ${symbols.join(', ')}`);
+        logger.info(`[Binance] Starting to watch liquidations for ${symbols.length} symbols...`);
         // Note: For Binance, ccxt does not support an aggregate liquidation stream for multiple symbols easily,
         // or watching them independently might hit limits if limits are strict, 
         // but let's conform to the structure.
