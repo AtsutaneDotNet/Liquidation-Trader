@@ -2,7 +2,7 @@
 
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
-[![Exchange Support](https://img.shields.io/badge/Exchanges-Binance%20%7C%20Bybit%20%7C%20BitMEX%20%7C%20OKX%20%7C%20Aster%20%7C%20Lighter-orange.svg)](https://ccxt.pro/)
+[![Exchange Support](https://img.shields.io/badge/Exchanges-Binance%20%7C%20Bybit%20%7C%20OKX-orange.svg)](https://ccxt.pro/)
 
 Liquidation-Trader is a high-performance, automated cryptocurrency trading bot designed to capitalize on market liquidations. By monitoring real-time liquidation streams across multiple exchanges, the bot identifies potential volatility spikes and executes trades using sophisticated technical indicators and advanced risk management rules.
 
@@ -36,7 +36,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 
 ## ✨ Key Features
 
-- **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, **BitMEX**, **OKX**, **Aster**, and **Lighter** using the unified **CCXT Pro** engine.
+- **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, and **OKX** using the unified **CCXT Pro** engine.
 - **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events. Includes a dynamic minimum safeguard configuration (`REPLACE_BELOW_MIN_THRESHOLD`).
 - **Advanced Strategies**:
   - **Rolling & Session VWAP**: 
@@ -148,7 +148,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 ### Trading Strategy
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `TRADE_EXCHANGE` | Exchange used for executing trades (`bybit`, `binance`, `okx`, `aster`, etc.). | `bybit` |
+| `TRADE_EXCHANGE` | Exchange used for executing trades (`bybit`, `binance`, `okx`, etc.). | `bybit` |
 | `LIQUIDATION_EXCHANGES` | Exchanges to monitor for liquidation signals (comma-separated). | `bybit,binance` |
 | `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
 | `TRADE_AMOUNT_PERCENTAGE` | % of wallet balance used per trade. | `5%` |
@@ -224,7 +224,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 ```text
 ├── assets/             # Saved screenshots and visual dashboard showcases
 ├── src/
-│   ├── exchanges/      # Unified exchange adapters (Bybit, Binance, OKX, Aster, BitMEX, Lighter)
+│   ├── exchanges/      # Unified exchange adapters (Bybit, Binance, OKX)
 │   ├── bot.js          # Core trading engine and strategy logic
 │   ├── server.js       # Express server and API routes
 │   ├── db.js           # SQLite management with encryption support
