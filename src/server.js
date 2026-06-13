@@ -191,6 +191,11 @@ class WebServer {
             res.json(this.bot.tradeDecisions || []);
         });
 
+        this.app.get('/api/statistics/24h', (req, res) => {
+            const db = require('./db');
+            res.json(db.get24HourStatistics());
+        });
+
         // Dynamic Thresholds
         this.app.get('/api/dynamic-thresholds', (req, res) => {
             const currentConfig = config.get();

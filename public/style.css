@@ -1784,6 +1784,95 @@ tr:nth-child(2) .strategy-badge-container.active .strategy-tooltip {
     transform: translateX(-50%) translateY(0);
 }
 
+/* ── 24H Statistics Dashboard ── */
+.statistics-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.wide-card {
+    grid-column: 1 / -1;
+}
+
+.glow-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.glow-effect::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0, 230, 118, 0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.glow-effect:hover::before {
+    opacity: 1;
+}
+
+.highlight-text {
+    background: linear-gradient(135deg, #00e676, #00b0ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 3rem !important;
+    font-weight: 800;
+}
+
+.chart-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    margin: 10px auto;
+}
+
+.strategy-chart-container {
+    max-width: 100%;
+    height: 250px;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-buy {
+    background-color: var(--accent);
+}
+
+.legend-sell {
+    background-color: var(--danger);
+}
+
 /* Mobile Optimizations for System Logs Page */
 @media (max-width: 600px) {
     .content {

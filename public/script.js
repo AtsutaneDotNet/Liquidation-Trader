@@ -1475,6 +1475,122 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchPnLHistory, 5000);
     fetchPnLHistory();
 
+    // ── 24H Statistics Dashboard ──────────────────────────────────
+    let tradesChartInst = null;
+    let strategiesChartInst = null;
+
+    function initStatisticsCharts() {
+        const tradesCtx = document.getElementById('tradesChart');
+        if (tradesCtx) {
+            tradesChartInst = new Chart(tradesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['BUY', 'SELL'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#00e676', '#ff3b3b'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#8a94a6',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        const stratCtx = document.getElementById('strategiesChart');
+        if (stratCtx) {
+            strategiesChartInst = new Chart(stratCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'BUY',
+                            data: [],
+                            backgroundColor: '#00e676',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'SELL',
+                            data: [],
+                            backgroundColor: '#ff3b3b',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: false, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { stacked: false, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#8a94a6' } },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#e0e4eb',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function fetch24HStatistics() {
+        const pageActive = document.getElementById('dashboard').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/statistics/24h')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('stats-liquidations-count').innerText = data.liquidations || 0;
+                
+                if (tradesChartInst && data.trades) {
+                    const buy = data.trades['BUY'] || 0;
+                    const sell = data.trades['SELL'] || 0;
+                    tradesChartInst.data.datasets[0].data = [buy, sell];
+                    tradesChartInst.update();
+                    document.getElementById('stats-trades-buy').innerText = buy;
+                    document.getElementById('stats-trades-sell').innerText = sell;
+                }
+                
+                if (strategiesChartInst && data.strategies) {
+                    const strats = Object.keys(data.strategies);
+                    const buys = strats.map(s => data.strategies[s]['BUY'] || 0);
+                    const sells = strats.map(s => data.strategies[s]['SELL'] || 0);
+                    
+                    strategiesChartInst.data.labels = strats;
+                    strategiesChartInst.data.datasets[0].data = buys;
+                    strategiesChartInst.data.datasets[1].data = sells;
+                    strategiesChartInst.update();
+                }
+            })
+            .catch(console.error);
+    }
+
+    initStatisticsCharts();
+    setInterval(fetch24HStatistics, 3000);
+    fetch24HStatistics();
+
+
     // ── Currency Switcher Selector Listener ───────────────────
     const currencySelect = document.getElementById('currency-select');
     if (currencySelect) {

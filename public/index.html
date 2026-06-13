@@ -133,6 +133,20 @@
                     </h3>
 
                     <div class="status-grid">
+                        <div class="card control-panel">
+                            <div class="page-subsection" style="border: none; background: transparent; padding: 0;">
+                                <h4>Engine Controls</h4>
+                                <p class="subtitle">Start or stop the background liquidation tracking engine.</p>
+                                <div class="controls">
+                                    <button id="btn-start" class="btn btn-primary">Start Engine</button>
+                                    <button id="btn-stop" class="btn btn-danger" disabled>Stop Engine</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="status-grid">
                         <div class="card stat-card">
                             <h3>Bot Status</h3>
                             <div class="status-indicator" id="bot-status-indicator">
@@ -174,27 +188,6 @@
                         </div>
                     </div>
 
-                    <div class="card control-panel">
-                        <div class="page-subsection" style="border: none; background: transparent; padding: 0;">
-                            <h4>Engine Controls</h4>
-                            <p class="subtitle">Start or stop the background liquidation tracking engine.</p>
-                            <div class="controls">
-                                <button id="btn-start" class="btn btn-primary">Start Engine</button>
-                                <button id="btn-stop" class="btn btn-danger" disabled>Stop Engine</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Crypto Sentiment
-                    </h3>
-
                     <div class="status-grid">
                         <div class="card stat-card">
                             <h3>Market Sentiment</h3>
@@ -205,6 +198,47 @@
                             <h3>Fear & Greed Index</h3>
                             <div class="stat-value" id="fear-greed-value"
                                 style="font-size: 1.2rem; white-space: nowrap;">N/A</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-section">
+                    <h3>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                        24H Statistics Data
+                    </h3>
+
+                    <div class="statistics-dashboard">
+                        <div class="card stat-card glow-effect">
+                            <h3>Liquidations Matched</h3>
+                            <div class="stat-value highlight-text" id="stats-liquidations-count">0</div>
+                            <p class="subtitle">Large liquidations detected past 24h</p>
+                        </div>
+
+                        <div class="card stat-card chart-card">
+                            <h3>Trades Executed</h3>
+                            <div class="chart-container">
+                                <canvas id="tradesChart"></canvas>
+                            </div>
+                            <div class="chart-legend" id="trades-legend">
+                                <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span
+                                        id="stats-trades-buy">0</span></div>
+                                <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span
+                                        id="stats-trades-sell">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="statistics-dashboard">
+                        <div class="card stat-card chart-card wide-card">
+                            <h3>Strategy Signals</h3>
+                            <div class="chart-container strategy-chart-container">
+                                <canvas id="strategiesChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -275,1177 +309,1179 @@
                         </table>
                     </div>
                 </div>
-            </section>
+    </div>
+    </section>
 
-            <!-- System Logs Page -->
-            <section id="logs-page" class="page">
-                <header>
-                    <h2>System Logs</h2>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- System Logs Page -->
+    <section id="logs-page" class="page">
+        <header>
+            <h2>System Logs</h2>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
+                    </path>
+                </svg>
+                Bot Telemetry
+            </h3>
+            <div class="card terminal-panel">
+                <!-- Terminal Controls Bar -->
+                <div class="terminal-controls-bar">
+                    <div class="terminal-search-wrapper">
+                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16m-7 6h7"></path>
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        Bot Telemetry
-                    </h3>
-                    <div class="card terminal-panel">
-                        <!-- Terminal Controls Bar -->
-                        <div class="terminal-controls-bar">
-                            <div class="terminal-search-wrapper">
-                                <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                                <input type="text" id="log-search" class="terminal-search" placeholder="Filter logs...">
+                        <input type="text" id="log-search" class="terminal-search" placeholder="Filter logs...">
+                    </div>
+
+                    <div class="terminal-filters">
+                        <button class="filter-chip active" data-level="all">All</button>
+                        <button class="filter-chip" data-level="info">Info</button>
+                        <button class="filter-chip" data-level="warn">Warning</button>
+                        <button class="filter-chip" data-level="error">Error</button>
+                        <button class="filter-chip" data-level="debug">Debug</button>
+                    </div>
+
+                    <div class="terminal-actions">
+                        <button id="btn-clear-logs" class="btn-secondary-terminal"
+                            title="Clear viewport logs">Clear</button>
+                        <button id="btn-download-logs" class="btn-secondary-terminal"
+                            title="Download logs text file">Download</button>
+                    </div>
+                </div>
+
+                <!-- macOS Terminal Chrome -->
+                <div class="terminal-chrome">
+                    <div class="terminal-chrome-dots">
+                        <span class="chrome-dot dot-close"></span>
+                        <span class="chrome-dot dot-minimize"></span>
+                        <span class="chrome-dot dot-expand"></span>
+                    </div>
+                    <div class="terminal-chrome-title">telemetry@liquidation-trader: ~</div>
+                    <div class="terminal-chrome-actions">
+                        <label class="toggle-autoscroll">
+                            <input type="checkbox" id="log-autoscroll" checked>
+                            <span>Auto-scroll</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="terminal" id="log-terminal">
+                    <!-- Logs inject here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Page -->
+    <section id="settings" class="page">
+        <header>
+            <h2>Configuration</h2>
+            <p class="subtitle">Credentials are encrypted with AES-256-GCM prior to storage.</p>
+        </header>
+
+        <div class="card form-container" style="max-width: 100%;">
+            <form id="config-form">
+                <!-- Modern Tabs Navigation Bar -->
+                <div class="settings-tabs-container">
+                    <div class="settings-tabs">
+                        <button type="button" class="settings-tab-btn active" data-settings-tab="api-security">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                </path>
+                            </svg>
+                            API & Security
+                        </button>
+                        <button type="button" class="settings-tab-btn" data-settings-tab="trading-settings">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Trading Settings
+                        </button>
+                        <button type="button" class="settings-tab-btn" data-settings-tab="technical-strategies">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                </path>
+                            </svg>
+                            Technical Strategies
+                        </button>
+                        <button type="button" class="settings-tab-btn" data-settings-tab="risk-management">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                </path>
+                            </svg>
+                            Risk Managements
+                        </button>
+                        <button type="button" class="settings-tab-btn" data-settings-tab="fund-management">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            Fund Managements
+                        </button>
+                        <button type="button" class="settings-tab-btn" data-settings-tab="others">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            Others
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 1: API & Security -->
+                <div class="settings-tab-content active" id="settings-tab-api-security">
+                    <!-- API Credentials Section -->
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                </path>
+                            </svg>
+                            Exchange & Data API Credentials
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1.5rem;">Configure authentication keys for
+                            trade execution and analytics. Keep these credentials confidential.</p>
+
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="API_KEY">API Key</label>
+                                <input type="text" id="API_KEY" name="API_KEY" placeholder="Wait...">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Primary trading
+                                    exchange API Key. Must have read and active trading permissions enabled.</p>
                             </div>
-                            
-                            <div class="terminal-filters">
-                                <button class="filter-chip active" data-level="all">All</button>
-                                <button class="filter-chip" data-level="info">Info</button>
-                                <button class="filter-chip" data-level="warn">Warning</button>
-                                <button class="filter-chip" data-level="error">Error</button>
-                                <button class="filter-chip" data-level="debug">Debug</button>
-                            </div>
-                            
-                            <div class="terminal-actions">
-                                <button id="btn-clear-logs" class="btn-secondary-terminal" title="Clear viewport logs">Clear</button>
-                                <button id="btn-download-logs" class="btn-secondary-terminal" title="Download logs text file">Download</button>
+                            <div class="col">
+                                <label for="API_SECRET">API Secret</label>
+                                <input type="password" id="API_SECRET" name="API_SECRET" placeholder="Wait...">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Primary trading
+                                    exchange API Secret. Never enable withdrawal privileges on this key.</p>
                             </div>
                         </div>
-
-                        <!-- macOS Terminal Chrome -->
-                        <div class="terminal-chrome">
-                            <div class="terminal-chrome-dots">
-                                <span class="chrome-dot dot-close"></span>
-                                <span class="chrome-dot dot-minimize"></span>
-                                <span class="chrome-dot dot-expand"></span>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="RAPIDAPI_KEY">RapidAPI Key <span
+                                        style="color: orange; font-weight: bold;">(🌟 Premium)</span></label>
+                                <input type="password" id="RAPIDAPI_KEY" name="RAPIDAPI_KEY"
+                                    placeholder="Paste your RapidAPI Key here">
+                                <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
+                                    Used to access 🌟 Premium Data, Fear & Greed index, and statistical
+                                    liquidation streams. Subscribe to the <a style="color: orange;"
+                                        href="https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader"
+                                        target="_blank">Liquidation Trader API</a>.
+                                </p>
                             </div>
-                            <div class="terminal-chrome-title">telemetry@liquidation-trader: ~</div>
-                            <div class="terminal-chrome-actions">
-                                <label class="toggle-autoscroll">
-                                    <input type="checkbox" id="log-autoscroll" checked>
-                                    <span>Auto-scroll</span>
+                            <div class="col">
+                                <label for="CMC_API_KEY">CoinMarketCap API Key</label>
+                                <input type="password" id="CMC_API_KEY" name="CMC_API_KEY"
+                                    placeholder="Paste your CMC Pro API Key here">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">CoinMarketCap Pro
+                                    API Key. Essential for calculating base asset market capitalization rank
+                                    filtering.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WebUI Security Section -->
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                </path>
+                            </svg>
+                            WebUI Security
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1.5rem;">Restrict unauthorized access to the
+                            control dashboard by enabling password protection.</p>
+
+                        <div class="form-group row">
+                            <div class="col">
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="WEBUI_AUTH_ENABLED" name="WEBUI_AUTH_ENABLED"
+                                        value="true" style="width: auto; margin: 0;"> Enable WebUI
+                                    Authentication
                                 </label>
                             </div>
                         </div>
-
-                        <div class="terminal" id="log-terminal">
-                            <!-- Logs inject here -->
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="WEBUI_USERNAME">WebUI Username</label>
+                                <input type="text" id="WEBUI_USERNAME" name="WEBUI_USERNAME" placeholder="admin">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The administrative
+                                    user identifier requested on session login.</p>
+                            </div>
+                            <div class="col">
+                                <label for="WEBUI_PASSWORD">WebUI Password (Encrypted)</label>
+                                <input type="password" id="WEBUI_PASSWORD" name="WEBUI_PASSWORD" placeholder="Wait...">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">AES-256-GCM
+                                    encrypted dashboard entry password.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Settings Page -->
-            <section id="settings" class="page">
-                <header>
-                    <h2>Configuration</h2>
-                    <p class="subtitle">Credentials are encrypted with AES-256-GCM prior to storage.</p>
-                </header>
+                <!-- TAB 2: Trading Settings -->
+                <div class="settings-tab-content" id="settings-tab-trading-settings">
+                    <!-- Trading Core Section -->
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Trading Core Configuration
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1.5rem;">Set up baseline trading destinations,
+                            streaming sources, and liquidation size limits.</p>
 
-                <div class="card form-container" style="max-width: 100%;">
-                    <form id="config-form">
-                        <!-- Modern Tabs Navigation Bar -->
-                        <div class="settings-tabs-container">
-                            <div class="settings-tabs">
-                                <button type="button" class="settings-tab-btn active" data-settings-tab="api-security">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
-                                        </path>
-                                    </svg>
-                                    API & Security
-                                </button>
-                                <button type="button" class="settings-tab-btn" data-settings-tab="trading-settings">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                    </svg>
-                                    Trading Settings
-                                </button>
-                                <button type="button" class="settings-tab-btn" data-settings-tab="technical-strategies">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                        </path>
-                                    </svg>
-                                    Technical Strategies
-                                </button>
-                                <button type="button" class="settings-tab-btn" data-settings-tab="risk-management">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
-                                        </path>
-                                    </svg>
-                                    Risk Managements
-                                </button>
-                                <button type="button" class="settings-tab-btn" data-settings-tab="fund-management">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                        </path>
-                                    </svg>
-                                    Fund Managements
-                                </button>
-                                <button type="button" class="settings-tab-btn" data-settings-tab="others">
-                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                                        </path>
-                                    </svg>
-                                    Others
-                                </button>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="TRADE_EXCHANGE">Primary Trading Exchange</label>
+                                <select id="TRADE_EXCHANGE" name="TRADE_EXCHANGE"
+                                    style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                    <option value="bybit">Bybit</option>
+                                    <option value="binance">Binance</option>
+                                    <option value="bitmex">BitMEX</option>
+                                    <option value="lighter">Lighter</option>
+                                    <option value="okx">OKX</option>
+                                    <option value="aster">Aster DEX</option>
+                                </select>
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The exchange where
+                                    live trade orders and leverage adjustments will be executed.</p>
+                            </div>
+                            <div class="col">
+                                <label>Liquidation Stream Sources</label>
+                                <div class="checkbox-group"
+                                    style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;">
+                                    <label
+                                        style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
+                                            type="checkbox" class="liq-exchange-cb" value="bybit"> Bybit</label>
+                                    <label
+                                        style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
+                                            type="checkbox" class="liq-exchange-cb" value="binance">
+                                        Binance</label>
+                                    <label
+                                        style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
+                                            type="checkbox" class="liq-exchange-cb" value="bitmex">
+                                        BitMEX</label>
+                                    <label
+                                        style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
+                                            type="checkbox" class="liq-exchange-cb" value="lighter">
+                                        Lighter</label>
+                                    <label
+                                        style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
+                                            type="checkbox" class="liq-exchange-cb" value="okx"> OKX</label>
+                                    <label
+                                        style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
+                                            type="checkbox" class="liq-exchange-cb" value="aster"> Aster
+                                        DEX</label>
+                                </div>
+                                <input type="hidden" id="LIQUIDATION_EXCHANGES" name="LIQUIDATION_EXCHANGES">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Active WebSocket
+                                    feeds streaming real-time liquidations to generate signals.</p>
                             </div>
                         </div>
-
-                        <!-- TAB 1: API & Security -->
-                        <div class="settings-tab-content active" id="settings-tab-api-security">
-                            <!-- API Credentials Section -->
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
-                                        </path>
-                                    </svg>
-                                    Exchange & Data API Credentials
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1.5rem;">Configure authentication keys for
-                                    trade execution and analytics. Keep these credentials confidential.</p>
-
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="API_KEY">API Key</label>
-                                        <input type="text" id="API_KEY" name="API_KEY" placeholder="Wait...">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Primary trading
-                                            exchange API Key. Must have read and active trading permissions enabled.</p>
-                                    </div>
-                                    <div class="col">
-                                        <label for="API_SECRET">API Secret</label>
-                                        <input type="password" id="API_SECRET" name="API_SECRET" placeholder="Wait...">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Primary trading
-                                            exchange API Secret. Never enable withdrawal privileges on this key.</p>
-                                    </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="LIQUIDATION_VALUE_THRESHOLD">Min Liquidation Value Threshold</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <select id="LIQUIDATION_VALUE_CURRENCY" name="LIQUIDATION_VALUE_CURRENCY"
+                                        style="width: 80px; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                        <option value="USD">$</option>
+                                        <option value="BTC">BTC</option>
+                                    </select>
+                                    <input type="number" id="LIQUIDATION_VALUE_THRESHOLD"
+                                        name="LIQUIDATION_VALUE_THRESHOLD" step="any" style="flex: 1;">
                                 </div>
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="RAPIDAPI_KEY">RapidAPI Key <span
-                                                style="color: orange; font-weight: bold;">(🌟 Premium)</span></label>
-                                        <input type="password" id="RAPIDAPI_KEY" name="RAPIDAPI_KEY"
-                                            placeholder="Paste your RapidAPI Key here">
-                                        <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
-                                            Used to access 🌟 Premium Data, Fear & Greed index, and statistical
-                                            liquidation streams. Subscribe to the <a style="color: orange;"
-                                                href="https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader"
-                                                target="_blank">Liquidation Trader API</a>.
-                                        </p>
-                                    </div>
-                                    <div class="col">
-                                        <label for="CMC_API_KEY">CoinMarketCap API Key</label>
-                                        <input type="password" id="CMC_API_KEY" name="CMC_API_KEY"
-                                            placeholder="Paste your CMC Pro API Key here">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">CoinMarketCap Pro
-                                            API Key. Essential for calculating base asset market capitalization rank
-                                            filtering.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- WebUI Security Section -->
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
-                                        </path>
-                                    </svg>
-                                    WebUI Security
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1.5rem;">Restrict unauthorized access to the
-                                    control dashboard by enabling password protection.</p>
-
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label
-                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                            <input type="checkbox" id="WEBUI_AUTH_ENABLED" name="WEBUI_AUTH_ENABLED"
-                                                value="true" style="width: auto; margin: 0;"> Enable WebUI
-                                            Authentication
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="WEBUI_USERNAME">WebUI Username</label>
-                                        <input type="text" id="WEBUI_USERNAME" name="WEBUI_USERNAME"
-                                            placeholder="admin">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The administrative
-                                            user identifier requested on session login.</p>
-                                    </div>
-                                    <div class="col">
-                                        <label for="WEBUI_PASSWORD">WebUI Password (Encrypted)</label>
-                                        <input type="password" id="WEBUI_PASSWORD" name="WEBUI_PASSWORD"
-                                            placeholder="Wait...">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">AES-256-GCM
-                                            encrypted dashboard entry password.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TAB 2: Trading Settings -->
-                        <div class="settings-tab-content" id="settings-tab-trading-settings">
-                            <!-- Trading Core Section -->
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                    </svg>
-                                    Trading Core Configuration
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1.5rem;">Set up baseline trading destinations,
-                                    streaming sources, and liquidation size limits.</p>
-
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="TRADE_EXCHANGE">Primary Trading Exchange</label>
-                                        <select id="TRADE_EXCHANGE" name="TRADE_EXCHANGE"
-                                            style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                            <option value="bybit">Bybit</option>
-                                            <option value="binance">Binance</option>
-                                            <option value="bitmex">BitMEX</option>
-                                            <option value="lighter">Lighter</option>
-                                            <option value="okx">OKX</option>
-                                            <option value="aster">Aster DEX</option>
-                                        </select>
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The exchange where
-                                            live trade orders and leverage adjustments will be executed.</p>
-                                    </div>
-                                    <div class="col">
-                                        <label>Liquidation Stream Sources</label>
-                                        <div class="checkbox-group"
-                                            style="display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px;">
-                                            <label
-                                                style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
-                                                    type="checkbox" class="liq-exchange-cb" value="bybit"> Bybit</label>
-                                            <label
-                                                style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
-                                                    type="checkbox" class="liq-exchange-cb" value="binance">
-                                                Binance</label>
-                                            <label
-                                                style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
-                                                    type="checkbox" class="liq-exchange-cb" value="bitmex">
-                                                BitMEX</label>
-                                            <label
-                                                style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
-                                                    type="checkbox" class="liq-exchange-cb" value="lighter">
-                                                Lighter</label>
-                                            <label
-                                                style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
-                                                    type="checkbox" class="liq-exchange-cb" value="okx"> OKX</label>
-                                            <label
-                                                style="font-weight: normal; margin-bottom: 0; display: flex; align-items: center; gap: 4px;"><input
-                                                    type="checkbox" class="liq-exchange-cb" value="aster"> Aster
-                                                DEX</label>
-                                        </div>
-                                        <input type="hidden" id="LIQUIDATION_EXCHANGES" name="LIQUIDATION_EXCHANGES">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Active WebSocket
-                                            feeds streaming real-time liquidations to generate signals.</p>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="LIQUIDATION_VALUE_THRESHOLD">Min Liquidation Value Threshold</label>
-                                        <div style="display: flex; gap: 10px;">
-                                            <select id="LIQUIDATION_VALUE_CURRENCY" name="LIQUIDATION_VALUE_CURRENCY"
-                                                style="width: 80px; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                                <option value="USD">$</option>
-                                                <option value="BTC">BTC</option>
-                                            </select>
-                                            <input type="number" id="LIQUIDATION_VALUE_THRESHOLD"
-                                                name="LIQUIDATION_VALUE_THRESHOLD" step="any" style="flex: 1;">
-                                        </div>
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The absolute
-                                            minimum valuation of a liquidation event required to trigger calculations.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="page-subsection" style="margin-top: 1.5rem;">
-                                    <h4>Dynamic Thresholds <span style="color: orange; font-weight: bold;">(🌟
-                                            Premium)</span></h4>
-                                    <p class="subtitle" style="margin-bottom: 1rem;">Use live stats-driven rolling
-                                        liquidation thresholds computed dynamically per coin to adapt to market
-                                        volatility.</p>
-
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_DYNAMIC_THRESHOLDS"
-                                                    name="ENABLE_DYNAMIC_THRESHOLDS" value="true"
-                                                    style="width: auto; margin: 0;"> Enable Dynamic Thresholds
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
-                                                Substitutes static limits with computed 24h rolling volatility
-                                                thresholds per asset. Requires RapidAPI Key.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row" style="margin-top: 0.5rem;">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="REPLACE_BELOW_MIN_THRESHOLD"
-                                                    name="REPLACE_BELOW_MIN_THRESHOLD" value="true"
-                                                    style="width: auto; margin: 0;"> Replace Dynamic Value Below Min
-                                                Threshold
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
-                                                Guarantees that dynamic statistical triggers never drop lower than your
-                                                absolute static Min Threshold setting.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TAB 3: Technical Strategies -->
-                        <div class="settings-tab-content" id="settings-tab-technical-strategies">
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                        </path>
-                                    </svg>
-                                    Technical Confluence Strategies
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1rem;">Set up filters and confirmation
-                                    indicators to qualify trade entries. At least one strategy must be enabled.</p>
-                                <p class="info-msg"
-                                    style="margin-bottom: 1.5rem; background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; padding: 10px; border-radius: 4px;">
-                                    <strong>Confluence Rule:</strong> If multiple strategies are enabled simultaneously,
-                                    all active indicators must align in the same direction to execute a trade.
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The absolute
+                                    minimum valuation of a liquidation event required to trigger calculations.
                                 </p>
-                                <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-                                    <a href="#" id="openAdvanceStrategyModal"
-                                        style="color: #3b82f6; text-decoration: none; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; transition: color 0.2s;"
-                                        onmouseover="this.style.color='#60a5fa'"
-                                        onmouseout="this.style.color='#3b82f6'">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                                            </path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        </svg>
-                                        Advance Strategy Settings
-                                    </a>
-                                </div>
+                            </div>
+                        </div>
 
-                                <!-- VWAP Sub-section -->
-                                <div class="page-subsection">
-                                    <h4>VWAP Strategy</h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_VWAP_STRATEGY"
-                                                    name="ENABLE_VWAP_STRATEGY" value="true"
-                                                    style="width: auto; margin: 0;"> Enable VWAP Strategy
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Calculates a rolling or session-based Volume-Weighted Average Price.
-                                                Triggers <strong style="color: #00ff00;">LONG</strong> when price falls
-                                                below the lower offset, and <strong
-                                                    style="color: var(--danger);">SHORT</strong> when price rises above
-                                                the upper offset.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="VWAP_TYPE">VWAP Type</label>
-                                            <select id="VWAP_TYPE" name="VWAP_TYPE"
-                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                                <option value="rolling">Rolling (Default)</option>
-                                                <option value="session">Session</option>
-                                            </select>
-                                        </div>
-                                        <div class="col" id="vwap-session-type-col" style="display: none;">
-                                            <label for="VWAP_SESSION_TYPE">Session Type</label>
-                                            <select id="VWAP_SESSION_TYPE" name="VWAP_SESSION_TYPE"
-                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                                <option value="daily">Daily</option>
-                                                <option value="weekly">Weekly</option>
-                                                <option value="monthly">Monthly</option>
-                                            </select>
-                                        </div>
-                                        <div class="col" id="vwap-period-col">
-                                            <label for="VWAP_PERIOD">VWAP Period</label>
-                                            <input type="number" id="VWAP_PERIOD" name="VWAP_PERIOD" step="1" min="1"
-                                                placeholder="e.g. 14">
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="VWAP_TIMEFRAME">VWAP Timeframe</label>
-                                            <select id="VWAP_TIMEFRAME" name="VWAP_TIMEFRAME"
-                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                                <option value="1m">1m</option>
-                                                <option value="3m">3m</option>
-                                                <option value="5m">5m</option>
-                                                <option value="15m">15m</option>
-                                                <option value="1h">1h</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="OFFSET_LONG_PERCENTAGE">VWAP Long Offset (%)</label>
-                                            <input type="number" id="OFFSET_LONG_PERCENTAGE"
-                                                name="OFFSET_LONG_PERCENTAGE" step="0.01">
-                                        </div>
-                                        <div class="col">
-                                            <label for="OFFSET_SHORT_PERCENTAGE">VWAP Short Offset (%)</label>
-                                            <input type="number" id="OFFSET_SHORT_PERCENTAGE"
-                                                name="OFFSET_SHORT_PERCENTAGE" step="0.01">
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="page-subsection" style="margin-top: 1.5rem;">
+                            <h4>Dynamic Thresholds <span style="color: orange; font-weight: bold;">(🌟
+                                    Premium)</span></h4>
+                            <p class="subtitle" style="margin-bottom: 1rem;">Use live stats-driven rolling
+                                liquidation thresholds computed dynamically per coin to adapt to market
+                                volatility.</p>
 
-                                <!-- RSI Sub-section -->
-                                <div class="page-subsection">
-                                    <h4>RSI Strategy</h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_RSI_STRATEGY"
-                                                    name="ENABLE_RSI_STRATEGY" value="true"
-                                                    style="width: auto; margin: 0;"> Enable RSI Strategy
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Uses Relative Strength Index to avoid entries in exhausted zones.
-                                                Triggers <strong style="color: #00ff00;">LONG</strong> when oversold,
-                                                and <strong style="color: var(--danger);">SHORT</strong> when
-                                                overbought.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="RSI_PERIOD">RSI Period</label>
-                                            <input type="number" id="RSI_PERIOD" name="RSI_PERIOD" step="1" min="1">
-                                        </div>
-                                        <div class="col">
-                                            <label for="RSI_TIMEFRAME">RSI Timeframe</label>
-                                            <select id="RSI_TIMEFRAME" name="RSI_TIMEFRAME"
-                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                                <option value="1m">1m</option>
-                                                <option value="3m">3m</option>
-                                                <option value="5m">5m</option>
-                                                <option value="15m">15m</option>
-                                                <option value="1h">1h</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="RSI_OVERBOUGHT">RSI Overbought</label>
-                                            <input type="number" id="RSI_OVERBOUGHT" name="RSI_OVERBOUGHT" step="1"
-                                                placeholder="e.g. 70">
-                                        </div>
-                                        <div class="col">
-                                            <label for="RSI_OVERSOLD">RSI Oversold</label>
-                                            <input type="number" id="RSI_OVERSOLD" name="RSI_OVERSOLD" step="1"
-                                                placeholder="e.g. 30">
-                                        </div>
-                                    </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_DYNAMIC_THRESHOLDS"
+                                            name="ENABLE_DYNAMIC_THRESHOLDS" value="true"
+                                            style="width: auto; margin: 0;"> Enable Dynamic Thresholds
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
+                                        Substitutes static limits with computed 24h rolling volatility
+                                        thresholds per asset. Requires RapidAPI Key.
+                                    </p>
                                 </div>
-
-                                <!-- DMI Sub-section -->
-                                <div class="page-subsection">
-                                    <h4>DMI Strategy</h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_DMI_STRATEGY"
-                                                    name="ENABLE_DMI_STRATEGY" value="true"
-                                                    style="width: auto; margin: 0;"> Enable DMI Strategy
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Evaluates trend strength. Trade is blocked if DMI is above the threshold
-                                                (ensuring mean reversion entries only). Direction dictated by DI
-                                                components.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="DMI_PERIOD">DMI Period</label>
-                                            <input type="number" id="DMI_PERIOD" name="DMI_PERIOD" step="1" min="1">
-                                        </div>
-                                        <div class="col">
-                                            <label for="DMI_TIMEFRAME">DMI Timeframe</label>
-                                            <select id="DMI_TIMEFRAME" name="DMI_TIMEFRAME"
-                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
-                                                <option value="1m">1m</option>
-                                                <option value="3m">3m</option>
-                                                <option value="5m">5m</option>
-                                                <option value="15m">15m</option>
-                                                <option value="1h">1h</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="DMI_THRESHOLD">DMI Threshold</label>
-                                            <input type="number" id="DMI_THRESHOLD" name="DMI_THRESHOLD" step="1"
-                                                placeholder="e.g. 25">
-                                        </div>
-                                    </div>
+                            </div>
+                            <div class="form-group row" style="margin-top: 0.5rem;">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="REPLACE_BELOW_MIN_THRESHOLD"
+                                            name="REPLACE_BELOW_MIN_THRESHOLD" value="true"
+                                            style="width: auto; margin: 0;"> Replace Dynamic Value Below Min
+                                        Threshold
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
+                                        Guarantees that dynamic statistical triggers never drop lower than your
+                                        absolute static Min Threshold setting.
+                                    </p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                <!-- Market Sentiment Sub-section -->
-                                <div class="page-subsection">
-                                    <h4>Market Sentiment Strategy <span style="color: orange; font-weight: bold;">(🌟
-                                            Premium)</span></h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_MARKET_SENTIMENT_STRATEGY"
-                                                    name="ENABLE_MARKET_SENTIMENT_STRATEGY" value="true"
-                                                    style="width: auto; margin: 0;"> Enable Market Sentiment
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Leverages global sentiment index. Buys when sentiment is Bullish +
-                                                Fear/Greed; sells when Bearish + Fear/Greed. Uses Extreme Fear/Greed
-                                                triggers. Requires RapidAPI Key.
-                                            </p>
-                                        </div>
-                                    </div>
+                <!-- TAB 3: Technical Strategies -->
+                <div class="settings-tab-content" id="settings-tab-technical-strategies">
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                </path>
+                            </svg>
+                            Technical Confluence Strategies
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1rem;">Set up filters and confirmation
+                            indicators to qualify trade entries. At least one strategy must be enabled.</p>
+                        <p class="info-msg"
+                            style="margin-bottom: 1.5rem; background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; padding: 10px; border-radius: 4px;">
+                            <strong>Confluence Rule:</strong> If multiple strategies are enabled simultaneously,
+                            all active indicators must align in the same direction to execute a trade.
+                        </p>
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                            <a href="#" id="openAdvanceStrategyModal"
+                                style="color: #3b82f6; text-decoration: none; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; transition: color 0.2s;"
+                                onmouseover="this.style.color='#60a5fa'" onmouseout="this.style.color='#3b82f6'">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Advance Strategy Settings
+                            </a>
+                        </div>
+
+                        <!-- VWAP Sub-section -->
+                        <div class="page-subsection">
+                            <h4>VWAP Strategy</h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_VWAP_STRATEGY" name="ENABLE_VWAP_STRATEGY"
+                                            value="true" style="width: auto; margin: 0;"> Enable VWAP Strategy
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Calculates a rolling or session-based Volume-Weighted Average Price.
+                                        Triggers <strong style="color: #00ff00;">LONG</strong> when price falls
+                                        below the lower offset, and <strong style="color: var(--danger);">SHORT</strong>
+                                        when price rises above
+                                        the upper offset.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="VWAP_TYPE">VWAP Type</label>
+                                    <select id="VWAP_TYPE" name="VWAP_TYPE"
+                                        style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                        <option value="rolling">Rolling (Default)</option>
+                                        <option value="session">Session</option>
+                                    </select>
+                                </div>
+                                <div class="col" id="vwap-session-type-col" style="display: none;">
+                                    <label for="VWAP_SESSION_TYPE">Session Type</label>
+                                    <select id="VWAP_SESSION_TYPE" name="VWAP_SESSION_TYPE"
+                                        style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div class="col" id="vwap-period-col">
+                                    <label for="VWAP_PERIOD">VWAP Period</label>
+                                    <input type="number" id="VWAP_PERIOD" name="VWAP_PERIOD" step="1" min="1"
+                                        placeholder="e.g. 14">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="VWAP_TIMEFRAME">VWAP Timeframe</label>
+                                    <select id="VWAP_TIMEFRAME" name="VWAP_TIMEFRAME"
+                                        style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                        <option value="1m">1m</option>
+                                        <option value="3m">3m</option>
+                                        <option value="5m">5m</option>
+                                        <option value="15m">15m</option>
+                                        <option value="1h">1h</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="OFFSET_LONG_PERCENTAGE">VWAP Long Offset (%)</label>
+                                    <input type="number" id="OFFSET_LONG_PERCENTAGE" name="OFFSET_LONG_PERCENTAGE"
+                                        step="0.01">
+                                </div>
+                                <div class="col">
+                                    <label for="OFFSET_SHORT_PERCENTAGE">VWAP Short Offset (%)</label>
+                                    <input type="number" id="OFFSET_SHORT_PERCENTAGE" name="OFFSET_SHORT_PERCENTAGE"
+                                        step="0.01">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TAB 4: Risk Managements -->
-                        <div class="settings-tab-content" id="settings-tab-risk-management">
-                            <!-- Risk Management Section -->
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Risk & Capital Safeguard Rules
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1.5rem;">Configure leverage multipliers,
-                                    margin constraints, stop loss guardrails, and dynamic risk helpers.</p>
-
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="TAKE_PROFIT_PERCENTAGE">Take Profit (%)</label>
-                                        <input type="number" id="TAKE_PROFIT_PERCENTAGE" name="TAKE_PROFIT_PERCENTAGE"
-                                            step="0.01">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Target position
-                                            percentage return before automated exit trigger.</p>
-                                    </div>
-                                    <div class="col">
-                                        <label for="STOP_LOSS_PERCENTAGE">Stop Loss (%)</label>
-                                        <input type="number" id="STOP_LOSS_PERCENTAGE" name="STOP_LOSS_PERCENTAGE"
-                                            step="0.01">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Max percentage
-                                            drawdown on position value before safety stop trigger.</p>
-                                    </div>
-                                </div>
-
-                                <div class="page-subsection">
-                                    <h4>Trailing Profit</h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_TRAILING_PROFIT"
-                                                    name="ENABLE_TRAILING_PROFIT" value="true"
-                                                    style="width: auto; margin: 0;"> Enable Trailing Profit
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Dynamically scales stop loss behind the price once activation percentage
-                                                is reached to locking in running gains.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="TRAILING_PROFIT_PERCENTAGE">Trailing Profit Distance (%)</label>
-                                            <input type="number" id="TRAILING_PROFIT_PERCENTAGE"
-                                                name="TRAILING_PROFIT_PERCENTAGE" step="0.01">
-                                        </div>
-                                        <div class="col">
-                                            <label for="TRAILING_ACTIVATION_PERCENTAGE">Trailing Activation (%)</label>
-                                            <input type="number" id="TRAILING_ACTIVATION_PERCENTAGE"
-                                                name="TRAILING_ACTIVATION_PERCENTAGE" step="0.01">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group row" style="margin-top: 1rem;">
-                                    <div class="col">
-                                        <label for="TRADE_LEVERAGE">Leverage (x)</label>
-                                        <input type="number" id="TRADE_LEVERAGE" name="TRADE_LEVERAGE" step="1">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Position borrowing
-                                            multiplier. Keep lower to prevent premature liquidations.</p>
-                                    </div>
-                                    <div class="col">
-                                        <label for="TRADE_AMOUNT_PERCENTAGE">Trade Size (% of Wallet)</label>
-                                        <input type="number" id="TRADE_AMOUNT_PERCENTAGE" name="TRADE_AMOUNT_PERCENTAGE"
-                                            step="0.01">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Allocated wallet
-                                            margin balance used for each initial order entry.</p>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="MAX_OPEN_POSITIONS">Max Simultaneous Positions</label>
-                                        <input type="number" id="MAX_OPEN_POSITIONS" name="MAX_OPEN_POSITIONS" step="1"
-                                            min="1">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Ceiling on
-                                            concurrent open active contracts to control aggregated margin exposure.</p>
-                                    </div>
-                                </div>
-
-                                <div class="page-subsection" style="margin-top: 1.5rem;">
-                                    <h4>Isolation Mode (Margin Safeguard)</h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_ISOLATION_MODE" name="ENABLE_ISOLATION_MODE" value="true" style="width: auto; margin: 0;"> Enable Isolation Mode
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                When enabled, the bot will stop opening new positions once the configured margin threshold is reached. Existing positions will continue to be managed. This helps preserve/reserve fund to manage the largest currently open position.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="ISOLATION_MARGIN_THRESHOLD">Isolation Margin Threshold (%)</label>
-                                            <input type="number" id="ISOLATION_MARGIN_THRESHOLD" name="ISOLATION_MARGIN_THRESHOLD" step="0.1" min="0" max="100">
-                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The maximum used margin percentage before the bot enters isolation mode.</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="page-subsection" style="margin-top: 1.5rem;">
-                                    <h4>DCA Martingale <span
-                                            style="color: var(--danger); font-weight: bold;">(EXPERIMENTAL)</span></h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_DCA_MARTINGALE"
-                                                    name="ENABLE_DCA_MARTINGALE" value="true"
-                                                    style="width: auto; margin: 0;"> Enable DCA into order size based on
-                                                PNL %
-                                            </label>
-                                            <p class="subtitle"
-                                                style="margin-top: 6px; font-size: 11px; color: var(--text-muted);">
-                                                ⚠️ **WARNING:** Scales next entries dynamically when existing positions
-                                                are in loss. High leverage combined with Martingale allocation can
-                                                deplete balances rapidly.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="page-subsection" style="margin-top: 1rem;">
-                                    <h4>Runaway Helper <span
-                                            style="color: var(--danger); font-weight: bold;">(EXPERIMENTAL)</span></h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_RUNAWAY_HELPER"
-                                                    name="ENABLE_RUNAWAY_HELPER" value="true"
-                                                    style="width: auto; margin: 0;"> Enable Runaway Helper
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Acts as a backup safety net. If active position is stale (no websocket
-                                                updates) and PnL drops below threshold, triggers an immediate
-                                                rescue/averaging check.
-                                            </p>
-                                        </div>
-                                        <div class="col">
-                                            <label for="RUNAWAY_HELPER_THRESHOLD">Threshold PnL (%)</label>
-                                            <input type="number" id="RUNAWAY_HELPER_THRESHOLD"
-                                                name="RUNAWAY_HELPER_THRESHOLD" step="0.01" placeholder="e.g. -10">
-                                        </div>
-                                    </div>
+                        <!-- RSI Sub-section -->
+                        <div class="page-subsection">
+                            <h4>RSI Strategy</h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_RSI_STRATEGY" name="ENABLE_RSI_STRATEGY"
+                                            value="true" style="width: auto; margin: 0;"> Enable RSI Strategy
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Uses Relative Strength Index to avoid entries in exhausted zones.
+                                        Triggers <strong style="color: #00ff00;">LONG</strong> when oversold,
+                                        and <strong style="color: var(--danger);">SHORT</strong> when
+                                        overbought.
+                                    </p>
                                 </div>
                             </div>
-
-                            <!-- Market Filtering Section -->
-                            <div class="page-section" style="margin-top: 2rem;">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
-                                        </path>
-                                    </svg>
-                                    Market & Capital Filtering
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1.5rem;">Prevent trading on illiquid, low-cap,
-                                    or highly volatile tokens to preserve capital.</p>
-
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label
-                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                            <input type="checkbox" id="CMC_FILTER_ENABLED" name="CMC_FILTER_ENABLED"
-                                                value="true" style="width: auto; margin: 0;"> Enable CMC Rank Filter
-                                        </label>
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Filters trading
-                                            targets by capitalization rank using CoinMarketCap. Requires CMC Key on API
-                                            tab.</p>
-                                    </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="RSI_PERIOD">RSI Period</label>
+                                    <input type="number" id="RSI_PERIOD" name="RSI_PERIOD" step="1" min="1">
                                 </div>
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="CMC_RANK_LIMIT">CMC Rank Limit</label>
-                                        <input type="number" id="CMC_RANK_LIMIT" name="CMC_RANK_LIMIT" min="1" step="1"
-                                            placeholder="e.g. 100">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Tokens ranked
-                                            below this limit will be ignored (e.g., set 100 to trade only Top 100
-                                            assets).</p>
-                                    </div>
+                                <div class="col">
+                                    <label for="RSI_TIMEFRAME">RSI Timeframe</label>
+                                    <select id="RSI_TIMEFRAME" name="RSI_TIMEFRAME"
+                                        style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                        <option value="1m">1m</option>
+                                        <option value="3m">3m</option>
+                                        <option value="5m">5m</option>
+                                        <option value="15m">15m</option>
+                                        <option value="1h">1h</option>
+                                    </select>
                                 </div>
-                                <div class="form-group row">
-                                    <div class="col">
-                                        <label for="COIN_BLACKLIST">Coin Blacklist (Comma Separated Base Coins)</label>
-                                        <input type="text" id="COIN_BLACKLIST" name="COIN_BLACKLIST"
-                                            placeholder="e.g. BTC, ETH">
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">A comma-separated
-                                            list of symbols to completely ignore (e.g., BTC, ETH, SOL).</p>
-                                    </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="RSI_OVERBOUGHT">RSI Overbought</label>
+                                    <input type="number" id="RSI_OVERBOUGHT" name="RSI_OVERBOUGHT" step="1"
+                                        placeholder="e.g. 70">
+                                </div>
+                                <div class="col">
+                                    <label for="RSI_OVERSOLD">RSI Oversold</label>
+                                    <input type="number" id="RSI_OVERSOLD" name="RSI_OVERSOLD" step="1"
+                                        placeholder="e.g. 30">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TAB 5: Fund Managements -->
-                        <div class="settings-tab-content" id="settings-tab-fund-management">
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                        </path>
-                                    </svg>
-                                    Fund Management
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 2rem;">Automatically manage your profits with smart internal transfers to secure your gains.</p>
-
-                                <div class="page-subsection">
-                                    <h4>Automatic Internal Transfer (Take Profit)</h4>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label
-                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_AUTO_TRANSFER"
-                                                    name="ENABLE_AUTO_TRANSFER" value="true"
-                                                    style="width: auto; margin: 0;"> Enable Auto Transfer
-                                            </label>
-                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Automatically takes profit by making an internal transfer from the trading account to the funding account when your total wallet value exceeds the minimum threshold.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col">
-                                            <label for="MIN_BALANCE_THRESHOLD">Min Balance Required ($)</label>
-                                            <input type="number" id="MIN_BALANCE_THRESHOLD" name="MIN_BALANCE_THRESHOLD" step="0.01"
-                                                placeholder="e.g. 1000">
-                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The base capital to keep in the trading account.</p>
-                                        </div>
-                                        <div class="col">
-                                            <label for="TRANSFER_PERCENTAGE_THRESHOLD">Transfer Trigger Threshold (%)</label>
-                                            <input type="number" id="TRANSFER_PERCENTAGE_THRESHOLD" name="TRANSFER_PERCENTAGE_THRESHOLD" step="0.01"
-                                                placeholder="e.g. 5">
-                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Transfer will trigger if profit % exceeds this value.</p>
-                                        </div>
-                                    </div>
+                        <!-- DMI Sub-section -->
+                        <div class="page-subsection">
+                            <h4>DMI Strategy</h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_DMI_STRATEGY" name="ENABLE_DMI_STRATEGY"
+                                            value="true" style="width: auto; margin: 0;"> Enable DMI Strategy
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Evaluates trend strength. Trade is blocked if DMI is above the threshold
+                                        (ensuring mean reversion entries only). Direction dictated by DI
+                                        components.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="DMI_PERIOD">DMI Period</label>
+                                    <input type="number" id="DMI_PERIOD" name="DMI_PERIOD" step="1" min="1">
+                                </div>
+                                <div class="col">
+                                    <label for="DMI_TIMEFRAME">DMI Timeframe</label>
+                                    <select id="DMI_TIMEFRAME" name="DMI_TIMEFRAME"
+                                        style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                        <option value="1m">1m</option>
+                                        <option value="3m">3m</option>
+                                        <option value="5m">5m</option>
+                                        <option value="15m">15m</option>
+                                        <option value="1h">1h</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="DMI_THRESHOLD">DMI Threshold</label>
+                                    <input type="number" id="DMI_THRESHOLD" name="DMI_THRESHOLD" step="1"
+                                        placeholder="e.g. 25">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- TAB 6: Others -->
-                        <div class="settings-tab-content" id="settings-tab-others">
-                            <!-- Browser Notifications Section -->
-                            <div class="page-section">
-                                <h3>
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                                        </path>
-                                    </svg>
-                                    System Preferences & Desktop Alerts
-                                </h3>
-                                <p class="subtitle" style="margin-bottom: 1.5rem;">Configure supplementary system
-                                    options, dashboard behaviors, and real-time browser push notifications.</p>
-
-                                <div class="form-group row">
-                                    <div class="col"
-                                        style="flex-direction: row; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                                        <label
-                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
-                                            <input type="checkbox" id="BROWSER_NOTIFICATIONS_ENABLED"
-                                                style="width: auto; margin: 0;"> Enable Desktop Notifications
-                                        </label>
-                                        <button type="button" id="btn-request-notifications" class="btn"
-                                            style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); display: none;">Authorize
-                                            Permission</button>
-                                        <span id="notification-status"
-                                            style="font-size: 12px; color: var(--text-muted);"></span>
-                                    </div>
+                        <!-- Market Sentiment Sub-section -->
+                        <div class="page-subsection">
+                            <h4>Market Sentiment Strategy <span style="color: orange; font-weight: bold;">(🌟
+                                    Premium)</span></h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_MARKET_SENTIMENT_STRATEGY"
+                                            name="ENABLE_MARKET_SENTIMENT_STRATEGY" value="true"
+                                            style="width: auto; margin: 0;"> Enable Market Sentiment
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Leverages global sentiment index. Buys when sentiment is Bullish +
+                                        Fear/Greed; sells when Bearish + Fear/Greed. Uses Extreme Fear/Greed
+                                        triggers. Requires RapidAPI Key.
+                                    </p>
                                 </div>
-                                <p class="subtitle" style="font-size: 11px; margin-top: -10px;">Receive browser
-                                    notification overlays instantly on your computer whenever critical liquidation
-                                    signals are logged or positions are managed.</p>
-                                <div class="form-group row" style="margin-top: 1rem;">
-                                    <div class="col">
-                                        <label
-                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
-                                            <input type="checkbox" id="ENABLE_ANON_REPORTING" name="ENABLE_ANON_REPORTING" value="true"
-                                                style="width: auto; margin: 0;"> Enable Anonymous Reporting
-                                        </label>
-                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Periodically sends anonymous aggregated PnL stats (Daily, Weekly, Monthly, Yearly, Total), UID, and Exchange to liquidation.report to help build community data.</p>
-                                    </div>
-                                    <div class="col">
-                                        <label for="ANON_UID">Your Anonymous UID</label>
-                                        <input type="text" id="ANON_UID" name="ANON_UID" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: not-allowed;">
-                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Risk Managements -->
+                <div class="settings-tab-content" id="settings-tab-risk-management">
+                    <!-- Risk Management Section -->
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Risk & Capital Safeguard Rules
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1.5rem;">Configure leverage multipliers,
+                            margin constraints, stop loss guardrails, and dynamic risk helpers.</p>
+
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="TAKE_PROFIT_PERCENTAGE">Take Profit (%)</label>
+                                <input type="number" id="TAKE_PROFIT_PERCENTAGE" name="TAKE_PROFIT_PERCENTAGE"
+                                    step="0.01">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Target position
+                                    percentage return before automated exit trigger.</p>
+                            </div>
+                            <div class="col">
+                                <label for="STOP_LOSS_PERCENTAGE">Stop Loss (%)</label>
+                                <input type="number" id="STOP_LOSS_PERCENTAGE" name="STOP_LOSS_PERCENTAGE" step="0.01">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Max percentage
+                                    drawdown on position value before safety stop trigger.</p>
+                            </div>
+                        </div>
+
+                        <div class="page-subsection">
+                            <h4>Trailing Profit</h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_TRAILING_PROFIT" name="ENABLE_TRAILING_PROFIT"
+                                            value="true" style="width: auto; margin: 0;"> Enable Trailing Profit
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Dynamically scales stop loss behind the price once activation percentage
+                                        is reached to locking in running gains.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="TRAILING_PROFIT_PERCENTAGE">Trailing Profit Distance (%)</label>
+                                    <input type="number" id="TRAILING_PROFIT_PERCENTAGE"
+                                        name="TRAILING_PROFIT_PERCENTAGE" step="0.01">
+                                </div>
+                                <div class="col">
+                                    <label for="TRAILING_ACTIVATION_PERCENTAGE">Trailing Activation (%)</label>
+                                    <input type="number" id="TRAILING_ACTIVATION_PERCENTAGE"
+                                        name="TRAILING_ACTIVATION_PERCENTAGE" step="0.01">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Form Actions remain visible at the very bottom -->
-                        <div class="form-actions"
-                            style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 30px;">
-                            <button type="button" id="btn-export" class="btn"
-                                style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">Export
-                                Settings</button>
-                            <input type="file" id="import-file-input" accept=".json" style="display: none;">
-                            <button type="button" id="btn-import" class="btn"
-                                style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">Import
-                                Settings</button>
-                            <button type="submit" class="btn btn-primary" style="min-width: 200px;">Save
-                                Configuration</button>
+                        <div class="form-group row" style="margin-top: 1rem;">
+                            <div class="col">
+                                <label for="TRADE_LEVERAGE">Leverage (x)</label>
+                                <input type="number" id="TRADE_LEVERAGE" name="TRADE_LEVERAGE" step="1">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Position borrowing
+                                    multiplier. Keep lower to prevent premature liquidations.</p>
+                            </div>
+                            <div class="col">
+                                <label for="TRADE_AMOUNT_PERCENTAGE">Trade Size (% of Wallet)</label>
+                                <input type="number" id="TRADE_AMOUNT_PERCENTAGE" name="TRADE_AMOUNT_PERCENTAGE"
+                                    step="0.01">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Allocated wallet
+                                    margin balance used for each initial order entry.</p>
+                            </div>
                         </div>
-                    </form>
-                </div>
-            </section>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="MAX_OPEN_POSITIONS">Max Simultaneous Positions</label>
+                                <input type="number" id="MAX_OPEN_POSITIONS" name="MAX_OPEN_POSITIONS" step="1" min="1">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Ceiling on
+                                    concurrent open active contracts to control aggregated margin exposure.</p>
+                            </div>
+                        </div>
 
-            <!-- Account Page -->
-            <section id="account" class="page">
-                <header>
-                    <h2>Account Performance</h2>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                            </path>
-                        </svg>
-                        Wallet Overview
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live wallet overview and aggregated trade metrics
-                        dynamically saved over SQLite.</p>
-                    <div class="status-grid">
-                        <div class="card stat-card">
-                            <h3>Total Wallet Value</h3>
-                            <div class="stat-value" id="acc-total-value">$...</div>
+                        <div class="page-subsection" style="margin-top: 1.5rem;">
+                            <h4>Isolation Mode (Margin Safeguard)</h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_ISOLATION_MODE" name="ENABLE_ISOLATION_MODE"
+                                            value="true" style="width: auto; margin: 0;"> Enable Isolation Mode
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        When enabled, the bot will stop opening new positions once the configured margin
+                                        threshold is reached. Existing positions will continue to be managed. This helps
+                                        preserve/reserve fund to manage the largest currently open position.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="ISOLATION_MARGIN_THRESHOLD">Isolation Margin Threshold (%)</label>
+                                    <input type="number" id="ISOLATION_MARGIN_THRESHOLD"
+                                        name="ISOLATION_MARGIN_THRESHOLD" step="0.1" min="0" max="100">
+                                    <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The maximum used
+                                        margin percentage before the bot enters isolation mode.</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Margin Used</h3>
-                            <div class="stat-value" id="acc-margin-used">$...</div>
+
+                        <div class="page-subsection" style="margin-top: 1.5rem;">
+                            <h4>DCA Martingale <span
+                                    style="color: var(--danger); font-weight: bold;">(EXPERIMENTAL)</span></h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_DCA_MARTINGALE" name="ENABLE_DCA_MARTINGALE"
+                                            value="true" style="width: auto; margin: 0;"> Enable DCA into order size
+                                        based on
+                                        PNL %
+                                    </label>
+                                    <p class="subtitle"
+                                        style="margin-top: 6px; font-size: 11px; color: var(--text-muted);">
+                                        ⚠️ **WARNING:** Scales next entries dynamically when existing positions
+                                        are in loss. High leverage combined with Martingale allocation can
+                                        deplete balances rapidly.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Margin Available</h3>
-                            <div class="stat-value" id="acc-margin-avail">$...</div>
+
+                        <div class="page-subsection" style="margin-top: 1rem;">
+                            <h4>Runaway Helper <span
+                                    style="color: var(--danger); font-weight: bold;">(EXPERIMENTAL)</span></h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_RUNAWAY_HELPER" name="ENABLE_RUNAWAY_HELPER"
+                                            value="true" style="width: auto; margin: 0;"> Enable Runaway Helper
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Acts as a backup safety net. If active position is stale (no websocket
+                                        updates) and PnL drops below threshold, triggers an immediate
+                                        rescue/averaging check.
+                                    </p>
+                                </div>
+                                <div class="col">
+                                    <label for="RUNAWAY_HELPER_THRESHOLD">Threshold PnL (%)</label>
+                                    <input type="number" id="RUNAWAY_HELPER_THRESHOLD" name="RUNAWAY_HELPER_THRESHOLD"
+                                        step="0.01" placeholder="e.g. -10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Market Filtering Section -->
+                    <div class="page-section" style="margin-top: 2rem;">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                                </path>
+                            </svg>
+                            Market & Capital Filtering
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1.5rem;">Prevent trading on illiquid, low-cap,
+                            or highly volatile tokens to preserve capital.</p>
+
+                        <div class="form-group row">
+                            <div class="col">
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                    <input type="checkbox" id="CMC_FILTER_ENABLED" name="CMC_FILTER_ENABLED"
+                                        value="true" style="width: auto; margin: 0;"> Enable CMC Rank Filter
+                                </label>
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Filters trading
+                                    targets by capitalization rank using CoinMarketCap. Requires CMC Key on API
+                                    tab.</p>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="CMC_RANK_LIMIT">CMC Rank Limit</label>
+                                <input type="number" id="CMC_RANK_LIMIT" name="CMC_RANK_LIMIT" min="1" step="1"
+                                    placeholder="e.g. 100">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Tokens ranked
+                                    below this limit will be ignored (e.g., set 100 to trade only Top 100
+                                    assets).</p>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col">
+                                <label for="COIN_BLACKLIST">Coin Blacklist (Comma Separated Base Coins)</label>
+                                <input type="text" id="COIN_BLACKLIST" name="COIN_BLACKLIST"
+                                    placeholder="e.g. BTC, ETH">
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">A comma-separated
+                                    list of symbols to completely ignore (e.g., BTC, ETH, SOL).</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        Profit & Loss Metrics
-                    </h3>
-                    <div class="status-grid">
-                        <div class="card stat-card">
-                            <h3>Daily PnL</h3>
-                            <div class="stat-value" id="acc-daily-pnl">...</div>
-                        </div>
-                        <div class="card stat-card">
-                            <h3>Weekly PnL</h3>
-                            <div class="stat-value" id="acc-weekly-pnl">...</div>
-                        </div>
-                        <div class="card stat-card">
-                            <h3>Monthly PnL</h3>
-                            <div class="stat-value" id="acc-monthly-pnl">...</div>
-                        </div>
-                        <div class="card stat-card">
-                            <h3>Yearly PnL</h3>
-                            <div class="stat-value" id="acc-yearly-pnl">...</div>
-                        </div>
-                        <div class="card stat-card">
-                            <h3>Total PnL</h3>
-                            <div class="stat-value" id="acc-total-pnl">...</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
-                            </path>
-                        </svg>
-                        Daily PnL History (Last 30 Days)
-                    </h3>
-                    <div class="card chart-container" style="min-height: 350px; position: relative;">
-                        <canvas id="pnl-chart"></canvas>
-                    </div>
-                </div>
-            </section>
+                <!-- TAB 5: Fund Managements -->
+                <div class="settings-tab-content" id="settings-tab-fund-management">
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            Fund Management
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 2rem;">Automatically manage your profits with smart
+                            internal transfers to secure your gains.</p>
 
-            <!-- Positions Page -->
-            <section id="positions" class="page">
-                <header>
-                    <h2>Open Positions</h2>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        Active Contracts
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live tracking of active linear contracts directly
-                        from configured exchanges.</p>
-                    <div id="positions-container" class="positions-grid">
-                        <div class="empty-msg">&mdash; No active positions tracked yet &mdash;</div>
+                        <div class="page-subsection">
+                            <h4>Automatic Internal Transfer (Take Profit)</h4>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                        <input type="checkbox" id="ENABLE_AUTO_TRANSFER" name="ENABLE_AUTO_TRANSFER"
+                                            value="true" style="width: auto; margin: 0;"> Enable Auto Transfer
+                                    </label>
+                                    <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                        Automatically takes profit by making an internal transfer from the trading
+                                        account to the funding account when your total wallet value exceeds the minimum
+                                        threshold.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="MIN_BALANCE_THRESHOLD">Min Balance Required ($)</label>
+                                    <input type="number" id="MIN_BALANCE_THRESHOLD" name="MIN_BALANCE_THRESHOLD"
+                                        step="0.01" placeholder="e.g. 1000">
+                                    <p class="subtitle" style="font-size: 11px; margin-top: 4px;">The base capital to
+                                        keep in the trading account.</p>
+                                </div>
+                                <div class="col">
+                                    <label for="TRANSFER_PERCENTAGE_THRESHOLD">Transfer Trigger Threshold (%)</label>
+                                    <input type="number" id="TRANSFER_PERCENTAGE_THRESHOLD"
+                                        name="TRANSFER_PERCENTAGE_THRESHOLD" step="0.01" placeholder="e.g. 5">
+                                    <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Transfer will trigger
+                                        if profit % exceeds this value.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Liquidations Page -->
-            <section id="liquidations-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Liquidation History</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="liquidations-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
-                    </div>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Global Stream
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live stream of raw websocket liquidations from
-                        configured exchanges.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="liquidations-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Exchange</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Price</th>
-                                    <th>Amount</th>
-                                    <th>Value ($)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="liquidations-tbody">
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting
-                                        for liquidations &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+                <!-- TAB 6: Others -->
+                <div class="settings-tab-content" id="settings-tab-others">
+                    <!-- Browser Notifications Section -->
+                    <div class="page-section">
+                        <h3>
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            System Preferences & Desktop Alerts
+                        </h3>
+                        <p class="subtitle" style="margin-bottom: 1.5rem;">Configure supplementary system
+                            options, dashboard behaviors, and real-time browser push notifications.</p>
 
-            <!-- Closed PnL Page -->
-            <section id="closed-pnl-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Closed Positions & PnL</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="closed-pnl-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
-                    </div>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                            </path>
-                        </svg>
-                        Historical PnL Records
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Database history of closed positions and their
-                        realized Profit & Loss.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="closed-pnl-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Size</th>
-                                    <th>Entry Price</th>
-                                    <th>Close Price</th>
-                                    <th>PnL</th>
-                                </tr>
-                            </thead>
-                            <tbody id="closed-pnl-tbody">
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for records &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="form-group row">
+                            <div class="col"
+                                style="flex-direction: row; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                    <input type="checkbox" id="BROWSER_NOTIFICATIONS_ENABLED"
+                                        style="width: auto; margin: 0;"> Enable Desktop Notifications
+                                </label>
+                                <button type="button" id="btn-request-notifications" class="btn"
+                                    style="padding: 6px 12px; font-size: 12px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main); display: none;">Authorize
+                                    Permission</button>
+                                <span id="notification-status"
+                                    style="font-size: 12px; color: var(--text-muted);"></span>
+                            </div>
+                        </div>
+                        <p class="subtitle" style="font-size: 11px; margin-top: -10px;">Receive browser
+                            notification overlays instantly on your computer whenever critical liquidation
+                            signals are logged or positions are managed.</p>
+                        <div class="form-group row" style="margin-top: 1rem;">
+                            <div class="col">
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                    <input type="checkbox" id="ENABLE_ANON_REPORTING" name="ENABLE_ANON_REPORTING"
+                                        value="true" style="width: auto; margin: 0;"> Enable Anonymous Reporting
+                                </label>
+                                <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Periodically sends
+                                    anonymous aggregated PnL stats (Daily, Weekly, Monthly, Yearly, Total), UID, and
+                                    Exchange to liquidation.report to help build community data.</p>
+                            </div>
+                            <div class="col">
+                                <label for="ANON_UID">Your Anonymous UID</label>
+                                <input type="text" id="ANON_UID" name="ANON_UID" readonly
+                                    style="background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: not-allowed;">
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Trade Decisions Page -->
-            <section id="trade-decisions-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Trade Decisions History</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="trade-decisions-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
-                    </div>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                            </path>
-                        </svg>
-                        Last 100 Evaluations
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live tracking of the bot's trade evaluations,
-                        including technical strategy readings. Purged on bot restart.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="trade-decisions-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Symbol</th>
-                                    <th>Price</th>
-                                    <th>VWAP</th>
-                                    <th>RSI</th>
-                                    <th>DMI</th>
-                                    <th>MS</th>
-                                    <th>Confluence</th>
-                                    <th>Outcome</th>
-                                </tr>
-                            </thead>
-                            <tbody id="trade-decisions-tbody">
-                                <tr>
-                                    <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for trade evaluations &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <!-- Form Actions remain visible at the very bottom -->
+                <div class="form-actions"
+                    style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 30px;">
+                    <button type="button" id="btn-export" class="btn"
+                        style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">Export
+                        Settings</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                    <button type="button" id="btn-import" class="btn"
+                        style="border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">Import
+                        Settings</button>
+                    <button type="submit" class="btn btn-primary" style="min-width: 200px;">Save
+                        Configuration</button>
                 </div>
-            </section>
+            </form>
+        </div>
+    </section>
 
-            <!-- Dynamic Thresholds Page -->
-            <section id="dynamic-thresholds-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Dynamic Thresholds</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="dynamic-thresholds-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
-                    </div>
-                </header>
-                <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                        API Values Mapping
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Displays the active trading pairs and their
-                        dynamic liquidation thresholds loaded from the API.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="dynamic-thresholds-table">
-                            <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Dynamic Threshold (USD)</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dynamic-thresholds-tbody">
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for data &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+    <!-- Account Page -->
+    <section id="account" class="page">
+        <header>
+            <h2>Account Performance</h2>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                </svg>
+                Wallet Overview
+            </h3>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Live wallet overview and aggregated trade metrics
+                dynamically saved over SQLite.</p>
+            <div class="status-grid">
+                <div class="card stat-card">
+                    <h3>Total Wallet Value</h3>
+                    <div class="stat-value" id="acc-total-value">$...</div>
                 </div>
-            </section>
-        </main>
+                <div class="card stat-card">
+                    <h3>Margin Used</h3>
+                    <div class="stat-value" id="acc-margin-used">$...</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Margin Available</h3>
+                    <div class="stat-value" id="acc-margin-avail">$...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                Profit & Loss Metrics
+            </h3>
+            <div class="status-grid">
+                <div class="card stat-card">
+                    <h3>Daily PnL</h3>
+                    <div class="stat-value" id="acc-daily-pnl">...</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Weekly PnL</h3>
+                    <div class="stat-value" id="acc-weekly-pnl">...</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Monthly PnL</h3>
+                    <div class="stat-value" id="acc-monthly-pnl">...</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Yearly PnL</h3>
+                    <div class="stat-value" id="acc-yearly-pnl">...</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Total PnL</h3>
+                    <div class="stat-value" id="acc-total-pnl">...</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
+                    </path>
+                </svg>
+                Daily PnL History (Last 30 Days)
+            </h3>
+            <div class="card chart-container" style="min-height: 350px; position: relative;">
+                <canvas id="pnl-chart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Positions Page -->
+    <section id="positions" class="page">
+        <header>
+            <h2>Open Positions</h2>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                Active Contracts
+            </h3>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Live tracking of active linear contracts directly
+                from configured exchanges.</p>
+            <div id="positions-container" class="positions-grid">
+                <div class="empty-msg">&mdash; No active positions tracked yet &mdash;</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Liquidations Page -->
+    <section id="liquidations-page" class="page">
+        <header class="page-header-with-search">
+            <h2>Liquidation History</h2>
+            <div class="search-container">
+                <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" id="liquidations-search" placeholder="Search symbol... e.g. BTC" class="search-input"
+                    autocomplete="off">
+            </div>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Global Stream
+            </h3>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Live stream of raw websocket liquidations from
+                configured exchanges.</p>
+            <div class="card form-container table-responsive" style="max-width: 100%;">
+                <table class="data-table" id="liquidations-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Exchange</th>
+                            <th>Symbol</th>
+                            <th>Side</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Value ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liquidations-tbody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
+                                Waiting
+                                for liquidations &mdash;</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Closed PnL Page -->
+    <section id="closed-pnl-page" class="page">
+        <header class="page-header-with-search">
+            <h2>Closed Positions & PnL</h2>
+            <div class="search-container">
+                <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" id="closed-pnl-search" placeholder="Search symbol... e.g. BTC" class="search-input"
+                    autocomplete="off">
+            </div>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                </svg>
+                Historical PnL Records
+            </h3>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Database history of closed positions and their
+                realized Profit & Loss.</p>
+            <div class="card form-container table-responsive" style="max-width: 100%;">
+                <table class="data-table" id="closed-pnl-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Symbol</th>
+                            <th>Side</th>
+                            <th>Size</th>
+                            <th>Entry Price</th>
+                            <th>Close Price</th>
+                            <th>PnL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="closed-pnl-tbody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
+                                Waiting for records &mdash;</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trade Decisions Page -->
+    <section id="trade-decisions-page" class="page">
+        <header class="page-header-with-search">
+            <h2>Trade Decisions History</h2>
+            <div class="search-container">
+                <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" id="trade-decisions-search" placeholder="Search symbol... e.g. BTC"
+                    class="search-input" autocomplete="off">
+            </div>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                    </path>
+                </svg>
+                Last 100 Evaluations
+            </h3>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Live tracking of the bot's trade evaluations,
+                including technical strategy readings. Purged on bot restart.</p>
+            <div class="card form-container table-responsive" style="max-width: 100%;">
+                <table class="data-table" id="trade-decisions-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Symbol</th>
+                            <th>Price</th>
+                            <th>VWAP</th>
+                            <th>RSI</th>
+                            <th>DMI</th>
+                            <th>MS</th>
+                            <th>Confluence</th>
+                            <th>Outcome</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trade-decisions-tbody">
+                        <tr>
+                            <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
+                                Waiting for trade evaluations &mdash;</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dynamic Thresholds Page -->
+    <section id="dynamic-thresholds-page" class="page">
+        <header class="page-header-with-search">
+            <h2>Dynamic Thresholds</h2>
+            <div class="search-container">
+                <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input type="text" id="dynamic-thresholds-search" placeholder="Search symbol... e.g. BTC"
+                    class="search-input" autocomplete="off">
+            </div>
+        </header>
+        <div class="page-section">
+            <h3>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                API Values Mapping
+            </h3>
+            <p class="subtitle" style="margin-bottom: 1.5rem;">Displays the active trading pairs and their
+                dynamic liquidation thresholds loaded from the API.</p>
+            <div class="card form-container table-responsive" style="max-width: 100%;">
+                <table class="data-table" id="dynamic-thresholds-table">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Dynamic Threshold (USD)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dynamic-thresholds-tbody">
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash;
+                                Waiting for data &mdash;</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    </main>
     </div>
 
     <!-- Advance Strategy Modal -->

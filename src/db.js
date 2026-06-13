@@ -61,6 +61,16 @@ db.exec(`
   );
 
   INSERT OR IGNORE INTO account_state (id) VALUES (1);
+
+  CREATE TABLE IF NOT EXISTS bot_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT,
+    symbol TEXT,
+    side TEXT,
+    strategy TEXT,
+    value REAL,
+    timestamp INTEGER
+  );
 `);
 
 // Add new columns dynamically if the table already existed
@@ -356,6 +366,54 @@ function calculateAggregatedPnl() {
     };
 }
 
+function logBotEvent(data) {
+    db.prepare(`
+        INSERT INTO bot_events (event_type, symbol, side, strategy, value, timestamp)
+        VALUES (@event_type, @symbol, @side, @strategy, @value, @timestamp)
+    `).run({
+        event_type: data.event_type || '',
+        symbol: data.symbol || null,
+        side: data.side || null,
+        strategy: data.strategy || null,
+        value: data.value || null,
+        timestamp: data.timestamp || Date.now()
+    });
+}
+
+function get24HourStatistics() {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    
+    // Aggregation queries
+    const liquidations = db.prepare(`SELECT COUNT(*) as count FROM bot_events WHERE event_type = 'LIQUIDATION_MATCH' AND timestamp >= ?`).get(cutoff);
+    const trades = db.prepare(`SELECT side, COUNT(*) as count FROM bot_events WHERE event_type = 'TRADE_EXECUTE' AND timestamp >= ? GROUP BY side`).all(cutoff);
+    const strategies = db.prepare(`SELECT strategy, side, COUNT(*) as count FROM bot_events WHERE event_type = 'STRATEGY_MATCH' AND timestamp >= ? GROUP BY strategy, side`).all(cutoff);
+    
+    const stats = {
+        liquidations: liquidations.count,
+        trades: { BUY: 0, SELL: 0 },
+        strategies: {}
+    };
+    
+    for (const t of trades) {
+        if (t.side) stats.trades[t.side] = t.count;
+    }
+    
+    for (const s of strategies) {
+        if (!s.strategy) continue;
+        if (!stats.strategies[s.strategy]) {
+            stats.strategies[s.strategy] = { BUY: 0, SELL: 0 };
+        }
+        if (s.side) stats.strategies[s.strategy][s.side] = s.count;
+    }
+    
+    return stats;
+}
+
+function pruneBotEvents() {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    db.prepare('DELETE FROM bot_events WHERE timestamp < ?').run(cutoff);
+}
+
 function getDailyPnLHistory(days = 30) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
@@ -393,5 +451,8 @@ module.exports = {
     addClosedPnl,
     getClosedPnls,
     calculateAggregatedPnl,
-    getDailyPnLHistory
+    getDailyPnLHistory,
+    logBotEvent,
+    get24HourStatistics,
+    pruneBotEvents
 };

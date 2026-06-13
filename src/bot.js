@@ -879,6 +879,11 @@ class TradingBot {
             }
 
             if (value >= thresholdInUsd) {
+                db.logBotEvent({
+                    event_type: 'LIQUIDATION_MATCH',
+                    symbol: symbol,
+                    value: value
+                });
                 logger.info(`--- Large Liquidation Detected ---`);
                 if (usingDynamic) {
                     logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)} (Dynamic Threshold: $${thresholdInUsd.toFixed(2)})`);
@@ -1314,6 +1319,11 @@ class TradingBot {
                 }
             }
 
+            if (cfg.ENABLE_VWAP_STRATEGY && vwapSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'VWAP', side: vwapSide });
+            if (cfg.ENABLE_RSI_STRATEGY && rsiSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'RSI', side: rsiSide });
+            if (cfg.ENABLE_DMI_STRATEGY && dmiSide && dmiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DMI', side: dmiSide });
+            if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide && msSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'MarketSentiment', side: msSide });
+
             // --- 6. Confluence Logic (AND) ---
             let finalSide = null;
             const activeStrategies = [];
@@ -1434,6 +1444,7 @@ class TradingBot {
             );
 
             logger.info(`Trade successfully executed! Order ID: ${order.id}`);
+            db.logBotEvent({ event_type: 'TRADE_EXECUTE', symbol: symbol, side: side });
 
             // Push order notification for the web UI toast system
             const orderEvent = {
