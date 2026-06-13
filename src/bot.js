@@ -1214,11 +1214,36 @@ class TradingBot {
 
             // --- 4. DMI Strategy ---
             if (dmiEnabled) {
+                let dmiShouldBypass = false;
+                let dmiBypassReason = '';
+
                 if (cfg.DMI_BYPASS_ON_POSITION === 'true' && openPosition) {
+                    dmiShouldBypass = true;
+                    dmiBypassReason = 'YES';
+                } else if (cfg.DMI_BYPASS_ON_POSITION === 'conditional' && openPosition) {
+                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const size = parseFloat(openPosition.size) || 0;
+                    const entryPrice = parseFloat(openPosition.entry_price) || 0;
+                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                    const unrealizedPnl = parseFloat(openPosition.unrealized_pnl) || 0;
+                    
+                    if (size > 0 && entryPrice > 0) {
+                        const margin = (size * entryPrice) / leverage;
+                        if (margin > 0) {
+                            const pnlPercent = (unrealizedPnl / margin) * 100;
+                            if (pnlPercent <= runawayThreshold) {
+                                dmiShouldBypass = true;
+                                dmiBypassReason = `Conditional (PNL% ${pnlPercent.toFixed(2)}% <= ${runawayThreshold}%)`;
+                            }
+                        }
+                    }
+                }
+
+                if (dmiShouldBypass) {
                     const posSide = (openPosition.side || '').toLowerCase();
                     dmiSide = 'ignore';
-                    logger.info(`Bypassing DMI strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
-                    decisionRecord.dmi = { classification: 'Bypassed (Open Position)', signal: dmiSide };
+                    logger.info(`Bypassing DMI strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}. [Reason: ${dmiBypassReason}]`);
+                    decisionRecord.dmi = { classification: `Bypassed (${dmiBypassReason})`, signal: dmiSide };
                 } else if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                     const period = parseInt(cfg.DMI_PERIOD) || 14;
                     const threshold = parseFloat(cfg.DMI_THRESHOLD) || 25;
@@ -1269,11 +1294,36 @@ class TradingBot {
 
             // --- 5. Market Sentiment Strategy ---
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
+                let msShouldBypass = false;
+                let msBypassReason = '';
+
                 if (cfg.MS_BYPASS_ON_POSITION === 'true' && openPosition) {
+                    msShouldBypass = true;
+                    msBypassReason = 'YES';
+                } else if (cfg.MS_BYPASS_ON_POSITION === 'conditional' && openPosition) {
+                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const size = parseFloat(openPosition.size) || 0;
+                    const entryPrice = parseFloat(openPosition.entry_price) || 0;
+                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                    const unrealizedPnl = parseFloat(openPosition.unrealized_pnl) || 0;
+                    
+                    if (size > 0 && entryPrice > 0) {
+                        const margin = (size * entryPrice) / leverage;
+                        if (margin > 0) {
+                            const pnlPercent = (unrealizedPnl / margin) * 100;
+                            if (pnlPercent <= runawayThreshold) {
+                                msShouldBypass = true;
+                                msBypassReason = `Conditional (PNL% ${pnlPercent.toFixed(2)}% <= ${runawayThreshold}%)`;
+                            }
+                        }
+                    }
+                }
+
+                if (msShouldBypass) {
                     const posSide = (openPosition.side || '').toLowerCase();
                     msSide = 'ignore';
-                    logger.info(`Bypassing Market Sentiment strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}.`);
-                    decisionRecord.marketSentiment = { classification: 'Bypassed (Open Position)', signal: msSide };
+                    logger.info(`Bypassing Market Sentiment strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}. [Reason: ${msBypassReason}]`);
+                    decisionRecord.marketSentiment = { classification: `Bypassed (${msBypassReason})`, signal: msSide };
                 } else if (this.marketSentiment) {
                     const fgClass = (this.marketSentiment.fgClassification || '').toLowerCase();
                     const mktLabel = (this.marketSentiment.marketLabel || '').toLowerCase();
