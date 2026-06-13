@@ -395,7 +395,14 @@ function get24HourStatistics() {
     };
     
     for (const t of trades) {
-        if (t.side) stats.trades[t.side] = t.count;
+        if (t.side) {
+            const sideUpper = t.side.toUpperCase();
+            if (stats.trades[sideUpper] !== undefined) {
+                stats.trades[sideUpper] += t.count;
+            } else {
+                stats.trades[sideUpper] = t.count;
+            }
+        }
     }
     
     for (const s of strategies) {
@@ -403,7 +410,14 @@ function get24HourStatistics() {
         if (!stats.strategies[s.strategy]) {
             stats.strategies[s.strategy] = { BUY: 0, SELL: 0 };
         }
-        if (s.side) stats.strategies[s.strategy][s.side] = s.count;
+        if (s.side) {
+            const sideUpper = s.side.toUpperCase();
+            if (stats.strategies[s.strategy][sideUpper] !== undefined) {
+                stats.strategies[s.strategy][sideUpper] += s.count;
+            } else {
+                stats.strategies[s.strategy][sideUpper] = s.count;
+            }
+        }
     }
     
     return stats;
