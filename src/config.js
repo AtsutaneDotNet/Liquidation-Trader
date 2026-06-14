@@ -41,6 +41,7 @@ function getConfig() {
         MAX_OPEN_POSITIONS: parseInt(dbConfig.MAX_OPEN_POSITIONS) || 3,
         ENABLE_ISOLATION_MODE: dbConfig.ENABLE_ISOLATION_MODE === 'true',
         ISOLATION_MARGIN_THRESHOLD: parseFloat(dbConfig.ISOLATION_MARGIN_THRESHOLD) || 10,
+        REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION: dbConfig.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION === 'true',
         CMC_API_KEY: dbConfig.CMC_API_KEY || '',
         CMC_RANK_LIMIT: parseInt(dbConfig.CMC_RANK_LIMIT) || 100,
         CMC_FILTER_ENABLED: dbConfig.CMC_FILTER_ENABLED === 'true',

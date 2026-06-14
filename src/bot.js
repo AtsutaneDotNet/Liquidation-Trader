@@ -455,7 +455,41 @@ class TradingBot {
         if (orderSide === 'unknown') return;
 
         const cfg = this.config.get();
-        const tpMultiplier = cfg.TAKE_PROFIT_PERCENTAGE / 100;
+        
+        let tpPercent = cfg.TAKE_PROFIT_PERCENTAGE;
+        let trailingPercentCfg = cfg.ENABLE_TRAILING_PROFIT ? cfg.TRAILING_PROFIT_PERCENTAGE : 0;
+        let trailingActivationPercent = cfg.TRAILING_ACTIVATION_PERCENTAGE;
+
+        if (cfg.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION) {
+            try {
+                const port = process.env.WEBUI_PORT || 3000;
+                const statusUrl = `http://localhost:${port}/api/status`;
+                const http = require('http');
+                
+                const statusObj = await new Promise((resolve, reject) => {
+                    http.get(statusUrl, (res) => {
+                        let data = '';
+                        res.on('data', chunk => data += chunk);
+                        res.on('end', () => {
+                            try { resolve(JSON.parse(data)); } catch (e) { resolve({}); }
+                        });
+                    }).on('error', reject);
+                });
+
+                if (statusObj && statusObj.isolationMode) {
+                    tpPercent /= 2;
+                    trailingPercentCfg /= 2;
+                    trailingActivationPercent /= 2;
+                    const logger = require('./logger');
+                    logger.debug(`Isolation Mode active. Halving TP to ${tpPercent}%, Trailing to ${trailingPercentCfg}%, Activation to ${trailingActivationPercent}% for ${symbol}`);
+                }
+            } catch (err) {
+                const logger = require('./logger');
+                logger.error(`Failed to fetch status API for Isolation Mode check: ${err.message}`);
+            }
+        }
+
+        const tpMultiplier = tpPercent / 100;
         const slMultiplier = cfg.STOP_LOSS_PERCENTAGE / 100;
 
         let targetTpPrice, targetSlPrice;
@@ -479,11 +513,11 @@ class TradingBot {
         const isTpMatch = !isNaN(currentTp) && currentTp > 0 && Math.abs(currentTp - formattedTp) / formattedTp < 0.005;
         const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.005;
 
-        const trailingPercent = cfg.ENABLE_TRAILING_PROFIT ? cfg.TRAILING_PROFIT_PERCENTAGE : 0;
+        const trailingPercent = trailingPercentCfg;
 
         let targetTrailingActivationPrice = 0;
-        if (trailingPercent > 0 && cfg.TRAILING_ACTIVATION_PERCENTAGE > 0) {
-            const activationMultiplier = cfg.TRAILING_ACTIVATION_PERCENTAGE / 100;
+        if (trailingPercent > 0 && trailingActivationPercent > 0) {
+            const activationMultiplier = trailingActivationPercent / 100;
             if (orderSide === 'buy') {
                 targetTrailingActivationPrice = entryPrice * (1 + activationMultiplier);
             } else {
@@ -529,12 +563,12 @@ class TradingBot {
                 await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
             } catch (error) {
                 logger.error(`Failed to set TP/SL/Trailing for ${symbol}: ${error.message}`);
-                await this.executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg);
+                await this.executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg, tpPercent, trailingActivationPercent);
             }
         }
     }
 
-    async executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg) {
+    async executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg, tpPercent, trailingActivationPercent) {
         try {
             logger.info(`Running fallback logic for ${symbol}...`);
             let currentPrice = null;
@@ -558,9 +592,10 @@ class TradingBot {
                 pnlPercent = ((entryPrice - currentPrice) / entryPrice) * 100;
             }
 
-            let targetThresholdPercent = cfg.TAKE_PROFIT_PERCENTAGE;
-            if (trailingPercent > 0 && cfg.TRAILING_ACTIVATION_PERCENTAGE > 0) {
-                targetThresholdPercent = Math.min(cfg.TAKE_PROFIT_PERCENTAGE, cfg.TRAILING_ACTIVATION_PERCENTAGE);
+            let targetThresholdPercent = tpPercent || cfg.TAKE_PROFIT_PERCENTAGE;
+            const fallbackActivationPercent = trailingActivationPercent !== undefined ? trailingActivationPercent : cfg.TRAILING_ACTIVATION_PERCENTAGE;
+            if (trailingPercent > 0 && fallbackActivationPercent > 0) {
+                targetThresholdPercent = Math.min(targetThresholdPercent, fallbackActivationPercent);
             }
 
             let shouldClose = false;
