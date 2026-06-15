@@ -200,6 +200,7 @@ class TradingBot {
             this.cleanupInterval = setInterval(() => {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
+                db.pruneBotEvents();
             }, 10000); // Every 10 secs
 
         } catch (error) {
