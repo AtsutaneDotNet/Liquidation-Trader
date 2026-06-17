@@ -463,8 +463,8 @@ class TradingBot {
 
         if (cfg.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION) {
             try {
-                const port = process.env.WEBUI_PORT || 3000;
-                const statusUrl = `http://localhost:${port}/api/status`;
+                const port = cfg.WEB_PORT || 3000;
+                const statusUrl = `http://127.0.0.1:${port}/api/status`;
                 const http = require('http');
                 
                 const statusObj = await new Promise((resolve, reject) => {
