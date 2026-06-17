@@ -463,21 +463,13 @@ class TradingBot {
 
         if (cfg.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION) {
             try {
-                const port = cfg.WEB_PORT || 3000;
-                const statusUrl = `http://127.0.0.1:${port}/api/status`;
-                const http = require('http');
-                
-                const statusObj = await new Promise((resolve, reject) => {
-                    http.get(statusUrl, (res) => {
-                        let data = '';
-                        res.on('data', chunk => data += chunk);
-                        res.on('end', () => {
-                            try { resolve(JSON.parse(data)); } catch (e) { resolve({}); }
-                        });
-                    }).on('error', reject);
-                });
+                const db = require('./db');
+                const state = db.getAccountState() || {};
+                const usedMarginPercent = state.total_value > 0 ? (state.margin_used / state.total_value) * 100 : 0;
+                const threshold = parseFloat(cfg.ISOLATION_MARGIN_THRESHOLD) || 10;
+                const isIsolationModeActive = cfg.ENABLE_ISOLATION_MODE && usedMarginPercent >= threshold;
 
-                if (statusObj && statusObj.isolationMode) {
+                if (isIsolationModeActive) {
                     tpPercent /= 2;
                     trailingPercentCfg /= 2;
                     trailingActivationPercent /= 2;
