@@ -997,6 +997,18 @@
                                     </p>
                                 </div>
                             </div>
+                            <div class="form-group row">
+                                <div class="col">
+                                    <label for="DCA_MARTINGALE_THRESHOLD">Threshold PnL (%)</label>
+                                    <input type="number" id="DCA_MARTINGALE_THRESHOLD" name="DCA_MARTINGALE_THRESHOLD" step="0.1" max="0">
+                                    <p class="subtitle" style="font-size: 11px; margin-top: 4px;">DCA Martingale multiplier will only trigger when PnL drops below this threshold.</p>
+                                </div>
+                                <div class="col">
+                                    <label for="DCA_MARTINGALE_MAX_MULTIPLIER">Max Multiplier</label>
+                                    <input type="number" id="DCA_MARTINGALE_MAX_MULTIPLIER" name="DCA_MARTINGALE_MAX_MULTIPLIER" step="1" min="1">
+                                    <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Maximum value for multiplier so it cannot exceed this value.</p>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="page-subsection" style="margin-top: 1rem;">

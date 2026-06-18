@@ -183,6 +183,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `MS_EXTREME_FEAR_SIGNAL` | Signal direction during Extreme Fear. | `none` |
 | `MS_EXTREME_GREED_SIGNAL` | Signal direction during Extreme Greed. | `none` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
+| `DCA_MARTINGALE_THRESHOLD` | PnL threshold (%) below which the Martingale multiplier is applied. | `-5` |
+| `DCA_MARTINGALE_MAX_MULTIPLIER` | Maximum multiplier limit to prevent excessive order sizes. | `5` |
 
 ### Filters & Dynamic Thresholds
 | Variable | Description | Default |
