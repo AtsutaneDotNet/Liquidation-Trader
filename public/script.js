@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const advInputs = [
             'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL',
             'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
-            'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL',
+            'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL', 'RSI_BYPASS_ON_POSITION',
             'DMI_THRESHOLD_DIR', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
             'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL', 'MS_BYPASS_ON_POSITION'
         ];
@@ -1836,6 +1836,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     RSI_OVERSOLD_DIR: 'under',
                     RSI_OVERBOUGHT_SIGNAL: 'sell',
                     RSI_OVERSOLD_SIGNAL: 'buy',
+                    RSI_BYPASS_ON_POSITION: 'false',
                     DMI_THRESHOLD_DIR: 'under',
                     DMI_PDI_SIGNAL: 'sell',
                     DMI_MDI_SIGNAL: 'buy',
