@@ -1209,26 +1209,60 @@ class TradingBot {
                         if (rsi !== null) {
                             logger.info(`RSI (${period}, ${cfg.RSI_TIMEFRAME}): ${rsi.toFixed(2)}`);
 
-                            let oversoldMet = false;
-                            if (cfg.RSI_OVERSOLD_DIR === 'above') oversoldMet = rsi >= cfg.RSI_OVERSOLD;
-                            else oversoldMet = rsi <= cfg.RSI_OVERSOLD;
+                            let rsiShouldBypass = false;
+                            let rsiBypassReason = '';
 
-                            let overboughtMet = false;
-                            if (cfg.RSI_OVERBOUGHT_DIR === 'under') overboughtMet = rsi <= cfg.RSI_OVERBOUGHT;
-                            else overboughtMet = rsi >= cfg.RSI_OVERBOUGHT;
-
-                            if (oversoldMet && rsi < 50) {
-                                rsiSide = cfg.RSI_OVERSOLD_SIGNAL === 'none' ? null : cfg.RSI_OVERSOLD_SIGNAL;
-                                const op = cfg.RSI_OVERSOLD_DIR === 'above' ? '>=' : '<=';
-                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Oversold (${cfg.RSI_OVERSOLD}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
-                            } else if (overboughtMet && rsi > 50) {
-                                rsiSide = cfg.RSI_OVERBOUGHT_SIGNAL === 'none' ? null : cfg.RSI_OVERBOUGHT_SIGNAL;
-                                const op = cfg.RSI_OVERBOUGHT_DIR === 'under' ? '<=' : '>=';
-                                logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Overbought (${cfg.RSI_OVERBOUGHT}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
-                            } else {
-                                logger.info(`RSI Condition: Value is neutral. No trade signal.`);
+                            if ((rsi >= 70 || rsi <= 30) && openPosition) {
+                                if (cfg.RSI_BYPASS_ON_POSITION === 'true') {
+                                    rsiShouldBypass = true;
+                                    rsiBypassReason = `YES (RSI ${rsi.toFixed(2)} met condition)`;
+                                } else if (cfg.RSI_BYPASS_ON_POSITION === 'conditional') {
+                                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                                    const size = parseFloat(openPosition.size) || 0;
+                                    const entryPrice = parseFloat(openPosition.entry_price) || 0;
+                                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                                    const unrealizedPnl = parseFloat(openPosition.unrealized_pnl) || 0;
+                                    
+                                    if (size > 0 && entryPrice > 0) {
+                                        const margin = (size * entryPrice) / leverage;
+                                        if (margin > 0) {
+                                            const pnlPercent = (unrealizedPnl / margin) * 100;
+                                            if (pnlPercent <= runawayThreshold) {
+                                                rsiShouldBypass = true;
+                                                rsiBypassReason = `Conditional (PNL% ${pnlPercent.toFixed(2)}% <= ${runawayThreshold}%, RSI ${rsi.toFixed(2)})`;
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            decisionRecord.rsi = { value: rsi, oversold: cfg.RSI_OVERSOLD, overbought: cfg.RSI_OVERBOUGHT, signal: rsiSide, timeframe: cfg.RSI_TIMEFRAME };
+
+                            if (rsiShouldBypass) {
+                                const posSide = (openPosition.side || '').toLowerCase();
+                                rsiSide = 'ignore';
+                                logger.info(`Bypassing RSI strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}. [Reason: ${rsiBypassReason}]`);
+                                decisionRecord.rsi = { classification: `Bypassed (${rsiBypassReason})`, signal: rsiSide };
+                            } else {
+                                let oversoldMet = false;
+                                if (cfg.RSI_OVERSOLD_DIR === 'above') oversoldMet = rsi >= cfg.RSI_OVERSOLD;
+                                else oversoldMet = rsi <= cfg.RSI_OVERSOLD;
+
+                                let overboughtMet = false;
+                                if (cfg.RSI_OVERBOUGHT_DIR === 'under') overboughtMet = rsi <= cfg.RSI_OVERBOUGHT;
+                                else overboughtMet = rsi >= cfg.RSI_OVERBOUGHT;
+
+                                if (oversoldMet && rsi < 50) {
+                                    rsiSide = cfg.RSI_OVERSOLD_SIGNAL === 'none' ? null : cfg.RSI_OVERSOLD_SIGNAL;
+                                    const op = cfg.RSI_OVERSOLD_DIR === 'above' ? '>=' : '<=';
+                                    logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Oversold (${cfg.RSI_OVERSOLD}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
+                                } else if (overboughtMet && rsi > 50) {
+                                    rsiSide = cfg.RSI_OVERBOUGHT_SIGNAL === 'none' ? null : cfg.RSI_OVERBOUGHT_SIGNAL;
+                                    const op = cfg.RSI_OVERBOUGHT_DIR === 'under' ? '<=' : '>=';
+                                    logger.info(`RSI Condition met: ${rsi.toFixed(2)} ${op} Overbought (${cfg.RSI_OVERBOUGHT}). Signal: ${rsiSide ? rsiSide.toUpperCase() : 'NONE'}.`);
+                                } else {
+                                    logger.info(`RSI Condition: Value is neutral. No trade signal.`);
+                                }
+                                decisionRecord.rsi = { value: rsi, oversold: cfg.RSI_OVERSOLD, overbought: cfg.RSI_OVERBOUGHT, signal: rsiSide, timeframe: cfg.RSI_TIMEFRAME };
+                            }
                         }
                     } else {
                         logger.info(`Not enough klines fetched for RSI calculation for ${symbol}.`);
@@ -1386,7 +1420,7 @@ class TradingBot {
             }
 
             if (cfg.ENABLE_VWAP_STRATEGY && vwapSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'VWAP', side: vwapSide });
-            if (cfg.ENABLE_RSI_STRATEGY && rsiSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'RSI', side: rsiSide });
+            if (cfg.ENABLE_RSI_STRATEGY && rsiSide && rsiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'RSI', side: rsiSide });
             if (cfg.ENABLE_DMI_STRATEGY && dmiSide && dmiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DMI', side: dmiSide });
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide && msSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'MarketSentiment', side: msSide });
 
@@ -1394,7 +1428,9 @@ class TradingBot {
             let finalSide = null;
             const activeStrategies = [];
             if (cfg.ENABLE_VWAP_STRATEGY) activeStrategies.push({ name: 'VWAP', side: vwapSide });
-            if (cfg.ENABLE_RSI_STRATEGY) activeStrategies.push({ name: 'RSI', side: rsiSide });
+            if (cfg.ENABLE_RSI_STRATEGY && rsiSide !== 'ignore') {
+                activeStrategies.push({ name: 'RSI', side: rsiSide });
+            }
             if (cfg.ENABLE_DMI_STRATEGY && dmiSide !== 'ignore') {
                 activeStrategies.push({ name: 'DMI', side: dmiSide });
             }

@@ -63,6 +63,7 @@ function getConfig() {
         RSI_OVERBOUGHT_SIGNAL: dbConfig.RSI_OVERBOUGHT_SIGNAL || 'sell',
         RSI_OVERSOLD_DIR: dbConfig.RSI_OVERSOLD_DIR || 'under',
         RSI_OVERSOLD_SIGNAL: dbConfig.RSI_OVERSOLD_SIGNAL || 'buy',
+        RSI_BYPASS_ON_POSITION: dbConfig.RSI_BYPASS_ON_POSITION || 'false',
         DMI_THRESHOLD_DIR: dbConfig.DMI_THRESHOLD_DIR || 'under',
         DMI_PDI_SIGNAL: dbConfig.DMI_PDI_SIGNAL || 'sell',
         DMI_MDI_SIGNAL: dbConfig.DMI_MDI_SIGNAL || 'buy',
