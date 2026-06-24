@@ -196,6 +196,12 @@ class WebServer {
             res.json(db.get24HourStatistics());
         });
 
+        this.app.get('/api/statistics/page-data', (req, res) => {
+            const db = require('./db');
+            const cutoffTimestamp = Date.now() - 24 * 60 * 60 * 1000;
+            res.json(db.getPageStatistics(cutoffTimestamp));
+        });
+
         // Dynamic Thresholds
         this.app.get('/api/dynamic-thresholds', (req, res) => {
             const currentConfig = config.get();

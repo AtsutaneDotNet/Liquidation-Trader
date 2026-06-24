@@ -1481,6 +1481,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 24H Statistics Dashboard ──────────────────────────────────
     let tradesChartInst = null;
     let strategiesChartInst = null;
+    let marginHistoryChart = null;
+    let pnlSymbolChart = null;
+    let pnlSideChart = null;
+    let pnlWinRateChart = null;
 
     function initStatisticsCharts() {
         const tradesCtx = document.getElementById('tradesChart');
@@ -1555,10 +1559,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+        
+        const marginCtx = document.getElementById('marginHistoryChart');
+        if (marginCtx) {
+            marginHistoryChart = new Chart(marginCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Used Margin (%)', data: [], borderColor: '#00e676', backgroundColor: 'rgba(0, 230, 118, 0.1)', fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: 20 } } }
+            });
+        }
+
+        const pnlSymCtx = document.getElementById('pnlSymbolChart');
+        if (pnlSymCtx) {
+            pnlSymbolChart = new Chart(pnlSymCtx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#8a94a6' } } } }
+            });
+        }
+        
+        const pnlSideCtx = document.getElementById('pnlSideChart');
+        if (pnlSideCtx) {
+            pnlSideChart = new Chart(pnlSideCtx, {
+                type: 'doughnut',
+                data: { labels: ['BUY Position', 'SELL Position'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#8a94a6' } } } }
+            });
+        }
+        
+        const pnlWinRateCtx = document.getElementById('pnlWinRateChart');
+        if (pnlWinRateCtx) {
+            pnlWinRateChart = new Chart(pnlWinRateCtx, {
+                type: 'doughnut',
+                data: { labels: ['Win % (BUY pos)', 'Win % (SELL pos)'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#8a94a6' } } } }
+            });
+        }
     }
 
     function fetch24HStatistics() {
-        const pageActive = document.getElementById('dashboard').classList.contains('active');
+        const pageActive = document.getElementById('statistics-page').classList.contains('active');
         if (!pageActive) return;
 
         fetch('/api/statistics/24h')
@@ -1596,9 +1636,83 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(console.error);
     }
 
+    function fetchPageStatisticsData() {
+        const pageActive = document.getElementById('statistics-page').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/statistics/page-data')
+            .then(res => res.json())
+            .then(data => {
+                if (data.marginHistory && marginHistoryChart) {
+                    const maxMargin = data.marginHistory.reduce((max, h) => Math.max(max, h.margin_percent), 0);
+                    document.getElementById('stats-highest-margin').innerText = maxMargin.toFixed(2) + '%';
+                    
+                    let points = data.marginHistory;
+                    if (points.length > 100) {
+                        const step = Math.ceil(points.length / 100);
+                        points = points.filter((_, i) => i % step === 0);
+                    }
+                    marginHistoryChart.data.labels = points.map(h => new Date(h.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+                    marginHistoryChart.data.datasets[0].data = points.map(h => h.margin_percent.toFixed(2));
+                    marginHistoryChart.update();
+                }
+
+                if (data.isolationModeCount !== undefined) {
+                    document.getElementById('stats-isolation-count').innerText = 'Isolation Activated: ' + data.isolationModeCount;
+                }
+
+                if (data.dynamicThresholds) {
+                    document.getElementById('stats-dynamic-high').innerText = '$' + (data.dynamicThresholds.max || 0).toFixed(2);
+                    document.getElementById('stats-dynamic-low').innerText = '$' + (data.dynamicThresholds.min || 0).toFixed(2);
+                }
+
+                if (data.closedPnls) {
+                    let symMap = {};
+                    let buyPosCount = 0; 
+                    let sellPosCount = 0; 
+                    let buyPosWin = 0;
+                    let sellPosWin = 0;
+
+                    for (let pnl of data.closedPnls) {
+                        symMap[pnl.symbol] = (symMap[pnl.symbol] || 0) + pnl.pnl;
+                        if (pnl.side === 'SELL') { 
+                            buyPosCount++;
+                            if (pnl.pnl > 0) buyPosWin++;
+                        } else if (pnl.side === 'BUY') { 
+                            sellPosCount++;
+                            if (pnl.pnl > 0) sellPosWin++;
+                        }
+                    }
+
+                    if (pnlSymbolChart) {
+                        const syms = Object.keys(symMap);
+                        pnlSymbolChart.data.labels = syms;
+                        pnlSymbolChart.data.datasets[0].data = syms.map(s => symMap[s]);
+                        pnlSymbolChart.data.datasets[0].backgroundColor = syms.map((s, i) => `hsl(${(i * 360 / syms.length)}, 70%, 50%)`);
+                        pnlSymbolChart.update();
+                    }
+
+                    if (pnlSideChart) {
+                        pnlSideChart.data.datasets[0].data = [buyPosCount, sellPosCount];
+                        pnlSideChart.update();
+                    }
+
+                    if (pnlWinRateChart) {
+                        const buyWinRate = buyPosCount > 0 ? (buyPosWin / buyPosCount) * 100 : 0;
+                        const sellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
+                        pnlWinRateChart.data.datasets[0].data = [buyWinRate, sellWinRate];
+                        pnlWinRateChart.update();
+                    }
+                }
+            })
+            .catch(console.error);
+    }
+
     initStatisticsCharts();
     setInterval(fetch24HStatistics, 3000);
+    setInterval(fetchPageStatisticsData, 3000);
     fetch24HStatistics();
+    fetchPageStatisticsData();
 
 
     // ── Currency Switcher Selector Listener ───────────────────

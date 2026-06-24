@@ -60,6 +60,12 @@ db.exec(`
     timestamp INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS margin_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    margin_percent REAL,
+    timestamp INTEGER
+  );
+
   INSERT OR IGNORE INTO account_state (id) VALUES (1);
 
   CREATE TABLE IF NOT EXISTS bot_events (
@@ -77,6 +83,7 @@ db.exec(`
 try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE account_state ADD COLUMN yearly_pnl REAL DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE bot_events ADD COLUMN threshold REAL DEFAULT 0;'); } catch(e) {}
 
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
@@ -257,6 +264,8 @@ if (!currentConfig['ANON_UID']) {
     currentConfig['ANON_UID'] = uid;
 }
 
+let lastIsolationModeState = false;
+
 function updateAccountState(data) {
     if (Object.keys(data).length === 0) return;
     const keys = Object.keys(data).filter(k => k !== 'id');
@@ -265,6 +274,25 @@ function updateAccountState(data) {
     data.id = 1;
 
     db.prepare(`UPDATE account_state SET ${setClause}, updated_at = @updated_at WHERE id = 1`).run(data);
+    
+    // Log margin history
+    const state = getAccountState();
+    if (state && state.total_value > 0) {
+        const marginPercent = (state.margin_used / state.total_value) * 100;
+        db.prepare('INSERT INTO margin_history (margin_percent, timestamp) VALUES (?, ?)').run(marginPercent, data.updated_at);
+        
+        // Track isolation mode
+        if (currentConfig['ENABLE_ISOLATION_MODE'] === 'true') {
+            const threshold = parseFloat(currentConfig['ISOLATION_MARGIN_THRESHOLD']) || 10;
+            const isIsolation = marginPercent >= threshold;
+            if (isIsolation && !lastIsolationModeState) {
+                logBotEvent({ event_type: 'ISOLATION_MODE_TRIGGER', value: marginPercent, timestamp: data.updated_at });
+            }
+            lastIsolationModeState = isIsolation;
+        } else {
+            lastIsolationModeState = false;
+        }
+    }
 }
 
 function getAccountState() {
@@ -374,14 +402,15 @@ function calculateAggregatedPnl() {
 
 function logBotEvent(data) {
     db.prepare(`
-        INSERT INTO bot_events (event_type, symbol, side, strategy, value, timestamp)
-        VALUES (@event_type, @symbol, @side, @strategy, @value, @timestamp)
+        INSERT INTO bot_events (event_type, symbol, side, strategy, value, threshold, timestamp)
+        VALUES (@event_type, @symbol, @side, @strategy, @value, @threshold, @timestamp)
     `).run({
         event_type: data.event_type || '',
         symbol: data.symbol || null,
         side: data.side || null,
         strategy: data.strategy || null,
         value: data.value || null,
+        threshold: data.threshold || 0,
         timestamp: data.timestamp || Date.now()
     });
 }
@@ -434,6 +463,7 @@ function get24HourStatistics() {
 function pruneBotEvents() {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     db.prepare('DELETE FROM bot_events WHERE timestamp < ?').run(cutoff);
+    db.prepare('DELETE FROM margin_history WHERE timestamp < ?').run(cutoff);
 }
 
 function getDailyPnLHistory(days = 30) {
@@ -452,6 +482,20 @@ function getDailyPnLHistory(days = 30) {
         GROUP BY date
         ORDER BY date ASC
     `).all(cutoffTimestamp);
+}
+
+function getPageStatistics(cutoffTimestamp) {
+    const marginHistory = db.prepare('SELECT margin_percent, timestamp FROM margin_history WHERE timestamp >= ? ORDER BY timestamp ASC').all(cutoffTimestamp);
+    const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
+    const dynamicThresholds = db.prepare('SELECT MAX(threshold) as max, MIN(threshold) as min FROM bot_events WHERE event_type = \'LIQUIDATION_MATCH\' AND strategy = \'DYNAMIC\' AND timestamp >= ?').get(cutoffTimestamp);
+    const closedPnls = db.prepare('SELECT symbol, side, pnl FROM closed_pnl WHERE timestamp >= ?').all(cutoffTimestamp);
+    
+    return {
+        marginHistory,
+        isolationModeCount,
+        dynamicThresholds,
+        closedPnls
+    };
 }
 
 module.exports = {
@@ -476,5 +520,6 @@ module.exports = {
     getDailyPnLHistory,
     logBotEvent,
     get24HourStatistics,
-    pruneBotEvents
+    pruneBotEvents,
+    getPageStatistics
 };

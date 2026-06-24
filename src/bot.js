@@ -898,7 +898,9 @@ class TradingBot {
                 db.logBotEvent({
                     event_type: 'LIQUIDATION_MATCH',
                     symbol: symbol,
-                    value: value
+                    value: value,
+                    strategy: usingDynamic ? 'DYNAMIC' : 'STATIC',
+                    threshold: thresholdInUsd
                 });
                 logger.info(`--- Large Liquidation Detected ---`);
                 if (usingDynamic) {
