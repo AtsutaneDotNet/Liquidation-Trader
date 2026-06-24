@@ -292,21 +292,6 @@
 
                     <div class="statistics-dashboard">
                         <div class="card stat-card glow-effect">
-                            <h3>Highest Used Margin (24H)</h3>
-                            <div class="stat-value highlight-text" id="stats-highest-margin">0.00%</div>
-                            <div class="stat-value" id="stats-isolation-count" style="font-size: 1.2rem; color: var(--text-muted); margin-top: 5px;">Isolation Activated: 0</div>
-                        </div>
-                        
-                        <div class="card stat-card chart-card wide-card">
-                            <h3>Margin History (24H)</h3>
-                            <div class="stat-chart-container strategy-chart-container">
-                                <canvas id="marginHistoryChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="statistics-dashboard">
-                        <div class="card stat-card glow-effect">
                             <h3>Liquidations Matched</h3>
                             <div class="stat-value highlight-text" id="stats-liquidations-count">0 / 0</div>
                             <div class="stat-value" id="stats-liquidations-percent" style="font-size: 1.2rem; color: var(--text-muted); margin-top: 5px;">0.00%</div>
@@ -314,6 +299,12 @@
                             <div style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
                                 Dynamic High: <span id="stats-dynamic-high" style="color: var(--text-main);">$0.00</span> | Low: <span id="stats-dynamic-low" style="color: var(--text-main);">$0.00</span>
                             </div>
+                        </div>
+
+                        <div class="card stat-card glow-effect">
+                            <h3>Highest Used Margin (24H)</h3>
+                            <div class="stat-value highlight-text" id="stats-highest-margin">0.00%</div>
+                            <div class="stat-value" id="stats-isolation-count" style="font-size: 1.2rem; color: var(--text-muted); margin-top: 5px;">Isolation Activated: 0</div>
                         </div>
 
                         <div class="card stat-card chart-card">
@@ -324,6 +315,15 @@
                             <div class="chart-legend" id="trades-legend">
                                 <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span id="stats-trades-buy">0</span></div>
                                 <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span id="stats-trades-sell">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="statistics-dashboard">
+                        <div class="card stat-card chart-card">
+                            <h3>Margin History (24H)</h3>
+                            <div class="stat-chart-container strategy-chart-container">
+                                <canvas id="marginHistoryChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -349,17 +349,28 @@
                             <div class="stat-chart-container">
                                 <canvas id="pnlSymbolChart"></canvas>
                             </div>
+                            <div class="chart-legend" id="pnl-symbol-legend" style="flex-wrap: wrap; justify-content: center; gap: 10px;">
+                                <!-- Dynamically populated -->
+                            </div>
                         </div>
                         <div class="card stat-card chart-card">
                             <h3>Positions Opened (Side)</h3>
                             <div class="stat-chart-container">
                                 <canvas id="pnlSideChart"></canvas>
                             </div>
+                            <div class="chart-legend" id="pnl-side-legend">
+                                <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span id="stats-pnl-buy-count">0</span></div>
+                                <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span id="stats-pnl-sell-count">0</span></div>
+                            </div>
                         </div>
                         <div class="card stat-card chart-card">
                             <h3>Win Rate by Side</h3>
                             <div class="stat-chart-container">
                                 <canvas id="pnlWinRateChart"></canvas>
+                            </div>
+                            <div class="chart-legend" id="pnl-winrate-legend">
+                                <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span id="stats-pnl-buy-win">0.00%</span></div>
+                                <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span id="stats-pnl-sell-win">0.00%</span></div>
                             </div>
                         </div>
                     </div>

@@ -1574,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pnlSymbolChart = new Chart(pnlSymCtx, {
                 type: 'doughnut',
                 data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#8a94a6' } } } }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
             });
         }
         
@@ -1583,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pnlSideChart = new Chart(pnlSideCtx, {
                 type: 'doughnut',
                 data: { labels: ['BUY Position', 'SELL Position'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#8a94a6' } } } }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
             });
         }
         
@@ -1592,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pnlWinRateChart = new Chart(pnlWinRateCtx, {
                 type: 'doughnut',
                 data: { labels: ['Win % (BUY pos)', 'Win % (SELL pos)'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { color: '#8a94a6' } } } }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
             });
         }
     }
@@ -1688,13 +1688,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         const syms = Object.keys(symMap);
                         pnlSymbolChart.data.labels = syms;
                         pnlSymbolChart.data.datasets[0].data = syms.map(s => symMap[s]);
-                        pnlSymbolChart.data.datasets[0].backgroundColor = syms.map((s, i) => `hsl(${(i * 360 / syms.length)}, 70%, 50%)`);
+                        const bgColors = syms.map((s, i) => `hsl(${(i * 360 / syms.length)}, 70%, 50%)`);
+                        pnlSymbolChart.data.datasets[0].backgroundColor = bgColors;
                         pnlSymbolChart.update();
+                        
+                        const legendDiv = document.getElementById('pnl-symbol-legend');
+                        if (legendDiv) {
+                            legendDiv.innerHTML = syms.map((s, i) => `
+                                <div class="legend-item"><span class="legend-color" style="background-color: ${bgColors[i]}"></span>${s}</div>
+                            `).join('');
+                        }
                     }
 
                     if (pnlSideChart) {
                         pnlSideChart.data.datasets[0].data = [buyPosCount, sellPosCount];
                         pnlSideChart.update();
+                        
+                        document.getElementById('stats-pnl-buy-count').innerText = buyPosCount;
+                        document.getElementById('stats-pnl-sell-count').innerText = sellPosCount;
                     }
 
                     if (pnlWinRateChart) {
@@ -1702,6 +1713,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const sellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
                         pnlWinRateChart.data.datasets[0].data = [buyWinRate, sellWinRate];
                         pnlWinRateChart.update();
+                        
+                        document.getElementById('stats-pnl-buy-win').innerText = buyWinRate.toFixed(2) + '%';
+                        document.getElementById('stats-pnl-sell-win').innerText = sellWinRate.toFixed(2) + '%';
                     }
                 }
             })
