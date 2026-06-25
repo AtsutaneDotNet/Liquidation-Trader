@@ -1493,7 +1493,7 @@ class TradingBot {
             }
             const hasPosition = !!openPosition;
 
-            if (hasPosition) {
+            if (hasPosition && cfg.MAX_POSITION_SIZE_PERCENTAGE > 0) {
                 const state = db.getAccountState();
                 if (state && state.total_value > 0) {
                     const positionMargin = (openPosition.size * currentPrice) / cfg.TRADE_LEVERAGE;
