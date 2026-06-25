@@ -457,6 +457,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         marketSentimentValue.style.color = 'var(--text-muted)';
                     }
                 }
+                
+                // Auto Transfer Status
+                const lastCheckEl = document.getElementById('auto-transfer-last-check');
+                if (lastCheckEl) {
+                    lastCheckEl.textContent = data.lastTransferCheck ? new Date(data.lastTransferCheck).toLocaleString() : 'Never';
+                }
+                const lastSuccessEl = document.getElementById('auto-transfer-last-success');
+                if (lastSuccessEl) {
+                    lastSuccessEl.textContent = data.lastSuccessfulTransfer ? new Date(data.lastSuccessfulTransfer).toLocaleString() : 'Never';
+                }
+
+                const accUpdateEl = document.getElementById('last-update-account');
+                if (accUpdateEl) accUpdateEl.textContent = data.lastAccountUpdate ? new Date(data.lastAccountUpdate).toLocaleString() : 'Never';
+                const posUpdateEl = document.getElementById('last-update-positions');
+                if (posUpdateEl) posUpdateEl.textContent = data.lastPositionsUpdate ? new Date(data.lastPositionsUpdate).toLocaleString() : 'Never';
+                const pnlUpdateEl = document.getElementById('last-update-closed-pnl');
+                if (pnlUpdateEl) pnlUpdateEl.textContent = data.lastClosedPnlUpdate ? new Date(data.lastClosedPnlUpdate).toLocaleString() : 'Never';
+                const dynUpdateEl = document.getElementById('last-update-dynamic-thresholds');
+                if (dynUpdateEl) dynUpdateEl.textContent = data.lastDynamicThresholdsUpdate ? new Date(data.lastDynamicThresholdsUpdate).toLocaleString() : 'Never';
             });
     }
 

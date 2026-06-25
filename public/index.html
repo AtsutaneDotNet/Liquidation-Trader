@@ -1286,6 +1286,16 @@
                                                 if profit % exceeds this value.</p>
                                         </div>
                                     </div>
+                                    <div class="form-group row" style="margin-top: 15px;">
+                                        <div class="col">
+                                            <label>Last Update</label>
+                                            <div id="auto-transfer-last-check" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Never</div>
+                                        </div>
+                                        <div class="col">
+                                            <label>Last Successful Transfer</label>
+                                            <div id="auto-transfer-last-success" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Never</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1367,6 +1377,9 @@
                 <header>
                     <h2>Account Performance</h2>
                 </header>
+                <div style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
+                    Last Update: <span id="last-update-account">Never</span>
+                </div>
                 <div class="page-section">
                     <h3>
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1446,6 +1459,9 @@
                 <header>
                     <h2>Open Positions</h2>
                 </header>
+                <div style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
+                    Last Update: <span id="last-update-positions">Never</span>
+                </div>
                 <div class="page-section">
                     <h3>
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1526,6 +1542,9 @@
                             class="search-input" autocomplete="off">
                     </div>
                 </header>
+                <div style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
+                    Last Update: <span id="last-update-closed-pnl">Never</span>
+                </div>
                 <div class="page-section">
                     <h3>
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1626,6 +1645,9 @@
                             class="search-input" autocomplete="off">
                     </div>
                 </header>
+                <div style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
+                    Last Update: <span id="last-update-dynamic-thresholds">Never</span>
+                </div>
                 <div class="page-section">
                     <h3>
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">

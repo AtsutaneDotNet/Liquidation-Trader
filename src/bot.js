@@ -42,6 +42,16 @@ class TradingBot {
 
         // Cache to prevent duplicate trade notifications
         this.seenTradeIds = new Set();
+
+        // Auto Transfer tracking
+        this.lastTransferCheck = null;
+        this.lastSuccessfulTransfer = null;
+
+        // API Update Tracking
+        this.lastAccountUpdate = null;
+        this.lastPositionsUpdate = null;
+        this.lastClosedPnlUpdate = null;
+        this.lastDynamicThresholdsUpdate = null;
     }
 
     async handleError(errMessage) {
@@ -294,10 +304,12 @@ class TradingBot {
     }
 
     onBalanceUpdate(data) {
+        this.lastAccountUpdate = new Date().toISOString();
         db.updateAccountState(data);
     }
 
     async onPositionUpdate(positions) {
+        this.lastPositionsUpdate = new Date().toISOString();
         if (!Array.isArray(positions)) positions = [positions];
 
         const state = db.getAccountState();
@@ -647,6 +659,7 @@ class TradingBot {
         if (!this.isRunning) return;
         try {
             const closedPnls = await this.tradeExchange.fetchClosedPnls();
+            this.lastClosedPnlUpdate = new Date().toISOString();
             if (closedPnls && closedPnls.length > 0) {
                 for (const pnl of closedPnls) {
                     db.addClosedPnl(pnl);
@@ -666,6 +679,7 @@ class TradingBot {
 
     async checkAutoTransfer() {
         if (!this.isRunning) return;
+        this.lastTransferCheck = new Date().toISOString();
         const cfg = this.config.get();
         if (!cfg.ENABLE_AUTO_TRANSFER) return;
 
@@ -702,6 +716,7 @@ class TradingBot {
                         const amountToTransfer = Math.floor(diff * 100) / 100; // Transfer exact diff rounded down to 2 decimals
                         const success = await this.tradeExchange.internalTransfer('USDT', amountToTransfer, fromAccount, toAccount);
                         if (success) {
+                            this.lastSuccessfulTransfer = new Date().toISOString();
                             logger.info(`Auto Transfer Completed: Moved $${amountToTransfer} USDT from ${fromAccount} to ${toAccount}.`);
                         }
                     } else {
@@ -778,6 +793,7 @@ class TradingBot {
                     }
                 }
                 this.dynamicThresholds = newThresholds;
+                this.lastDynamicThresholdsUpdate = new Date().toISOString();
                 logger.info(`Successfully updated dynamic thresholds for ${Object.keys(newThresholds).length} base assets.`);
             }
         } catch (e) {
