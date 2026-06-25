@@ -31,6 +31,9 @@ class TradingBot {
         this.marketSentiment = null;
         this.marketSentimentInterval = null;
 
+        this.tickersVolume = {};
+        this.volumeInterval = null;
+
         // In-memory store for recent order notifications (max 50)
         this.orderEvents = [];
 
@@ -191,7 +194,9 @@ class TradingBot {
             this.fetchDynamicThresholds(); // Fetch once initially
             this.updateMarketSentiment(); // Fetch once initially
             this.sendAnonReport(); // Fetch once initially
+            this.update24hVolume(); // Fetch once initially
 
+            this.volumeInterval = setInterval(() => this.update24hVolume(), 600000); // Every 10 mins
             this.pnlInterval = setInterval(() => this.updatePnL(), 600000); // Every 10 mins
             this.btcInterval = setInterval(() => this.updateBtcPrice(), 3600000); // Every hour
             this.dynamicInterval = setInterval(() => this.fetchDynamicThresholds(), 3600000); // Every hour
@@ -225,6 +230,7 @@ class TradingBot {
         clearInterval(this.cmcInterval);
         clearInterval(this.btcInterval);
         clearInterval(this.dynamicInterval);
+        clearInterval(this.volumeInterval);
         clearInterval(this.marketSentimentInterval);
         clearInterval(this.anonReportInterval);
     }
@@ -708,6 +714,23 @@ class TradingBot {
         }
     }
 
+    async update24hVolume() {
+        if (!this.config.get().ENABLE_24H_VOLUME_FILTER) return;
+        try {
+            if (this.tradeExchange?.exchange?.has['fetchTickers']) {
+                logger.info('Fetching 24h volume for all tickers...');
+                const tickers = await this.tradeExchange.exchange.fetchTickers();
+                for (const symbol in tickers) {
+                    this.tickersVolume[symbol] = tickers[symbol].quoteVolume || 0;
+                }
+            } else {
+                logger.warn('Exchange does not support fetchTickers. 24h volume filter will not work.');
+            }
+        } catch (error) {
+            logger.error(`Error updating 24h volume: ${error.message}`);
+        }
+    }
+
     async updateBtcPrice() {
         if (!this.isRunning) return;
         try {
@@ -864,6 +887,13 @@ class TradingBot {
             
             // Log for 24h statistics
             db.logBotEvent({ event_type: 'LIQUIDATION_RECEIVED', symbol: symbol, side: unifiedSide, value: value });
+
+            if (cfg.ENABLE_24H_VOLUME_FILTER) {
+                const volUsd = this.tickersVolume[symbol] || 0;
+                if (volUsd < cfg.MIN_24H_VOLUME_USD) {
+                    return;
+                }
+            }
 
             let thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD;
             if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
@@ -1461,8 +1491,20 @@ class TradingBot {
                 pushDecision('No Signal');
                 return;
             }
-
             const hasPosition = !!openPosition;
+
+            if (hasPosition) {
+                const state = db.getAccountState();
+                if (state && state.total_value > 0) {
+                    const positionMargin = (openPosition.size * currentPrice) / cfg.TRADE_LEVERAGE;
+                    const usedMarginPercent = (positionMargin / state.total_value) * 100;
+                    if (usedMarginPercent >= cfg.MAX_POSITION_SIZE_PERCENTAGE) {
+                        logger.info(`Max position size reached for ${symbol} (${usedMarginPercent.toFixed(2)}% >= ${cfg.MAX_POSITION_SIZE_PERCENTAGE}% of total balance). Holding bot from adding to position.`);
+                        pushDecision('Max Position Size Reached');
+                        return;
+                    }
+                }
+            }
             const maxPositions = cfg.MAX_OPEN_POSITIONS || 3;
             if (!hasPosition && positions.length >= maxPositions) {
                 logger.info(`Max open positions (${maxPositions}) reached. Holding bot from opening new position for ${symbol}.`);

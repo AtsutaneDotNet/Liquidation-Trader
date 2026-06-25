@@ -176,7 +176,10 @@ const defaults = {
     FG_EXTREME_GREED_SIGNAL: 'none',
     MS_BYPASS_ON_POSITION: 'false',
     ENABLE_ANON_REPORTING: 'false',
-    ANON_UID: ''
+    ANON_UID: '',
+    ENABLE_24H_VOLUME_FILTER: 'false',
+    MIN_24H_VOLUME_USD: '1000000',
+    MAX_POSITION_SIZE_PERCENTAGE: '10'
 };
 
 const currentConfig = getConfig();

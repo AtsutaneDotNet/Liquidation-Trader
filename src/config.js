@@ -75,6 +75,9 @@ function getConfig() {
         MS_BYPASS_ON_POSITION: dbConfig.MS_BYPASS_ON_POSITION || 'false',
         ENABLE_ANON_REPORTING: dbConfig.ENABLE_ANON_REPORTING === 'true',
         ANON_UID: dbConfig.ANON_UID || '',
+        ENABLE_24H_VOLUME_FILTER: dbConfig.ENABLE_24H_VOLUME_FILTER === 'true',
+        MIN_24H_VOLUME_USD: parseFloat(dbConfig.MIN_24H_VOLUME_USD) || 1000000,
+        MAX_POSITION_SIZE_PERCENTAGE: parseFloat(dbConfig.MAX_POSITION_SIZE_PERCENTAGE) || 10,
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
         WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,
         WEB_HOST: process.env.WEB_HOST || 'localhost'
