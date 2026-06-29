@@ -80,7 +80,15 @@ function getConfig() {
         MAX_POSITION_SIZE_PERCENTAGE: dbConfig.MAX_POSITION_SIZE_PERCENTAGE !== undefined ? parseFloat(dbConfig.MAX_POSITION_SIZE_PERCENTAGE) : 10,
         LOG_LEVEL: process.env.LOG_LEVEL || 'info',
         WEB_PORT: parseInt(process.env.WEB_PORT) || 3000,
-        WEB_HOST: process.env.WEB_HOST || 'localhost'
+        WEB_HOST: process.env.WEB_HOST || 'localhost',
+        ENABLE_CIRCUIT_BREAKER: dbConfig.ENABLE_CIRCUIT_BREAKER === 'true',
+        CB_TIMEFRAME: dbConfig.CB_TIMEFRAME || '15m',
+        CB_ATR_PERIOD: parseInt(dbConfig.CB_ATR_PERIOD) || 14,
+        CB_ATR_MULTIPLIER: parseFloat(dbConfig.CB_ATR_MULTIPLIER) || 3.0,
+        CB_PRICE_LOOKBACK: parseInt(dbConfig.CB_PRICE_LOOKBACK) || 10,
+        CB_MOVEMENT_PERCENT_THRESHOLD: parseFloat(dbConfig.CB_MOVEMENT_PERCENT_THRESHOLD) || 5.0,
+        CB_VOLUME_SMA_PERIOD: parseInt(dbConfig.CB_VOLUME_SMA_PERIOD) || 20,
+        CB_VOLUME_MULTIPLIER: parseFloat(dbConfig.CB_VOLUME_MULTIPLIER) || 2.0
     };
 }
 

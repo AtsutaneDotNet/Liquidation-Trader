@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -137,6 +137,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (sessionCol) sessionCol.style.display = type === 'session' ? 'flex' : 'none';
                     if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'flex';
                 }
+
+                // Toggle CB fields on load
+                const cbEnableEl = document.getElementById('ENABLE_CIRCUIT_BREAKER');
+                if (cbEnableEl) {
+                    const row = document.getElementById('cbSettingsRow');
+                    if (row) row.style.display = cbEnableEl.checked ? 'block' : 'none';
+                }
+
+                const vwapEnableEl = document.getElementById('ENABLE_VWAP_STRATEGY');
+                if (vwapEnableEl) {
+                    const row = document.getElementById('vwapSettingsRow');
+                    if (row) row.style.display = vwapEnableEl.checked ? 'block' : 'none';
+                }
+
+                const rsiEnableEl = document.getElementById('ENABLE_RSI_STRATEGY');
+                if (rsiEnableEl) {
+                    const row = document.getElementById('rsiSettingsRow');
+                    if (row) row.style.display = rsiEnableEl.checked ? 'block' : 'none';
+                }
+
+                const dmiEnableEl = document.getElementById('ENABLE_DMI_STRATEGY');
+                if (dmiEnableEl) {
+                    const row = document.getElementById('dmiSettingsRow');
+                    if (row) row.style.display = dmiEnableEl.checked ? 'block' : 'none';
+                }
             })
             .catch(console.error);
     }
@@ -151,6 +176,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const periodCol = document.getElementById('vwap-period-col');
             if (sessionCol) sessionCol.style.display = type === 'session' ? 'flex' : 'none';
             if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'flex';
+        });
+    }
+
+    const cbEnableEl = document.getElementById('ENABLE_CIRCUIT_BREAKER');
+    if (cbEnableEl) {
+        cbEnableEl.addEventListener('change', (e) => {
+            const row = document.getElementById('cbSettingsRow');
+            if (row) row.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const vwapEnableEl = document.getElementById('ENABLE_VWAP_STRATEGY');
+    if (vwapEnableEl) {
+        vwapEnableEl.addEventListener('change', (e) => {
+            const row = document.getElementById('vwapSettingsRow');
+            if (row) row.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const rsiEnableEl = document.getElementById('ENABLE_RSI_STRATEGY');
+    if (rsiEnableEl) {
+        rsiEnableEl.addEventListener('change', (e) => {
+            const row = document.getElementById('rsiSettingsRow');
+            if (row) row.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const dmiEnableEl = document.getElementById('ENABLE_DMI_STRATEGY');
+    if (dmiEnableEl) {
+        dmiEnableEl.addEventListener('change', (e) => {
+            const row = document.getElementById('dmiSettingsRow');
+            if (row) row.style.display = e.target.checked ? 'block' : 'none';
         });
     }
 
@@ -172,6 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cmcFilterCb) {
             formData.set('CMC_FILTER_ENABLED', cmcFilterCb.checked ? 'true' : 'false');
         }
+
+        const cbCb = document.getElementById('ENABLE_CIRCUIT_BREAKER');
+        if (cbCb) formData.set('ENABLE_CIRCUIT_BREAKER', cbCb.checked ? 'true' : 'false');
 
         const vwapCb = document.getElementById('ENABLE_VWAP_STRATEGY');
         if (vwapCb) formData.set('ENABLE_VWAP_STRATEGY', vwapCb.checked ? 'true' : 'false');

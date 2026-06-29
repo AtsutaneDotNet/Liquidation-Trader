@@ -972,6 +972,35 @@ class TradingBot {
             }
         }
     }
+    calculateATR(highs, lows, closes, period = 14) {
+        if (!highs || !lows || !closes || highs.length < period + 1) return null;
+        let tr = [];
+        for (let i = 1; i < highs.length; i++) {
+            const h = highs[i], l = lows[i], prevC = closes[i - 1];
+            tr.push(Math.max(h - l, Math.abs(h - prevC), Math.abs(l - prevC)));
+        }
+        
+        // Simple Moving Average (SMA) of True Range for the first ATR value
+        if (tr.length < period) return null;
+        let sum = 0;
+        for (let i = 0; i < period; i++) sum += tr[i];
+        let atr = sum / period;
+
+        // Smoothed Moving Average (RMA / SMMA) for subsequent ATR values
+        for (let i = period; i < tr.length; i++) {
+            atr = (atr * (period - 1) + tr[i]) / period;
+        }
+        return atr;
+    }
+
+    calculateSMA(data, period = 20) {
+        if (!data || data.length < period) return null;
+        let sum = 0;
+        for (let i = data.length - period; i < data.length; i++) {
+            sum += data[i];
+        }
+        return sum / period;
+    }
 
     calculateRSI(closes, period = 14) {
         if (!closes || closes.length < period + 1) return null;
@@ -1134,12 +1163,14 @@ class TradingBot {
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
+            const cbEnabled = cfg.ENABLE_CIRCUIT_BREAKER;
             const vwapEnabled = cfg.ENABLE_VWAP_STRATEGY;
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
             const dmiEnabled = cfg.ENABLE_DMI_STRATEGY;
 
-            if ((vwapEnabled || rsiEnabled || dmiEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                 const activeTimeframes = [];
+                if (cbEnabled) activeTimeframes.push(cfg.CB_TIMEFRAME || '15m');
                 if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
                 if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
                 if (dmiEnabled) activeTimeframes.push(cfg.DMI_TIMEFRAME || '1m');
@@ -1148,10 +1179,11 @@ class TradingBot {
                 const allSameTimeframe = activeTimeframes.length > 0 && activeTimeframes.every(tf => tf === activeTimeframes[0]);
 
                 if (activeTimeframes.length > 1 && allSameTimeframe) {
+                    const cbLimit = cbEnabled ? (parseInt(cfg.CB_PRICE_LOOKBACK) || 10) + (parseInt(cfg.CB_ATR_PERIOD) || 14) + (parseInt(cfg.CB_VOLUME_SMA_PERIOD) || 20) + 10 : 0;
                     const vLimit = vwapEnabled ? (parseInt(cfg.VWAP_PERIOD) || 14) + 100 : 0;
                     const rLimit = rsiEnabled ? (parseInt(cfg.RSI_PERIOD) || 14) + 100 : 0;
                     const aLimit = dmiEnabled ? (parseInt(cfg.DMI_PERIOD) || 14) * 2 + 100 : 0;
-                    const maxLimit = Math.max(vLimit, rLimit, aLimit);
+                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit);
 
                     try {
                         logger.info(`Fetching shared OHLCV for Technical Strategies (${activeTimeframes[0]}, limit: ${maxLimit})...`);
@@ -1159,6 +1191,55 @@ class TradingBot {
                     } catch (e) {
                         logger.error(`Error fetching shared OHLCV: ${e.message}`);
                     }
+                }
+            }
+
+            // --- 1.5. Volatility-Based Circuit Breaker Strategy ---
+            if (cbEnabled && !openPosition && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                try {
+                    let klines = sharedKlines;
+                    const cbTimeframe = cfg.CB_TIMEFRAME || '15m';
+                    
+                    if (!klines || cbTimeframe !== activeTimeframes[0]) {
+                        const cbLimit = (parseInt(cfg.CB_PRICE_LOOKBACK) || 10) + (parseInt(cfg.CB_ATR_PERIOD) || 14) + (parseInt(cfg.CB_VOLUME_SMA_PERIOD) || 20) + 10;
+                        logger.info(`Fetching OHLCV for Circuit Breaker (${cbTimeframe}, limit: ${cbLimit})...`);
+                        klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, cbTimeframe, undefined, cbLimit);
+                    }
+
+                    if (klines && klines.length > 0) {
+                        const closes = klines.map(k => k[4]);
+                        const highs = klines.map(k => k[2]);
+                        const lows = klines.map(k => k[3]);
+                        const volumes = klines.map(k => k[5]);
+
+                        const atrPeriod = parseInt(cfg.CB_ATR_PERIOD) || 14;
+                        const atr = this.calculateATR(highs, lows, closes, atrPeriod);
+                        
+                        const lookback = parseInt(cfg.CB_PRICE_LOOKBACK) || 10;
+                        const currentClose = closes[closes.length - 1];
+                        const lookbackClose = closes.length > lookback ? closes[closes.length - 1 - lookback] : closes[0];
+                        
+                        const movementAbsolute = Math.abs(currentClose - lookbackClose);
+                        const movementPercent = (movementAbsolute / lookbackClose) * 100;
+                        const atrMultiple = atr ? (movementAbsolute / atr) : 0;
+
+                        const volPeriod = parseInt(cfg.CB_VOLUME_SMA_PERIOD) || 20;
+                        const avgVolume = this.calculateSMA(volumes, volPeriod);
+                        const currentVolume = volumes[volumes.length - 1];
+
+                        const atrThresh = parseFloat(cfg.CB_ATR_MULTIPLIER) || 3.0;
+                        const movThresh = parseFloat(cfg.CB_MOVEMENT_PERCENT_THRESHOLD) || 5.0;
+                        const volThresh = parseFloat(cfg.CB_VOLUME_MULTIPLIER) || 2.0;
+
+                        if (atrMultiple >= atrThresh && movementPercent >= movThresh && currentVolume >= (avgVolume * volThresh)) {
+                            logger.info(`Circuit Breaker triggered for ${symbol}. ATR Multiple: ${atrMultiple.toFixed(2)}, Movement: ${movementPercent.toFixed(2)}%, Vol: ${currentVolume.toFixed(2)} vs Avg: ${avgVolume?.toFixed(2)}`);
+                            db.logBotEvent({ event_type: 'CIRCUIT_BREAKER_TRIGGERED', symbol: symbol, strategy: 'CircuitBreaker', value: movementPercent });
+                            pushDecision('Circuit Breaker Active (Bypassed)');
+                            return; // Skip new positions
+                        }
+                    }
+                } catch (e) {
+                    logger.error(`Error evaluating Circuit Breaker: ${e.message}`);
                 }
             }
 
