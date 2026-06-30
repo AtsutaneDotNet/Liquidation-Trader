@@ -86,7 +86,6 @@ function getConfig() {
         CB_ATR_PERIOD: parseInt(dbConfig.CB_ATR_PERIOD) || 14,
         CB_ATR_MULTIPLIER: parseFloat(dbConfig.CB_ATR_MULTIPLIER) || 3.0,
         CB_PRICE_LOOKBACK: parseInt(dbConfig.CB_PRICE_LOOKBACK) || 10,
-        CB_MOVEMENT_PERCENT_THRESHOLD: parseFloat(dbConfig.CB_MOVEMENT_PERCENT_THRESHOLD) || 5.0,
         CB_VOLUME_SMA_PERIOD: parseInt(dbConfig.CB_VOLUME_SMA_PERIOD) || 20,
         CB_VOLUME_MULTIPLIER: parseFloat(dbConfig.CB_VOLUME_MULTIPLIER) || 2.0
     };

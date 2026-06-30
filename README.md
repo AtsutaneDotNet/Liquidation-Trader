@@ -39,7 +39,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 - **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, and **OKX** using the unified **CCXT Pro** engine.
 - **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events. Includes a dynamic minimum safeguard configuration (`REPLACE_BELOW_MIN_THRESHOLD`).
 - **Advanced Strategies**:
-  - **Circuit Breaker**: Detects extreme market volatility using ATR multiples, cumulative price movement, and volume surges. Halts new trading entries during abnormal conditions to protect capital while allowing existing positions to be managed normally.
+  - **Circuit Breaker**: Detects extreme market volatility using ATR multiples and volume surges. Halts new trading entries during abnormal conditions to protect capital while allowing existing positions to be managed normally.
   - **Rolling & Session VWAP**: 
     - **Rolling VWAP**: Trade based on price deviations from a rolling Volume Weighted Average Price calculated dynamically from historical OHLCV data. Supports configurable timeframes (`VWAP_TIMEFRAME`) and period lengths (`VWAP_PERIOD`), with independent long and short offset percentages.
     - **Session VWAP**: Track price deviations against a session-anchored Volume Weighted Average Price (Daily, Weekly, Monthly) which resets cumulative calculations at the start of each session timeframe.
@@ -158,7 +158,6 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `CB_ATR_PERIOD` | Number of candles for ATR calculation. | `14` |
 | `CB_ATR_MULTIPLIER` | ATR multiple threshold to detect volatility. | `3.0` |
 | `CB_PRICE_LOOKBACK` | Number of candles to look back for price movement. | `5` |
-| `CB_PRICE_THRESHOLD` | Percentage price movement threshold. | `2.0` |
 | `CB_VOLUME_PERIOD` | Number of candles for Volume SMA calculation. | `20` |
 | `CB_VOLUME_MULTIPLIER` | Volume spike multiplier threshold compared to SMA. | `2.0` |
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |

@@ -1220,7 +1220,6 @@ class TradingBot {
                         const lookbackClose = closes.length > lookback ? closes[closes.length - 1 - lookback] : closes[0];
                         
                         const movementAbsolute = Math.abs(currentClose - lookbackClose);
-                        const movementPercent = (movementAbsolute / lookbackClose) * 100;
                         const atrMultiple = atr ? (movementAbsolute / atr) : 0;
 
                         const volPeriod = parseInt(cfg.CB_VOLUME_SMA_PERIOD) || 20;
@@ -1228,12 +1227,11 @@ class TradingBot {
                         const currentVolume = volumes[volumes.length - 1];
 
                         const atrThresh = parseFloat(cfg.CB_ATR_MULTIPLIER) || 3.0;
-                        const movThresh = parseFloat(cfg.CB_MOVEMENT_PERCENT_THRESHOLD) || 5.0;
                         const volThresh = parseFloat(cfg.CB_VOLUME_MULTIPLIER) || 2.0;
 
-                        if (atrMultiple >= atrThresh && movementPercent >= movThresh && currentVolume >= (avgVolume * volThresh)) {
-                            logger.info(`Circuit Breaker triggered for ${symbol}. ATR Multiple: ${atrMultiple.toFixed(2)}, Movement: ${movementPercent.toFixed(2)}%, Vol: ${currentVolume.toFixed(2)} vs Avg: ${avgVolume?.toFixed(2)}`);
-                            db.logBotEvent({ event_type: 'CIRCUIT_BREAKER_TRIGGERED', symbol: symbol, strategy: 'CircuitBreaker', value: movementPercent });
+                        if (atrMultiple >= atrThresh && currentVolume >= (avgVolume * volThresh)) {
+                            logger.info(`Circuit Breaker triggered for ${symbol}. ATR Multiple: ${atrMultiple.toFixed(2)}, Vol: ${currentVolume.toFixed(2)} vs Avg: ${avgVolume?.toFixed(2)}`);
+                            db.logBotEvent({ event_type: 'CIRCUIT_BREAKER_TRIGGERED', symbol: symbol, strategy: 'CircuitBreaker', value: atrMultiple });
                             pushDecision('Circuit Breaker Active (Bypassed)');
                             return; // Skip new positions
                         }

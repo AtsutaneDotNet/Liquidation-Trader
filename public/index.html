@@ -783,8 +783,8 @@
                                                     style="width: auto; margin: 0;"> Enable Circuit Breaker
                                             </label>
                                             <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
-                                                Halts new entries when extreme volatility is detected based on ATR,
-                                                price movement, and volume.
+                                                Halts new entries when extreme volatility is detected based on ATR
+                                                multiples and volume surges.
                                             </p>
                                         </div>
                                     </div>
@@ -819,12 +819,6 @@
                                                 <label for="CB_PRICE_LOOKBACK">Price Lookback</label>
                                                 <input type="number" id="CB_PRICE_LOOKBACK" name="CB_PRICE_LOOKBACK"
                                                     placeholder="10" min="1">
-                                            </div>
-                                            <div class="col">
-                                                <label for="CB_MOVEMENT_PERCENT_THRESHOLD">Price Movement (%)</label>
-                                                <input type="number" id="CB_MOVEMENT_PERCENT_THRESHOLD"
-                                                    name="CB_MOVEMENT_PERCENT_THRESHOLD" placeholder="5.0" step="0.1"
-                                                    min="0.1">
                                             </div>
                                         </div>
                                         <div class="form-group row">
