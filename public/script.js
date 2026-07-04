@@ -743,6 +743,106 @@ document.addEventListener('DOMContentLoaded', () => {
     const elAccYearly = document.getElementById('acc-yearly-pnl');
     const elAccTotalPnl = document.getElementById('acc-total-pnl');
     const positionsContainer = document.getElementById('positions-container');
+    let currentPositionsList = [];
+    let currentTvWidget = null;
+
+    window.openPositionDetail = function(symbol) {
+        const position = currentPositionsList.find(p => p.symbol === symbol);
+        if (!position) return;
+
+        // Update Nav & Pages manually
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('position-detail-page').classList.add('active');
+
+        document.getElementById('detail-symbol-name').textContent = symbol;
+        
+        const sideStr = (position.side || '').toLowerCase();
+        const isBuy = sideStr === 'buy' || sideStr === 'long';
+        const sideClz = isBuy ? 'buy' : 'sell';
+        
+        document.getElementById('position-detail-stats').innerHTML = `
+            <div class="position-card ${isBuy ? 'pos-card-buy' : 'pos-card-sell'}">
+                <div class="pos-header">
+                    <div class="pos-symbol">${position.symbol}</div>
+                    <div class="pos-side ${sideClz}">${(position.side || 'UNKNOWN').toUpperCase()}</div>
+                </div>
+                <div class="pos-details">
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Size</span>
+                        <span class="pos-detail-value">${position.size}</span>
+                    </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Entry Price</span>
+                        <span class="pos-detail-value">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Mark Price</span>
+                        <span class="pos-detail-value">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Liq. Price</span>
+                        <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">TP Price</span>
+                        <span class="pos-detail-value" style="color: var(--accent)">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">SL Price</span>
+                        <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
+                    </div>
+                </div>
+                <div class="pos-pnl">
+                    <span class="pos-pnl-label">Unrealized PnL</span>
+                    <span class="pos-pnl-value">${formatPnl(position.unrealized_pnl)}</span>
+                </div>
+            </div>
+        `;
+
+        let exchangeInput = document.getElementById('TRADE_EXCHANGE');
+        let exchangeName = exchangeInput ? exchangeInput.value.toUpperCase() : 'BINANCE';
+        
+        let cleanSymbol = symbol;
+        if (symbol.includes('/')) {
+            cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
+        }
+        let tvSymbol = `${exchangeName}:${cleanSymbol}`;
+
+        if (currentTvWidget) {
+            currentTvWidget.remove();
+            currentTvWidget = null;
+        }
+
+        currentTvWidget = new TradingView.widget({
+            "autosize": true,
+            "symbol": tvSymbol,
+            "interval": "15",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "8",
+            "locale": "en",
+            "enable_publishing": false,
+            "backgroundColor": "rgba(0, 0, 0, 1)",
+            "hide_top_toolbar": false,
+            "hide_legend": false,
+            "save_image": false,
+            "container_id": "tv_chart_container",
+            "studies": [
+                "RSI@tv-basicstudies",
+                "DM@tv-basicstudies"
+            ]
+        });
+    };
+
+    window.closePositionDetail = function() {
+        document.getElementById('position-detail-page').classList.remove('active');
+        document.getElementById('positions').classList.add('active');
+        
+        if (currentTvWidget) {
+            currentTvWidget.remove();
+            currentTvWidget = null;
+        }
+    };
 
     function formatUsd(val) {
         return formatSelectedCurrency(val);
@@ -794,8 +894,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (!positionsContainer) return;
                 if (!data || data.length === 0) {
+                    currentPositionsList = [];
                     positionsContainer.innerHTML = '<div class="empty-msg">&mdash; No active positions tracked yet &mdash;</div>';
                 } else {
+                    currentPositionsList = data;
                     positionsContainer.innerHTML = data.map(p => {
                         const sideStr = (p.side || '').toLowerCase();
                         const isBuy = sideStr === 'buy' || sideStr === 'long';
@@ -806,7 +908,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return `
                         <div class="position-card ${cardClz}">
                             <div class="pos-header">
-                                <div class="pos-symbol">${p.symbol}</div>
+                                <div class="pos-symbol" style="cursor: pointer; text-decoration: underline;" onclick="openPositionDetail('${p.symbol}')" title="View Details">${p.symbol}</div>
                                 <div class="pos-side ${sideClz}">${sideText}</div>
                             </div>
                             <div class="pos-details">

@@ -1202,6 +1202,11 @@ canvas#pnl-chart {
     font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.5px;
+    transition: color 0.2s ease;
+}
+
+.pos-symbol:hover {
+    color: var(--accent);
 }
 
 .pos-side {
