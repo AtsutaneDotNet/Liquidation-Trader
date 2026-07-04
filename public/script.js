@@ -537,14 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dynUpdateEl = document.getElementById('last-update-dynamic-thresholds');
                 if (dynUpdateEl) dynUpdateEl.textContent = data.lastDynamicThresholdsUpdate ? new Date(data.lastDynamicThresholdsUpdate).toLocaleString() : 'Never';
                 
-                // If detail page is active, auto-update the stats
-                const detailPage = document.getElementById('position-detail-page');
-                if (detailPage && detailPage.classList.contains('active')) {
-                    const activeSymbol = document.getElementById('detail-symbol-name').textContent;
-                    if (activeSymbol && typeof renderPositionStats === 'function') {
-                        renderPositionStats(activeSymbol);
-                    }
-                }
+                // Stats auto-updating moved to fetchAccountData
             });
     }
 
@@ -964,7 +957,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function fetchAccountData() {
         // Optimize polling: only render if standard tabs correspond.
         if (!document.getElementById('account').classList.contains('active') &&
-            !document.getElementById('positions').classList.contains('active')) return;
+            !document.getElementById('positions').classList.contains('active') &&
+            !document.getElementById('position-detail-page').classList.contains('active')) return;
 
         fetch('/api/account')
             .then(res => res.json())
@@ -1035,6 +1029,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>`;
                     }).join('');
+                }
+                
+                // If detail page is active, auto-update the stats
+                const detailPage = document.getElementById('position-detail-page');
+                if (detailPage && detailPage.classList.contains('active')) {
+                    const activeSymbol = document.getElementById('detail-symbol-name').textContent;
+                    if (activeSymbol && typeof renderPositionStats === 'function') {
+                        renderPositionStats(activeSymbol);
+                    }
                 }
             }).catch(console.error);
     }
