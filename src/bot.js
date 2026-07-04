@@ -1478,19 +1478,32 @@ class TradingBot {
 
                         if (dmiResult !== null) {
                             logger.info(`DMI (${period}, ${cfg.DMI_TIMEFRAME}): ${dmiResult.adx.toFixed(2)} | +DI: ${dmiResult.plusDI.toFixed(2)} | -DI: ${dmiResult.minusDI.toFixed(2)}`);
-                            const isDmiConditionMet = cfg.DMI_THRESHOLD_DIR === 'above' ? (dmiResult.adx >= threshold) : (dmiResult.adx <= threshold);
+                            let isDmiConditionMet = false;
+                            let conditionMsg = '';
+                            if (cfg.DMI_THRESHOLD_DIR === 'above') {
+                                isDmiConditionMet = (dmiResult.adx >= threshold);
+                                conditionMsg = `>= ${threshold}`;
+                            } else if (cfg.DMI_THRESHOLD_DIR === 'under') {
+                                isDmiConditionMet = (dmiResult.adx <= threshold);
+                                conditionMsg = `<= ${threshold}`;
+                            } else if (cfg.DMI_THRESHOLD_DIR === 'range') {
+                                const upperThreshold = parseFloat(cfg.DMI_THRESHOLD_UPPER) || 30;
+                                isDmiConditionMet = (dmiResult.adx >= threshold && dmiResult.adx <= upperThreshold);
+                                conditionMsg = `between ${threshold} and ${upperThreshold}`;
+                            }
+
                             if (isDmiConditionMet) {
                                 if (dmiResult.plusDI > dmiResult.minusDI) {
                                     dmiSide = cfg.DMI_PDI_SIGNAL === 'none' ? null : cfg.DMI_PDI_SIGNAL;
-                                    logger.info(`DMI Condition met: DMI ${cfg.DMI_THRESHOLD_DIR} ${threshold} and +DI > -DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
+                                    logger.info(`DMI Condition met: DMI ${conditionMsg} and +DI > -DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
                                 } else if (dmiResult.minusDI > dmiResult.plusDI) {
                                     dmiSide = cfg.DMI_MDI_SIGNAL === 'none' ? null : cfg.DMI_MDI_SIGNAL;
-                                    logger.info(`DMI Condition met: DMI ${cfg.DMI_THRESHOLD_DIR} ${threshold} and -DI > +DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
+                                    logger.info(`DMI Condition met: DMI ${conditionMsg} and -DI > +DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
                                 } else {
                                     logger.info(`DMI Condition: Value met threshold but DIs are equal. No trade signal.`);
                                 }
                             } else {
-                                logger.info(`DMI Condition: DMI (${dmiResult.adx.toFixed(2)}) is not ${cfg.DMI_THRESHOLD_DIR} threshold (${threshold}). No trade signal.`);
+                                logger.info(`DMI Condition: DMI (${dmiResult.adx.toFixed(2)}) is not ${conditionMsg}. No trade signal.`);
                             }
                             decisionRecord.dmi = { value: dmiResult.adx, plusDI: dmiResult.plusDI, minusDI: dmiResult.minusDI, threshold: threshold, signal: dmiSide, timeframe: cfg.DMI_TIMEFRAME };
                         }

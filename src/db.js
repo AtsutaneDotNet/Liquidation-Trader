@@ -167,6 +167,7 @@ const defaults = {
     RSI_OVERSOLD_DIR: 'under',
     RSI_OVERSOLD_SIGNAL: 'buy',
     DMI_THRESHOLD_DIR: 'under',
+    DMI_THRESHOLD_UPPER: '30',
     DMI_PDI_SIGNAL: 'sell',
     DMI_MDI_SIGNAL: 'buy',
     DMI_BYPASS_ON_POSITION: 'false',

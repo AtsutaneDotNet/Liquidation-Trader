@@ -128,6 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (hiddenEl) hiddenEl.value = data[key];
                     }
                 }
+
+                // Toggle DMI range field on load
+                const dmiDirEl = document.getElementById('DMI_THRESHOLD_DIR');
+                if (dmiDirEl) {
+                    const dmiUpperCol = document.getElementById('dmi-upper-threshold-col');
+                    if (dmiUpperCol) dmiUpperCol.style.display = dmiDirEl.value === 'range' ? 'block' : 'none';
+                }
+
                 // Toggle VWAP fields on load
                 const vwapTypeEl = document.getElementById('VWAP_TYPE');
                 if (vwapTypeEl) {
@@ -294,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL', 'CB_BYPASS_ON_POSITION',
             'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL', 'RSI_BYPASS_ON_POSITION',
-            'DMI_THRESHOLD_DIR', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
+            'DMI_THRESHOLD_DIR', 'DMI_THRESHOLD_UPPER', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
             'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL', 'MS_BYPASS_ON_POSITION'
         ];
         advInputs.forEach(id => {
@@ -2289,6 +2297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     RSI_OVERSOLD_SIGNAL: 'buy',
                     RSI_BYPASS_ON_POSITION: 'false',
                     DMI_THRESHOLD_DIR: 'under',
+                    DMI_THRESHOLD_UPPER: '30',
                     DMI_PDI_SIGNAL: 'sell',
                     DMI_MDI_SIGNAL: 'buy',
                     DMI_BYPASS_ON_POSITION: 'false',

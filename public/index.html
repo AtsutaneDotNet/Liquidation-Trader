@@ -1935,10 +1935,15 @@
                     <div class="form-group row">
                         <div class="col">
                             <label>DMI Threshold Condition</label>
-                            <select id="DMI_THRESHOLD_DIR" class="styled-select">
+                            <select id="DMI_THRESHOLD_DIR" class="styled-select" onchange="document.getElementById('dmi-upper-threshold-col').style.display = this.value === 'range' ? 'block' : 'none'">
                                 <option value="under">DMI <= Threshold (Default)</option>
                                 <option value="above">DMI >= Threshold</option>
+                                <option value="range">Range (Threshold to Upper)</option>
                             </select>
+                        </div>
+                        <div class="col" id="dmi-upper-threshold-col" style="display: none;">
+                            <label>DMI Upper Threshold</label>
+                            <input type="number" id="DMI_THRESHOLD_UPPER" class="styled-input" step="1" title="Used when DMI Threshold Condition is set to Range">
                         </div>
                     </div>
                     <div class="form-group row">
