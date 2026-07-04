@@ -760,6 +760,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const isBuy = sideStr === 'buy' || sideStr === 'long';
         const sideClz = isBuy ? 'buy' : 'sell';
         
+        let posValue = (parseFloat(position.size || 0) * parseFloat(position.entry_price || 0));
+        let posValueStr = posValue > 0 ? posValue.toFixed(4) : '0.0000';
+
+        let trailingActivationPercent = parseFloat(document.getElementById('TRAILING_ACTIVATION_PERCENTAGE')?.value || 0);
+        let trailingPriceStr = 'N/A';
+        if (trailingActivationPercent > 0) {
+            let multiplier = trailingActivationPercent / 100;
+            let tp = isBuy ? (position.entry_price * (1 + multiplier)) : (position.entry_price * (1 - multiplier));
+            trailingPriceStr = tp.toFixed(4);
+        }
+
+        let leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
+        let margin = posValue / leverage;
+        let pnlPercentStr = '0.00%';
+        if (margin > 0) {
+            let pnlPercent = (parseFloat(position.unrealized_pnl || 0) / margin) * 100;
+            pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
+        }
+
+        
         document.getElementById('position-detail-stats').innerHTML = `
             <div class="position-detail-banner" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; margin-top: 10px; border-left: 4px solid ${isBuy ? 'var(--accent)' : 'var(--danger)'};">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px;">
@@ -792,9 +812,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="pos-detail-label">SL Price</span>
                         <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
                     </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Value</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${posValueStr}</span>
+                    </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Trailing Price</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${trailingPriceStr}</span>
+                    </div>
                     <div class="pos-detail-item" style="border-left: 1px solid var(--border-color); padding-left: 20px; min-width: max-content;">
                         <span class="pos-detail-label">Unrealized PnL</span>
-                        <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">${formatPnl(position.unrealized_pnl)}</div>
+                        <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
+                            ${formatPnl(position.unrealized_pnl)} 
+                            <span style="font-size: 14px; font-weight: 600; color: ${parseFloat(position.unrealized_pnl) >= 0 ? 'var(--accent)' : 'var(--danger)'}; margin-left: 4px;">(${pnlPercentStr})</span>
+                        </div>
                     </div>
                 </div>
             </div>
