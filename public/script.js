@@ -536,6 +536,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pnlUpdateEl) pnlUpdateEl.textContent = data.lastClosedPnlUpdate ? new Date(data.lastClosedPnlUpdate).toLocaleString() : 'Never';
                 const dynUpdateEl = document.getElementById('last-update-dynamic-thresholds');
                 if (dynUpdateEl) dynUpdateEl.textContent = data.lastDynamicThresholdsUpdate ? new Date(data.lastDynamicThresholdsUpdate).toLocaleString() : 'Never';
+                
+                // If detail page is active, auto-update the stats
+                const detailPage = document.getElementById('position-detail-page');
+                if (detailPage && detailPage.classList.contains('active')) {
+                    const activeSymbol = document.getElementById('detail-symbol-name').textContent;
+                    if (activeSymbol && typeof renderPositionStats === 'function') {
+                        renderPositionStats(activeSymbol);
+                    }
+                }
             });
     }
 
@@ -756,6 +765,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('detail-symbol-name').textContent = symbol;
         
+        renderPositionStats(symbol);
+
+        let exchangeInput = document.getElementById('TRADE_EXCHANGE');
+        let exchangeName = exchangeInput ? exchangeInput.value.toUpperCase() : 'BINANCE';
+        
+        let cleanSymbol = symbol;
+        if (symbol.includes('/')) {
+            cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
+        }
+        let tvSymbol = `${exchangeName}:${cleanSymbol}.P`;
+
+        if (currentTvWidget) {
+            currentTvWidget.remove();
+            currentTvWidget = null;
+        }
+
+        currentTvWidget = new TradingView.widget({
+            "autosize": true,
+            "symbol": tvSymbol,
+            "interval": "15",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "8",
+            "locale": "en",
+            "enable_publishing": false,
+            "backgroundColor": "rgba(0, 0, 0, 1)",
+            "hide_top_toolbar": false,
+            "hide_legend": false,
+            "save_image": false,
+            "container_id": "tv_chart_container",
+            "studies": [
+                "RSI@tv-basicstudies",
+                "DM@tv-basicstudies"
+            ]
+        });
+    };
+
+    window.renderPositionStats = function(symbol) {
+        const position = currentPositionsList.find(p => p.symbol === symbol);
+        if (!position) return;
+        
         const sideStr = (position.side || '').toLowerCase();
         const isBuy = sideStr === 'buy' || sideStr === 'long';
         const sideClz = isBuy ? 'buy' : 'sell';
@@ -779,7 +829,6 @@ document.addEventListener('DOMContentLoaded', () => {
             pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
         }
 
-        
         document.getElementById('position-detail-stats').innerHTML = `
             <div class="position-detail-banner" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; margin-top: 10px; border-left: 4px solid ${isBuy ? 'var(--accent)' : 'var(--danger)'};">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px;">
@@ -834,40 +883,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-
-        let exchangeInput = document.getElementById('TRADE_EXCHANGE');
-        let exchangeName = exchangeInput ? exchangeInput.value.toUpperCase() : 'BINANCE';
-        
-        let cleanSymbol = symbol;
-        if (symbol.includes('/')) {
-            cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
-        }
-        let tvSymbol = `${exchangeName}:${cleanSymbol}.P`;
-
-        if (currentTvWidget) {
-            currentTvWidget.remove();
-            currentTvWidget = null;
-        }
-
-        currentTvWidget = new TradingView.widget({
-            "autosize": true,
-            "symbol": tvSymbol,
-            "interval": "15",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "8",
-            "locale": "en",
-            "enable_publishing": false,
-            "backgroundColor": "rgba(0, 0, 0, 1)",
-            "hide_top_toolbar": false,
-            "hide_legend": false,
-            "save_image": false,
-            "container_id": "tv_chart_container",
-            "studies": [
-                "RSI@tv-basicstudies",
-                "DM@tv-basicstudies"
-            ]
-        });
     };
 
     window.closePositionDetail = function() {
