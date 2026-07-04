@@ -820,6 +820,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="pos-detail-label">Trailing Price</span>
                         <span class="pos-detail-value" style="font-size: 18px;">${trailingPriceStr}</span>
                     </div>
+                    <div class="pos-detail-item">
+                        <span class="pos-detail-label">Last Update</span>
+                        <span class="pos-detail-value" style="font-size: 16px;">${position.updated_at ? new Date(position.updated_at).toLocaleTimeString() : 'Unknown'}</span>
+                    </div>
                     <div class="pos-detail-item" style="border-left: 1px solid var(--border-color); padding-left: 20px; min-width: max-content;">
                         <span class="pos-detail-label">Unrealized PnL</span>
                         <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
