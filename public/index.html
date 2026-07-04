@@ -1559,14 +1559,14 @@
 
             <!-- Position Detail Page -->
             <section id="position-detail-page" class="page">
-                <header class="page-header">
-                    <button class="btn btn-secondary" onclick="closePositionDetail()" style="margin-right: 15px;">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align: text-bottom;">
+                <header class="page-header" style="display: flex; align-items: center; gap: 15px;">
+                    <button class="btn btn-secondary" onclick="closePositionDetail()" style="width: auto; padding: 6px 12px; margin: 0; flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                         Back
                     </button>
-                    <h2>Position Detail: <span id="detail-symbol-name"></span></h2>
+                    <h2 style="margin: 0; padding: 0;">Position Detail: <span id="detail-symbol-name"></span></h2>
                 </header>
                 <div class="page-section">
                     <div class="card chart-container" style="min-height: 500px; padding: 0; overflow: hidden; position: relative;">
