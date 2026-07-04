@@ -1506,6 +1506,9 @@ class TradingBot {
                                 logger.info(`DMI Condition: DMI (${dmiResult.adx.toFixed(2)}) is not ${conditionMsg}. No trade signal.`);
                             }
                             decisionRecord.dmi = { value: dmiResult.adx, plusDI: dmiResult.plusDI, minusDI: dmiResult.minusDI, threshold: threshold, signal: dmiSide, timeframe: cfg.DMI_TIMEFRAME };
+                            if (cfg.DMI_THRESHOLD_DIR === 'range') {
+                                decisionRecord.dmi.upperThreshold = parseFloat(cfg.DMI_THRESHOLD_UPPER) || 30;
+                            }
                         }
                     } else {
                         logger.info(`Not enough klines fetched for DMI calculation for ${symbol}.`);
