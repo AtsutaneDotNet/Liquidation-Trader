@@ -177,6 +177,24 @@ class WebServer {
             res.json(db.getPositions() || []);
         });
 
+        this.app.post('/api/positions/refresh', async (req, res) => {
+            if (!this.bot.isRunning || !this.bot.tradeExchange || !this.bot.tradeExchange.exchange) {
+                return res.json({ success: false, message: 'Bot is not running or exchange not initialized.' });
+            }
+            try {
+                if (this.bot.tradeExchange.exchange.has['fetchPositions']) {
+                    const apiPositions = await this.bot.tradeExchange.exchange.fetchPositions();
+                    await this.bot.onPositionUpdate(apiPositions);
+                    res.json({ success: true, message: 'Positions refreshed.' });
+                } else {
+                    res.json({ success: false, message: 'Exchange does not support fetchPositions.' });
+                }
+            } catch (err) {
+                logger.error('Failed to manually refresh positions:', err);
+                res.status(500).json({ success: false, message: 'Error refreshing positions.' });
+            }
+        });
+
         this.app.get('/api/liquidations', (req, res) => {
             const db = require('./db');
             res.json(db.getLiquidations(200) || []); // Fetch up to 200 liquidations for the UI
