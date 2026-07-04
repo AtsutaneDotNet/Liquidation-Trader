@@ -170,6 +170,7 @@ const defaults = {
     DMI_PDI_SIGNAL: 'sell',
     DMI_MDI_SIGNAL: 'buy',
     DMI_BYPASS_ON_POSITION: 'false',
+    CB_BYPASS_ON_POSITION: 'false',
     FG_FEAR_SIGNAL: 'buy',
     FG_GREED_SIGNAL: 'sell',
     FG_EXTREME_FEAR_SIGNAL: 'none',

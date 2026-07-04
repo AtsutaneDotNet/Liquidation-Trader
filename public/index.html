@@ -1560,16 +1560,20 @@
             <!-- Position Detail Page -->
             <section id="position-detail-page" class="page">
                 <header class="page-header" style="display: flex; align-items: center; gap: 15px;">
-                    <button class="btn btn-secondary" onclick="closePositionDetail()" style="width: auto; padding: 6px 12px; margin: 0; flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1;">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    <button class="btn btn-secondary" onclick="closePositionDetail()"
+                        style="width: auto; padding: 6px 12px; margin: 0; flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            style="margin-right: 6px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
                         </svg>
                         Back
                     </button>
                     <h2 style="margin: 0; padding: 0;">Position Detail: <span id="detail-symbol-name"></span></h2>
                 </header>
                 <div class="page-section">
-                    <div class="card chart-container" style="min-height: 500px; padding: 0; overflow: hidden; position: relative;">
+                    <div class="card chart-container"
+                        style="min-height: 500px; padding: 0; overflow: hidden; position: relative;">
                         <div id="tv_chart_container" style="width: 100%; height: 500px;"></div>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 2rem; align-items: start;">
@@ -1577,9 +1581,14 @@
                         <div style="flex: 1 1 0%; min-width: 300px;">
                             <h3 style="margin: 0; display: flex; justify-content: space-between; align-items: center;">
                                 Position Stats
-                                <button id="refresh-positions-btn" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px; border-radius: 4px; font-weight: 500; min-width: 110px; width: 110px; max-width: 110px; text-align: center; flex-shrink: 0; display: inline-flex; justify-content: center; align-items: center; white-space: nowrap; box-sizing: border-box;" onclick="refreshPositions()">
-                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                <button id="refresh-positions-btn" class="btn btn-primary"
+                                    style="padding: 4px 10px; font-size: 12px; border-radius: 4px; font-weight: 500; min-width: 110px; width: 110px; max-width: 110px; text-align: center; flex-shrink: 0; display: inline-flex; justify-content: center; align-items: center; white-space: nowrap; box-sizing: border-box;"
+                                    onclick="refreshPositions()">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        style="margin-right: 4px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
                                     </svg>
                                     Refresh
                                 </button>
@@ -1592,9 +1601,13 @@
                         <!-- Right column: Trading Center -->
                         <div class="trading-center-col" style="flex: 0 1 300px; min-width: 250px;">
                             <h3 style="margin: 0;">Trading Center</h3>
-                            <div class="card" style="margin-top: 1rem; padding: 20px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius);">
-                                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Quickly manage and exit your active position.</p>
-                                <button id="close-position-btn" class="btn btn-danger" style="width: 100%; padding: 12px; font-weight: bold; font-size: 14px;" onclick="closePositionMarket()">
+                            <div class="card"
+                                style="margin-top: 1rem; padding: 20px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius);">
+                                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Quickly
+                                    manage and exit your active position.</p>
+                                <button id="close-position-btn" class="btn btn-danger"
+                                    style="width: 100%; padding: 12px; font-weight: bold; font-size: 14px;"
+                                    onclick="closePositionMarket()">
                                     Close Position (Market)
                                 </button>
                             </div>
@@ -1832,6 +1845,20 @@
                 </button>
             </header>
             <div class="modal-body form-container" style="max-height: 70vh; overflow-y: auto; padding-right: 0.5rem;">
+
+                <div class="page-subsection">
+                    <h4>Circuit Breaker Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Bypass if Open Position</label>
+                            <select id="CB_BYPASS_ON_POSITION" class="styled-select">
+                                <option value="false">NO (Default)</option>
+                                <option value="true">YES</option>
+                                <option value="conditional">YES if % pnl &lt;= runaway helper threshold</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="page-subsection">
                     <h4>VWAP Strategy</h4>

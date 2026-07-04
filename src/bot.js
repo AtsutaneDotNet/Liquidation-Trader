@@ -1195,8 +1195,30 @@ class TradingBot {
             }
 
             // --- 1.5. Volatility-Based Circuit Breaker Strategy ---
-            if (cbEnabled && !openPosition && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
-                try {
+            if (cbEnabled && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                let cbShouldBypass = false;
+                let cbBypassReason = '';
+
+                if (cfg.CB_BYPASS_ON_POSITION === 'true' && openPosition) {
+                    cbShouldBypass = true;
+                    cbBypassReason = 'YES';
+                } else if (cfg.CB_BYPASS_ON_POSITION === 'conditional' && openPosition) {
+                    const runawayEnabled = cfg.ENABLE_RUNAWAY_HELPER === 'true';
+                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const pnlPercent = parseFloat(openPosition.percentage);
+                    
+                    if (runawayEnabled && !isNaN(pnlPercent)) {
+                        if (pnlPercent <= runawayThreshold) {
+                            cbShouldBypass = true;
+                            cbBypassReason = `Conditional (PNL% ${pnlPercent.toFixed(2)}% <= ${runawayThreshold}%)`;
+                        }
+                    }
+                }
+
+                if (cbShouldBypass) {
+                    logger.info(`Bypassing Circuit Breaker strategy because there is an open ${openPosition.side.toUpperCase()} position on ${symbol}. [Reason: ${cbBypassReason}]`);
+                } else {
+                    try {
                     let klines = sharedKlines;
                     const cbTimeframe = cfg.CB_TIMEFRAME || '15m';
                     
@@ -1239,6 +1261,7 @@ class TradingBot {
                 } catch (e) {
                     logger.error(`Error evaluating Circuit Breaker: ${e.message}`);
                 }
+            }
             }
 
             // --- 2. VWAP Strategy ---

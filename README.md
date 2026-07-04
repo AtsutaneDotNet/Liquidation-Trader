@@ -160,6 +160,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `CB_PRICE_LOOKBACK` | Number of candles to look back for price movement. | `5` |
 | `CB_VOLUME_PERIOD` | Number of candles for Volume SMA calculation. | `20` |
 | `CB_VOLUME_MULTIPLIER` | Volume spike multiplier threshold compared to SMA. | `2.0` |
+| `CB_BYPASS_ON_POSITION` | Bypass the circuit breaker condition if there is an open position (`false`, `true`, `conditional`). | `false` |
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
 | `VWAP_TYPE` | Type of VWAP strategy: `rolling` or `session`. | `rolling` |
 | `VWAP_SESSION_TYPE` | Time anchor for session VWAP: `daily`, `weekly`, `monthly`. | `daily` |

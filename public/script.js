@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add Advance Strategy Settings manually since they are outside the form
         const advInputs = [
-            'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL',
+            'VWAP_UPPER_SIGNAL', 'VWAP_LOWER_SIGNAL', 'CB_BYPASS_ON_POSITION',
             'RSI_OVERBOUGHT_DIR', 'RSI_OVERSOLD_DIR',
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL', 'RSI_BYPASS_ON_POSITION',
             'DMI_THRESHOLD_DIR', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
@@ -2282,6 +2282,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const defaults = {
                     VWAP_UPPER_SIGNAL: 'sell',
                     VWAP_LOWER_SIGNAL: 'buy',
+                    CB_BYPASS_ON_POSITION: 'false',
                     RSI_OVERBOUGHT_DIR: 'above',
                     RSI_OVERSOLD_DIR: 'under',
                     RSI_OVERBOUGHT_SIGNAL: 'sell',

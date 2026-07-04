@@ -59,6 +59,7 @@ function getConfig() {
         COIN_BLACKLIST: dbConfig.COIN_BLACKLIST || '',
         VWAP_UPPER_SIGNAL: dbConfig.VWAP_UPPER_SIGNAL || 'sell',
         VWAP_LOWER_SIGNAL: dbConfig.VWAP_LOWER_SIGNAL || 'buy',
+        CB_BYPASS_ON_POSITION: dbConfig.CB_BYPASS_ON_POSITION || 'false',
         RSI_OVERBOUGHT_DIR: dbConfig.RSI_OVERBOUGHT_DIR || 'above',
         RSI_OVERBOUGHT_SIGNAL: dbConfig.RSI_OVERBOUGHT_SIGNAL || 'sell',
         RSI_OVERSOLD_DIR: dbConfig.RSI_OVERSOLD_DIR || 'under',
