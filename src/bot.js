@@ -1717,6 +1717,45 @@ class TradingBot {
             this.handleError(`Error executing trade for ${symbol}: ${error.message}`);
         }
     }
+    async closePositionBySymbol(symbol) {
+        if (!this.isRunning || !this.tradeExchange || !this.tradeExchange.exchange) {
+            throw new Error('Bot is not running or exchange not configured.');
+        }
+        
+        const position = db.getPositions().find(p => p.symbol === symbol);
+        if (!position) {
+            throw new Error(`Position ${symbol} not found in database.`);
+        }
+        
+        const closeSide = (position.side || '').toLowerCase() === 'buy' || (position.side || '').toLowerCase() === 'long' ? 'sell' : 'buy';
+        const contracts = parseFloat(position.size);
+        
+        if (!contracts || contracts <= 0) {
+            throw new Error('Invalid position size');
+        }
+
+        logger.info(`Manual close requested for ${symbol} via API.`);
+        
+        // Market close with reduceOnly
+        const order = await this.tradeExchange.exchange.createOrder(
+            symbol,
+            'market',
+            closeSide,
+            contracts,
+            undefined,
+            { reduceOnly: true }
+        );
+        
+        logger.info(`Manual close executed for ${symbol}: ${JSON.stringify(order.id || order)}`);
+        
+        // Trigger positions update
+        if (this.tradeExchange.exchange.has['fetchPositions']) {
+            const apiPositions = await this.tradeExchange.exchange.fetchPositions();
+            await this.onPositionUpdate(apiPositions);
+        }
+        
+        return order;
+    }
 }
 
 module.exports = TradingBot;

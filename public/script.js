@@ -929,6 +929,49 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     };
 
+    window.closePositionMarket = function() {
+        const symbol = document.getElementById('detail-symbol-name').textContent;
+        if (!symbol) return;
+        
+        if (!confirm(`Are you sure you want to CLOSE ${symbol} at MARKET price?`)) {
+            return;
+        }
+        
+        const btn = document.getElementById('close-position-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = 'Closing...';
+        }
+        
+        fetch('/api/positions/close', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbol })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast({ title: 'Position Closed', message: data.message, type: 'success' });
+                closePositionDetail();
+                fetchAccountData();
+            } else {
+                showToast({ title: 'Error', message: data.message || 'Failed to close position.', type: 'error' });
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Close Position (Market)';
+                }
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast({ title: 'Error', message: 'Network error closing position.', type: 'error' });
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'Close Position (Market)';
+            }
+        });
+    };
+
     function formatUsd(val) {
         return formatSelectedCurrency(val);
     }

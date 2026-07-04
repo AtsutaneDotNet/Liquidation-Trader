@@ -195,6 +195,27 @@ class WebServer {
             }
         });
 
+        this.app.post('/api/positions/close', async (req, res) => {
+            const { symbol } = req.body;
+            if (!symbol) {
+                return res.status(400).json({ success: false, message: 'Symbol is required.' });
+            }
+            try {
+                if (!this.bot.isRunning) {
+                    return res.json({ success: false, message: 'Bot is not running.' });
+                }
+                if (typeof this.bot.closePositionBySymbol === 'function') {
+                    await this.bot.closePositionBySymbol(symbol);
+                    res.json({ success: true, message: `Position ${symbol} successfully closed.` });
+                } else {
+                    res.json({ success: false, message: 'Bot does not support closePositionBySymbol.' });
+                }
+            } catch (err) {
+                logger.error(`Failed to manually close position ${symbol}:`, err);
+                res.status(500).json({ success: false, message: `Error closing position: ${err.message}` });
+            }
+        });
+
         this.app.get('/api/liquidations', (req, res) => {
             const db = require('./db');
             res.json(db.getLiquidations(200) || []); // Fetch up to 200 liquidations for the UI
