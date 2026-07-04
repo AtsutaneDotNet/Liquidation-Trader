@@ -761,40 +761,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const sideClz = isBuy ? 'buy' : 'sell';
         
         document.getElementById('position-detail-stats').innerHTML = `
-            <div class="position-card ${isBuy ? 'pos-card-buy' : 'pos-card-sell'}">
-                <div class="pos-header">
-                    <div class="pos-symbol">${position.symbol}</div>
-                    <div class="pos-side ${sideClz}">${(position.side || 'UNKNOWN').toUpperCase()}</div>
+            <div class="position-detail-banner" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; margin-top: 10px; border-left: 4px solid ${isBuy ? 'var(--accent)' : 'var(--danger)'};">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px;">
+                    <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;">${position.symbol}</div>
+                    <div class="pos-side ${sideClz}" style="font-size: 14px; padding: 6px 14px;">${(position.side || 'UNKNOWN').toUpperCase()}</div>
                 </div>
-                <div class="pos-details">
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 24px;">
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">Size</span>
-                        <span class="pos-detail-value">${position.size}</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${position.size}</span>
                     </div>
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">Entry Price</span>
-                        <span class="pos-detail-value">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
                     </div>
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">Mark Price</span>
-                        <span class="pos-detail-value">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
                     </div>
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">Liq. Price</span>
-                        <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
+                        <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
                     </div>
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">TP Price</span>
-                        <span class="pos-detail-value" style="color: var(--accent)">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
+                        <span class="pos-detail-value" style="color: var(--accent); font-size: 18px;">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
                     </div>
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">SL Price</span>
-                        <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
+                        <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
                     </div>
-                </div>
-                <div class="pos-pnl">
-                    <span class="pos-pnl-label">Unrealized PnL</span>
-                    <span class="pos-pnl-value">${formatPnl(position.unrealized_pnl)}</span>
+                    <div class="pos-detail-item" style="border-left: 1px solid var(--border-color); padding-left: 20px; min-width: max-content;">
+                        <span class="pos-detail-label">Unrealized PnL</span>
+                        <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">${formatPnl(position.unrealized_pnl)}</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -806,7 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (symbol.includes('/')) {
             cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
         }
-        let tvSymbol = `${exchangeName}:${cleanSymbol}`;
+        let tvSymbol = `${exchangeName}:${cleanSymbol}.P`;
 
         if (currentTvWidget) {
             currentTvWidget.remove();
