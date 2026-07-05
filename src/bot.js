@@ -1496,19 +1496,30 @@ class TradingBot {
                             }
 
                             if (isDmiConditionMet) {
-                                if (dmiResult.plusDI > dmiResult.minusDI) {
-                                    dmiSide = cfg.DMI_PDI_SIGNAL === 'none' ? null : cfg.DMI_PDI_SIGNAL;
-                                    logger.info(`DMI Condition met: DMI ${conditionMsg} and +DI > -DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
-                                } else if (dmiResult.minusDI > dmiResult.plusDI) {
-                                    dmiSide = cfg.DMI_MDI_SIGNAL === 'none' ? null : cfg.DMI_MDI_SIGNAL;
-                                    logger.info(`DMI Condition met: DMI ${conditionMsg} and -DI > +DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
-                                } else {
-                                    logger.info(`DMI Condition: Value met threshold but DIs are equal. No trade signal.`);
+                                let isSpreadConditionMet = true;
+                                const diSpread = Math.abs(dmiResult.plusDI - dmiResult.minusDI);
+                                if (cfg.DMI_SPREAD_THRESHOLD !== null && !isNaN(cfg.DMI_SPREAD_THRESHOLD)) {
+                                    if (diSpread > cfg.DMI_SPREAD_THRESHOLD) {
+                                        isSpreadConditionMet = false;
+                                        logger.info(`DMI Condition: DI Spread (${diSpread.toFixed(2)}) is greater than threshold (${cfg.DMI_SPREAD_THRESHOLD}). No trade signal.`);
+                                    }
+                                }
+
+                                if (isSpreadConditionMet) {
+                                    if (dmiResult.plusDI > dmiResult.minusDI) {
+                                        dmiSide = cfg.DMI_PDI_SIGNAL === 'none' ? null : cfg.DMI_PDI_SIGNAL;
+                                        logger.info(`DMI Condition met: DMI ${conditionMsg}, DI Spread (${diSpread.toFixed(2)}) <= ${cfg.DMI_SPREAD_THRESHOLD || 'N/A'}, and +DI > -DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
+                                    } else if (dmiResult.minusDI > dmiResult.plusDI) {
+                                        dmiSide = cfg.DMI_MDI_SIGNAL === 'none' ? null : cfg.DMI_MDI_SIGNAL;
+                                        logger.info(`DMI Condition met: DMI ${conditionMsg}, DI Spread (${diSpread.toFixed(2)}) <= ${cfg.DMI_SPREAD_THRESHOLD || 'N/A'}, and -DI > +DI. Signal: ${dmiSide ? dmiSide.toUpperCase() : 'NONE'}.`);
+                                    } else {
+                                        logger.info(`DMI Condition: Value met threshold but DIs are equal. No trade signal.`);
+                                    }
                                 }
                             } else {
                                 logger.info(`DMI Condition: DMI (${dmiResult.adx.toFixed(2)}) is not ${conditionMsg}. No trade signal.`);
                             }
-                            decisionRecord.dmi = { value: dmiResult.adx, plusDI: dmiResult.plusDI, minusDI: dmiResult.minusDI, threshold: threshold, signal: dmiSide, timeframe: cfg.DMI_TIMEFRAME };
+                            decisionRecord.dmi = { value: dmiResult.adx, plusDI: dmiResult.plusDI, minusDI: dmiResult.minusDI, spread: Math.abs(dmiResult.plusDI - dmiResult.minusDI), spreadThreshold: cfg.DMI_SPREAD_THRESHOLD, threshold: threshold, signal: dmiSide, timeframe: cfg.DMI_TIMEFRAME };
                             if (cfg.DMI_THRESHOLD_DIR === 'range') {
                                 decisionRecord.dmi.upperThreshold = parseFloat(cfg.DMI_THRESHOLD_UPPER) || 30;
                             }

@@ -25,6 +25,7 @@ function getConfig() {
         DMI_PERIOD: parseInt(dbConfig.DMI_PERIOD) || 14,
         DMI_TIMEFRAME: dbConfig.DMI_TIMEFRAME || '1m',
         DMI_THRESHOLD: parseFloat(dbConfig.DMI_THRESHOLD) || 25,
+        DMI_SPREAD_THRESHOLD: dbConfig.DMI_SPREAD_THRESHOLD !== undefined && dbConfig.DMI_SPREAD_THRESHOLD !== '' ? parseFloat(dbConfig.DMI_SPREAD_THRESHOLD) : 10,
         TRADE_EXCHANGE: dbConfig.TRADE_EXCHANGE || 'bybit',
         LIQUIDATION_EXCHANGES: dbConfig.LIQUIDATION_EXCHANGES || 'bybit',
         LIQUIDATION_VALUE_CURRENCY: dbConfig.LIQUIDATION_VALUE_CURRENCY || 'USD',
