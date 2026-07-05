@@ -803,6 +803,65 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    let popupTvWidget = null;
+
+    window.openTvPopupModal = function(symbol) {
+        let exchangeInput = document.getElementById('TRADE_EXCHANGE');
+        let exchangeName = exchangeInput ? exchangeInput.value.toUpperCase() : 'BINANCE';
+        
+        let cleanSymbol = symbol;
+        if (symbol.includes('/')) {
+            cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
+        }
+        let tvSymbol = `${exchangeName}:${cleanSymbol}.P`;
+
+        document.getElementById('tvPopupModalSymbol').textContent = symbol;
+        document.getElementById('tvPopupModal').style.display = 'flex';
+
+        if (popupTvWidget) {
+            popupTvWidget.remove();
+            popupTvWidget = null;
+        }
+
+        popupTvWidget = new TradingView.widget({
+            "autosize": true,
+            "symbol": tvSymbol,
+            "interval": "15",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "8",
+            "locale": "en",
+            "enable_publishing": false,
+            "backgroundColor": "rgba(0, 0, 0, 1)",
+            "hide_top_toolbar": false,
+            "hide_legend": false,
+            "save_image": false,
+            "container_id": "tv_popup_chart_container",
+            "studies": [
+                "RSI@tv-basicstudies",
+                "DM@tv-basicstudies"
+            ]
+        });
+    };
+
+    document.getElementById('closeTvPopupModalBtn')?.addEventListener('click', () => {
+        document.getElementById('tvPopupModal').style.display = 'none';
+        if (popupTvWidget) {
+            popupTvWidget.remove();
+            popupTvWidget = null;
+        }
+    });
+
+    document.getElementById('tvPopupModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('tvPopupModal')) {
+            document.getElementById('tvPopupModal').style.display = 'none';
+            if (popupTvWidget) {
+                popupTvWidget.remove();
+                popupTvWidget = null;
+            }
+        }
+    });
+
     window.renderPositionStats = function(symbol) {
         const position = currentPositionsList.find(p => p.symbol === symbol);
         if (!position) return;
@@ -1460,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return `<tr>
             <td style="color: var(--text-muted);">${timeStr}</td>
-            <td><strong>${record.symbol}</strong></td>
+            <td style="cursor: pointer;" onclick="openTvPopupModal('${record.symbol}')"><strong style="color: var(--accent); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--accent)'">${record.symbol}</strong></td>
             <td>${priceFormatted}</td>
             <td>${formatStrategy(record.vwap, 'VWAP')}</td>
             <td>${formatStrategy(record.rsi, 'RSI')}</td>
