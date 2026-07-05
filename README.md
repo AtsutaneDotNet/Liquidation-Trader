@@ -183,7 +183,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `DMI_TIMEFRAME` | Timeframe for DMI calculation (e.g., `1m`, `5m`). | `1m` |
 | `DMI_PERIOD` | Number of candles for DMI calculation. | `14` |
 | `DMI_THRESHOLD` | DMI strength threshold. | `25` |
-| `DMI_THRESHOLD_DIR` | Condition for DMI threshold (`above`/`under`/`range`). | `under` |
+| `DMI_THRESHOLD_DIR` | Condition for DMI threshold (`above`/`under`/`range`/`none`). | `under` |
 | `DMI_THRESHOLD_UPPER` | Upper boundary for DMI range condition. | `30` |
 | `DMI_PDI_SIGNAL` | Signal direction when +DI crosses -DI (`sell`, `buy`, `none`). | `sell` |
 | `DMI_MDI_SIGNAL` | Signal direction when -DI crosses +DI (`buy`, `sell`, `none`). | `buy` |

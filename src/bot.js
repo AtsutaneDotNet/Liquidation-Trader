@@ -1480,7 +1480,10 @@ class TradingBot {
                             logger.info(`DMI (${period}, ${cfg.DMI_TIMEFRAME}): ${dmiResult.adx.toFixed(2)} | +DI: ${dmiResult.plusDI.toFixed(2)} | -DI: ${dmiResult.minusDI.toFixed(2)}`);
                             let isDmiConditionMet = false;
                             let conditionMsg = '';
-                            if (cfg.DMI_THRESHOLD_DIR === 'above') {
+                            if (cfg.DMI_THRESHOLD_DIR === 'none') {
+                                isDmiConditionMet = true;
+                                conditionMsg = `threshold checking disabled`;
+                            } else if (cfg.DMI_THRESHOLD_DIR === 'above') {
                                 isDmiConditionMet = (dmiResult.adx >= threshold);
                                 conditionMsg = `>= ${threshold}`;
                             } else if (cfg.DMI_THRESHOLD_DIR === 'under') {
