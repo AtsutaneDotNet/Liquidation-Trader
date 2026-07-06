@@ -1473,6 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const mDiStr = typeof strat.minusDI === 'number' ? strat.minusDI.toFixed(2) : 'N/A';
             const thresholdStr = strat.threshold !== undefined ? strat.threshold : 'N/A';
             const tfStr = strat.timeframe || 'N/A';
+            const spreadStr = typeof strat.spread === 'number' ? strat.spread.toFixed(2) : 'N/A';
 
             tooltipHTML = `
                 <div class="tooltip-header">DMI Strategy</div>
@@ -1482,6 +1483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tooltip-row"><span>+DI</span><span>${pDiStr}</span></div>
                     <div class="tooltip-row"><span>-DI</span><span>${mDiStr}</span></div>
                     <div class="tooltip-row"><span>Threshold</span><span>${thresholdStr}</span></div>
+                    <div class="tooltip-row"><span>Spread</span><span>${spreadStr}</span></div>
                     <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
                 </div>
             `;
