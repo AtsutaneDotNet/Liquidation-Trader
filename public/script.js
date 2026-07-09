@@ -48,14 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Interactive Tooltip Touch & Click Delegation Handler
     document.addEventListener('click', (e) => {
         const container = e.target.closest('.strategy-badge-container');
-        
+
         // Remove active class from all other containers
         document.querySelectorAll('.strategy-badge-container').forEach(el => {
             if (el !== container) {
                 el.classList.remove('active');
             }
         });
-        
+
         // Toggle active class on current container if clicked
         if (container) {
             container.classList.toggle('active');
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cur = localStorage.getItem('selectedCurrency') || 'USD';
         const converted = convertFromUsd(val);
         const symbol = currencySymbols[cur] || '$';
-        
+
         if (cur === 'BTC') {
             return symbol + parseFloat(converted).toFixed(6);
         } else if (cur === 'JPY') {
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentBtcPrice > 0) {
             exchangeRates.BTC = 1 / currentBtcPrice;
         }
-        
+
         // Re-trigger visual updates instantly on currency change or rate updates
         fetchAccountData();
         fetchLiquidations();
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         marketSentimentValue.style.color = 'var(--text-muted)';
                     }
                 }
-                
+
                 // Auto Transfer Status
                 const lastCheckEl = document.getElementById('auto-transfer-last-check');
                 if (lastCheckEl) {
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pnlUpdateEl) pnlUpdateEl.textContent = data.lastClosedPnlUpdate ? new Date(data.lastClosedPnlUpdate).toLocaleString() : 'Never';
                 const dynUpdateEl = document.getElementById('last-update-dynamic-thresholds');
                 if (dynUpdateEl) dynUpdateEl.textContent = data.lastDynamicThresholdsUpdate ? new Date(data.lastDynamicThresholdsUpdate).toLocaleString() : 'Never';
-                
+
                 // Stats auto-updating moved to fetchAccountData
             });
     }
@@ -587,35 +587,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderLogs() {
         if (!logTerminal) return;
-        
+
         let filtered = cachedLogs;
-        
+
         // 1. Filter by Level
         if (logsLevelFilter !== 'all') {
             filtered = filtered.filter(l => l.type === logsLevelFilter);
         }
-        
+
         // 2. Filter by Search Query
         if (logsSearchQuery) {
             const query = logsSearchQuery.toLowerCase();
-            filtered = filtered.filter(l => 
-                (l.msg && l.msg.toLowerCase().includes(query)) || 
+            filtered = filtered.filter(l =>
+                (l.msg && l.msg.toLowerCase().includes(query)) ||
                 (l.time && l.time.toLowerCase().includes(query)) ||
                 (l.type && l.type.toLowerCase().includes(query))
             );
         }
-        
+
         if (filtered.length === 0) {
             logTerminal.innerHTML = `<div class="empty-terminal-msg">&mdash; No matching logs found &mdash;</div>`;
             return;
         }
-        
+
         logTerminal.innerHTML = filtered.map(l => {
             const badgeClass = `badge-${l.type}`;
             const textClass = `log-${l.type}`;
             return `<div class="log-row"><span class="log-time">[${l.time}]</span><span class="log-badge ${badgeClass}">${l.type.toUpperCase()}</span><span class="${textClass}">${l.msg}</span></div>`;
         }).join('');
-        
+
         // Auto-scroll
         if (isAutoScrollEnabled) {
             logTerminal.scrollTop = logTerminal.scrollHeight;
@@ -629,9 +629,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/logs')
             .then(res => res.json())
             .then(logs => {
-                const logsChanged = logs.length !== cachedLogs.length || 
+                const logsChanged = logs.length !== cachedLogs.length ||
                     (logs.length > 0 && cachedLogs.length > 0 && logs[logs.length - 1].time !== cachedLogs[cachedLogs.length - 1].time);
-                
+
                 if (logsChanged) {
                     const isAtBottom = logTerminal.scrollHeight - logTerminal.clientHeight <= logTerminal.scrollTop + 50;
                     if (!isAtBottom && cachedLogs.length > 0) {
@@ -702,12 +702,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     return;
                 }
-                
+
                 const logText = cachedLogs.map(l => `[${l.time}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
                 const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                
+
                 const timestampStr = new Date().toISOString().slice(0, 19).replace(/T|:/g, '-');
                 a.href = url;
                 a.download = `liquidation_trader_logs_${timestampStr}.txt`;
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                
+
                 showToast({
                     title: 'Export Successful',
                     message: 'Logs downloaded successfully.',
@@ -756,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPositionsList = [];
     let currentTvWidget = null;
 
-    window.openPositionDetail = function(symbol) {
+    window.openPositionDetail = function (symbol) {
         const position = currentPositionsList.find(p => p.symbol === symbol);
         if (!position) return;
 
@@ -765,12 +765,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('position-detail-page').classList.add('active');
 
         document.getElementById('detail-symbol-name').textContent = symbol;
-        
+
         renderPositionStats(symbol);
 
         let exchangeInput = document.getElementById('TRADE_EXCHANGE');
         let exchangeName = exchangeInput ? exchangeInput.value.toUpperCase() : 'BINANCE';
-        
+
         let cleanSymbol = symbol;
         if (symbol.includes('/')) {
             cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
@@ -805,10 +805,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let popupTvWidget = null;
 
-    window.openTvPopupModal = function(symbol) {
+    window.openTvPopupModal = function (symbol) {
         let exchangeInput = document.getElementById('TRADE_EXCHANGE');
         let exchangeName = exchangeInput ? exchangeInput.value.toUpperCase() : 'BINANCE';
-        
+
         let cleanSymbol = symbol;
         if (symbol.includes('/')) {
             cleanSymbol = symbol.split('/')[0] + symbol.split('/')[1].split(':')[0];
@@ -862,14 +862,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.renderPositionStats = function(symbol) {
+    window.renderPositionStats = function (symbol) {
         const position = currentPositionsList.find(p => p.symbol === symbol);
         if (!position) return;
-        
+
         const sideStr = (position.side || '').toLowerCase();
         const isBuy = sideStr === 'buy' || sideStr === 'long';
         const sideClz = isBuy ? 'buy' : 'sell';
-        
+
         let posValue = (parseFloat(position.size || 0) * parseFloat(position.entry_price || 0));
         let posValueStr = posValue > 0 ? posValue.toFixed(4) : '0.0000';
 
@@ -883,6 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
         let margin = posValue / leverage;
+        let marginStr = margin > 0 ? margin.toFixed(4) : '0.0000';
         let pnlPercentStr = '0.00%';
         if (margin > 0) {
             let pnlPercent = (parseFloat(position.unrealized_pnl || 0) / margin) * 100;
@@ -922,12 +923,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
                     </div>
                     <div class="pos-detail-item">
+                        <span class="pos-detail-label">Trailing Price</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${trailingPriceStr}</span>
+                    </div>
+                    <div class="pos-detail-item">
                         <span class="pos-detail-label">Value</span>
                         <span class="pos-detail-value" style="font-size: 18px;">${posValueStr}</span>
                     </div>
                     <div class="pos-detail-item">
-                        <span class="pos-detail-label">Trailing Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${trailingPriceStr}</span>
+                        <span class="pos-detail-label">Margin</span>
+                        <span class="pos-detail-value" style="font-size: 18px;">${marginStr}</span>
                     </div>
                     <div class="pos-detail-item">
                         <span class="pos-detail-label">Last Update</span>
@@ -945,27 +950,27 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    window.closePositionDetail = function() {
+    window.closePositionDetail = function () {
         document.getElementById('position-detail-page').classList.remove('active');
         document.getElementById('positions').classList.add('active');
-        
+
         if (currentTvWidget) {
             currentTvWidget.remove();
             currentTvWidget = null;
         }
     };
 
-    window.refreshPositions = function() {
+    window.refreshPositions = function () {
         const btn = document.getElementById('refresh-positions-btn');
         if (!btn || btn.disabled) return;
-        
+
         btn.disabled = true;
         const originalText = btn.innerHTML;
         btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px; animation: spin 1s linear infinite;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
                         Refreshing...`;
-        
+
         fetch('/api/positions/refresh', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
@@ -996,47 +1001,47 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     };
 
-    window.closePositionMarket = function() {
+    window.closePositionMarket = function () {
         const symbol = document.getElementById('detail-symbol-name').textContent;
         if (!symbol) return;
-        
+
         if (!confirm(`Are you sure you want to CLOSE ${symbol} at MARKET price?`)) {
             return;
         }
-        
+
         const btn = document.getElementById('close-position-btn');
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = 'Closing...';
         }
-        
+
         fetch('/api/positions/close', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symbol })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                showToast({ title: 'Position Closed', message: data.message, type: 'success' });
-                closePositionDetail();
-                fetchAccountData();
-            } else {
-                showToast({ title: 'Error', message: data.message || 'Failed to close position.', type: 'error' });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast({ title: 'Position Closed', message: data.message, type: 'success' });
+                    closePositionDetail();
+                    fetchAccountData();
+                } else {
+                    showToast({ title: 'Error', message: data.message || 'Failed to close position.', type: 'error' });
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Close Position (Market)';
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast({ title: 'Error', message: 'Network error closing position.', type: 'error' });
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = 'Close Position (Market)';
                 }
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            showToast({ title: 'Error', message: 'Network error closing position.', type: 'error' });
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = 'Close Position (Market)';
-            }
-        });
+            });
     };
 
     function formatUsd(val) {
@@ -1047,11 +1052,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const cur = localStorage.getItem('selectedCurrency') || 'USD';
         const numUsd = parseFloat(val || 0);
         const converted = convertFromUsd(numUsd);
-        
+
         const sign = converted > 0 ? '+' : '';
         const clz = numUsd >= 0 ? 'pnl-positive' : 'pnl-negative';
         const symbol = currencySymbols[cur] || '$';
-        
+
         let formattedVal = '';
         if (cur === 'BTC') {
             formattedVal = parseFloat(converted).toFixed(6);
@@ -1060,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             formattedVal = parseFloat(converted).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
-        
+
         return `<span class="${clz}">${sign}${symbol}${formattedVal}</span>`;
     }
 
@@ -1140,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>`;
                     }).join('');
                 }
-                
+
                 // If detail page is active, auto-update the stats
                 const detailPage = document.getElementById('position-detail-page');
                 if (detailPage && detailPage.classList.contains('active')) {
@@ -1950,7 +1955,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        
+
         const marginCtx = document.getElementById('marginHistoryChart');
         if (marginCtx) {
             marginHistoryChart = new Chart(marginCtx, {
@@ -1968,7 +1973,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
             });
         }
-        
+
         const pnlSideCtx = document.getElementById('pnlSideChart');
         if (pnlSideCtx) {
             pnlSideChart = new Chart(pnlSideCtx, {
@@ -1977,7 +1982,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
             });
         }
-        
+
         const pnlWinRateCtx = document.getElementById('pnlWinRateChart');
         if (pnlWinRateCtx) {
             pnlWinRateChart = new Chart(pnlWinRateCtx, {
@@ -1998,12 +2003,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const matched = data.liquidations || 0;
                 const total = data.totalLiquidations || 0;
                 const percent = total > 0 ? ((matched / total) * 100).toFixed(2) : '0.00';
-                
+
                 document.getElementById('stats-liquidations-count').innerText = `${matched} / ${total}`;
-                
+
                 const percentEl = document.getElementById('stats-liquidations-percent');
                 if (percentEl) percentEl.innerText = `${percent}%`;
-                
+
                 if (tradesChartInst && data.trades) {
                     const buy = data.trades['BUY'] || 0;
                     const sell = data.trades['SELL'] || 0;
@@ -2012,12 +2017,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('stats-trades-buy').innerText = buy;
                     document.getElementById('stats-trades-sell').innerText = sell;
                 }
-                
+
                 if (strategiesChartInst && data.strategies) {
                     const strats = Object.keys(data.strategies);
                     const buys = strats.map(s => data.strategies[s]['BUY'] || 0);
                     const sells = strats.map(s => data.strategies[s]['SELL'] || 0);
-                    
+
                     strategiesChartInst.data.labels = strats;
                     strategiesChartInst.data.datasets[0].data = buys;
                     strategiesChartInst.data.datasets[1].data = sells;
@@ -2037,13 +2042,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.marginHistory && marginHistoryChart) {
                     const maxMargin = data.marginHistory.reduce((max, h) => Math.max(max, h.margin_percent), 0);
                     document.getElementById('stats-highest-margin').innerText = maxMargin.toFixed(2) + '%';
-                    
+
                     let points = data.marginHistory;
                     if (points.length > 100) {
                         const step = Math.ceil(points.length / 100);
                         points = points.filter((_, i) => i % step === 0);
                     }
-                    marginHistoryChart.data.labels = points.map(h => new Date(h.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+                    marginHistoryChart.data.labels = points.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                     marginHistoryChart.data.datasets[0].data = points.map(h => h.margin_percent.toFixed(2));
                     marginHistoryChart.update();
                 }
@@ -2059,17 +2064,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.closedPnls) {
                     let symMap = {};
-                    let buyPosCount = 0; 
-                    let sellPosCount = 0; 
+                    let buyPosCount = 0;
+                    let sellPosCount = 0;
                     let buyPosWin = 0;
                     let sellPosWin = 0;
 
                     for (let pnl of data.closedPnls) {
                         symMap[pnl.symbol] = (symMap[pnl.symbol] || 0) + pnl.pnl;
-                        if (pnl.side === 'SELL') { 
+                        if (pnl.side === 'SELL') {
                             buyPosCount++;
                             if (pnl.pnl > 0) buyPosWin++;
-                        } else if (pnl.side === 'BUY') { 
+                        } else if (pnl.side === 'BUY') {
                             sellPosCount++;
                             if (pnl.pnl > 0) sellPosWin++;
                         }
@@ -2082,7 +2087,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const bgColors = syms.map((s, i) => `hsl(${(i * 360 / syms.length)}, 70%, 50%)`);
                         pnlSymbolChart.data.datasets[0].backgroundColor = bgColors;
                         pnlSymbolChart.update();
-                        
+
                         const legendDiv = document.getElementById('pnl-symbol-legend');
                         if (legendDiv) {
                             legendDiv.innerHTML = syms.map((s, i) => `
@@ -2094,7 +2099,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pnlSideChart) {
                         pnlSideChart.data.datasets[0].data = [buyPosCount, sellPosCount];
                         pnlSideChart.update();
-                        
+
                         document.getElementById('stats-pnl-buy-count').innerText = buyPosCount;
                         document.getElementById('stats-pnl-sell-count').innerText = sellPosCount;
                     }
@@ -2104,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const sellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
                         pnlWinRateChart.data.datasets[0].data = [buyWinRate, sellWinRate];
                         pnlWinRateChart.update();
-                        
+
                         document.getElementById('stats-pnl-buy-win').innerText = buyWinRate.toFixed(2) + '%';
                         document.getElementById('stats-pnl-sell-win').innerText = sellWinRate.toFixed(2) + '%';
                     }
@@ -2125,7 +2130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currencySelect) {
         // Load initial currency selection from local storage
         currencySelect.value = localStorage.getItem('selectedCurrency') || 'USD';
-        
+
         currencySelect.addEventListener('change', (e) => {
             localStorage.setItem('selectedCurrency', e.target.value);
             console.log('Active currency updated to:', e.target.value);
@@ -2197,16 +2202,16 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = (evt) => {
                 try {
                     const importedConfig = JSON.parse(evt.target.result);
-                    
+
                     const excludedKeys = [
-                        'API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 
-                        'RAPIDAPI_KEY', 'CMC_API_KEY', 'WEBUI_AUTH_ENABLED', 
+                        'API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD',
+                        'RAPIDAPI_KEY', 'CMC_API_KEY', 'WEBUI_AUTH_ENABLED',
                         'LOG_LEVEL', 'WEB_PORT', 'WEB_HOST'
                     ];
                     for (const key of excludedKeys) {
                         delete importedConfig[key];
                     }
-                    
+
                     fetch('/api/config', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
