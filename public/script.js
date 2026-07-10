@@ -1153,6 +1153,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     cumulativePnl = data.reduce((sum, p) => sum + (parseFloat(p.unrealized_pnl) || 0), 0);
                 }
                 
+                const summaryBar = document.getElementById('positions-summary-bar');
+                if (summaryBar) {
+                    summaryBar.style.display = currentPositionsCount > 1 ? 'flex' : 'none';
+                }
+
                 const elSummaryCount = document.getElementById('summary-current-positions');
                 const elSummaryPnl = document.getElementById('summary-cumulative-pnl');
                 
