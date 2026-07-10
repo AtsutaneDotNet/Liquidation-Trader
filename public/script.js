@@ -1146,6 +1146,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).join('');
                 }
 
+                let currentPositionsCount = 0;
+                let cumulativePnl = 0;
+                if (data && data.length > 0) {
+                    currentPositionsCount = data.length;
+                    cumulativePnl = data.reduce((sum, p) => sum + (parseFloat(p.unrealized_pnl) || 0), 0);
+                }
+                
+                const elSummaryCount = document.getElementById('summary-current-positions');
+                const elSummaryPnl = document.getElementById('summary-cumulative-pnl');
+                
+                if (elSummaryCount) elSummaryCount.textContent = currentPositionsCount;
+                if (elSummaryPnl) {
+                    const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                    const convertedPnl = convertFromUsd(cumulativePnl);
+                    const pnlText = (convertedPnl > 0 ? '+' : '') + convertedPnl.toFixed(2) + ' ' + cur;
+                    elSummaryPnl.textContent = pnlText;
+                    elSummaryPnl.style.color = convertedPnl >= 0 ? 'var(--accent)' : 'var(--danger)';
+                }
+
                 // If detail page is active, auto-update the stats
                 const detailPage = document.getElementById('position-detail-page');
                 if (detailPage && detailPage.classList.contains('active')) {
