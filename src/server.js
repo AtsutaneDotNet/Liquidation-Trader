@@ -188,6 +188,9 @@ class WebServer {
         });
 
         this.app.post('/api/positions/refresh', async (req, res) => {
+            if (config.get().ENABLE_PAPER_TRADING) {
+                return res.json({ success: true, message: 'Paper positions are updated locally.' });
+            }
             if (!this.bot.isRunning || !this.bot.tradeExchange || !this.bot.tradeExchange.exchange) {
                 return res.json({ success: false, message: 'Bot is not running or exchange not initialized.' });
             }
