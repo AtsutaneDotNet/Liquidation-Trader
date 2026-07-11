@@ -1872,6 +1872,15 @@ class TradingBot {
 
             let totalWalletUSDT = 0;
             if (cfg.ENABLE_PAPER_TRADING) {
+                try {
+                    const ticker = await this.tradeExchange.exchange.fetchTicker(symbol);
+                    if (ticker && ticker.last) {
+                        entryPrice = ticker.last;
+                        logger.info(`[PAPER TRADING] Fetched latest market price for ${symbol}: ${entryPrice}`);
+                    }
+                } catch (e) {
+                    logger.warn(`[PAPER TRADING] Failed to fetch latest price for ${symbol}, falling back to provided entryPrice: ${e.message}`);
+                }
                 const paperState = db.getPaperAccountState();
                 totalWalletUSDT = paperState ? paperState.total_value : 0;
             } else {
