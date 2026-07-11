@@ -421,6 +421,22 @@ class TradingBot {
                     unrealized_pnl: pnl
                 });
 
+                // Runaway Helper Logic for Paper Trading
+                if (cfg.ENABLE_RUNAWAY_HELPER) {
+                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                    if (pos.size > 0 && pos.entry_price > 0) {
+                        const margin = (pos.size * pos.entry_price) / leverage;
+                        if (margin > 0) {
+                            const pnlPercent = (pnl / margin) * 100;
+                            if (pnlPercent < runawayThreshold) {
+                                logger.info(`[PAPER TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
+                                this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
+                            }
+                        }
+                    }
+                }
+
                 // Update account state to reflect unrealized PnL
                 const state = db.getPaperAccountState();
                 if (state) {
