@@ -36,6 +36,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 
 ## ✨ Key Features
 
+- **Full-Featured Paper Trading Engine**: Test strategies securely without risking real capital! The paper engine accurately simulates live trading logic including local Take-Profit, Stop-Loss, Trailing Stops, real-time market entries, Runaway Helper rescues, and true Realized/Unrealized PnL wallet balance isolation.
 - **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, and **OKX** using the unified **CCXT Pro** engine.
 - **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events. Includes a dynamic minimum safeguard configuration (`REPLACE_BELOW_MIN_THRESHOLD`).
 - **Advanced Strategies**:
@@ -149,6 +150,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 ### Trading Strategy
 | Variable | Description | Default |
 | :--- | :--- | :--- |
+| `ENABLE_PAPER_TRADING` | Toggle virtual Paper Trading mode. Simulates trades, TP/SL, and PnL locally without real capital. | `false` |
 | `TRADE_EXCHANGE` | Exchange used for executing trades (`bybit`, `binance`, `okx`, etc.). | `bybit` |
 | `LIQUIDATION_EXCHANGES` | Exchanges to monitor for liquidation signals (comma-separated). | `bybit,binance` |
 | `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
