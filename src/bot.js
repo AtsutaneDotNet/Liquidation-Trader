@@ -168,20 +168,39 @@ class TradingBot {
 
             // Initial Balance Fetch
             try {
-                const initialBalance = await this.tradeExchange.fetchBalance();
-                const parsedData = this.tradeExchange.parseBalanceData(initialBalance);
-                if (parsedData) {
-                    this.onBalanceUpdate(parsedData);
-                    logger.info(`Initial account balance fetched: $${parsedData.total_value}`);
+                if (cfg.ENABLE_PAPER_TRADING) {
+                    const paperState = db.getPaperAccountState();
+                    if (!paperState || paperState.total_value === 0) {
+                        const initialBalance = parseFloat(cfg.PAPER_TRADING_BALANCE) || 10000;
+                        db.updatePaperAccountState({ total_value: initialBalance, margin_available: initialBalance });
+                    }
+                    this.onBalanceUpdate(db.getPaperAccountState());
+                    logger.info(`Initial paper account balance loaded: $${db.getPaperAccountState().total_value}`);
+                } else {
+                    const initialBalance = await this.tradeExchange.fetchBalance();
+                    const parsedData = this.tradeExchange.parseBalanceData(initialBalance);
+                    if (parsedData) {
+                        this.onBalanceUpdate(parsedData);
+                        logger.info(`Initial account balance fetched: $${parsedData.total_value}`);
+                    }
                 }
             } catch (balanceError) {
                 logger.warn(`Could not fetch initial balance via REST: ${balanceError.message}`);
             }
 
             // Kickoff Private Account Streams on Trade Exchange
-            this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
-            this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
-            this.tradeExchange.watchPrivateTrades(this.onTradeUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
+            if (cfg.ENABLE_PAPER_TRADING) {
+                logger.info('Paper Trading Mode ENABLED. Bypassing real exchange private streams.');
+                this.activePaperWebsockets = {};
+                const activePaperPos = db.getPaperPositions();
+                for (const pos of activePaperPos) {
+                    this.startPaperWatchOHLCV(pos.symbol);
+                }
+            } else {
+                this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
+                this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
+                this.tradeExchange.watchPrivateTrades(this.onTradeUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
+            }
 
             // Kickoff Public Liquidation Stream on all Liq Exchanges using unified symbols
             for (const [exName, exInstance] of Object.entries(this.liqExchanges)) {
@@ -253,6 +272,7 @@ class TradingBot {
 
     async checkAndRemoveStalePositions() {
         if (!this.isRunning) return;
+        if (this.config.get().ENABLE_PAPER_TRADING) return;
 
         const stalePositions = db.getStalePositions(60000);
         if (!stalePositions || stalePositions.length === 0) return;
@@ -301,6 +321,139 @@ class TradingBot {
         } catch (e) {
             logger.error(`Error checking stale positions: ${e.message}`);
         }
+    }
+
+    startPaperWatchOHLCV(symbol) {
+        if (this.activePaperWebsockets && this.activePaperWebsockets[symbol]) return; // Already running
+        
+        logger.info(`[PAPER TRADING] Starting 1m OHLCV stream for ${symbol} to track virtual position...`);
+        this.activePaperWebsockets = this.activePaperWebsockets || {};
+        this.activePaperWebsockets[symbol] = true;
+
+        this.tradeExchange.watchOHLCV(
+            symbol, 
+            '1m', 
+            (ohlcv) => {
+                const candle = Array.isArray(ohlcv) ? ohlcv[0] : ohlcv;
+                if (!candle || !candle.length) return;
+                
+                const closePrice = candle[4];
+                
+                const positions = db.getPaperPositions();
+                const pos = positions.find(p => p.symbol === symbol);
+                if (!pos) {
+                    // Position was closed, stop the stream
+                    delete this.activePaperWebsockets[symbol];
+                    logger.info(`[PAPER TRADING] Position for ${symbol} closed. Stopping OHLCV stream.`);
+                    return; // Should break the loop if isRunningCheck fails, but CCXT doesn't allow returning false easily from callback to break loop. We use a function for isRunningCheck.
+                }
+
+                const direction = pos.side.toLowerCase() === 'long' || pos.side.toLowerCase() === 'buy' ? 1 : -1;
+                const highPrice = candle[2];
+                const lowPrice = candle[3];
+
+                const cfg = this.config.get();
+                let slHitPrice = null;
+                let tpHitPrice = null;
+                let newSlPrice = pos.sl_price;
+
+                if (direction === 1) { // LONG
+                    if (pos.sl_price > 0 && lowPrice <= pos.sl_price) slHitPrice = pos.sl_price;
+                    else if (pos.tp_price > 0 && highPrice >= pos.tp_price) tpHitPrice = pos.tp_price;
+                } else { // SHORT
+                    if (pos.sl_price > 0 && highPrice >= pos.sl_price) slHitPrice = pos.sl_price;
+                    else if (pos.tp_price > 0 && lowPrice <= pos.tp_price) tpHitPrice = pos.tp_price;
+                }
+
+                if (slHitPrice) {
+                    logger.info(`[PAPER TRADING] Stop Loss hit for ${symbol} at ${slHitPrice}`);
+                    this.closePositionBySymbol(symbol, slHitPrice).catch(e => logger.error(e));
+                    return;
+                } else if (tpHitPrice) {
+                    logger.info(`[PAPER TRADING] Take Profit hit for ${symbol} at ${tpHitPrice}`);
+                    this.closePositionBySymbol(symbol, tpHitPrice).catch(e => logger.error(e));
+                    return;
+                }
+
+                // Trailing Stop Logic
+                if (cfg.ENABLE_TRAILING_PROFIT) {
+                    let trailingPct = (parseFloat(cfg.TRAILING_PROFIT_PERCENTAGE) || 1) / 100;
+                    let actPct = (parseFloat(cfg.TRAILING_ACTIVATION_PERCENTAGE) || 1) / 100;
+                    
+                    if (cfg.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION) {
+                        const accState = db.getPaperAccountState() || {};
+                        const usedMarginPercent = accState.total_value > 0 ? (accState.margin_used / accState.total_value) * 100 : 0;
+                        const threshold = parseFloat(cfg.ISOLATION_MARGIN_THRESHOLD) || 10;
+                        if (cfg.ENABLE_ISOLATION_MODE && usedMarginPercent >= threshold) {
+                            trailingPct /= 2;
+                            actPct /= 2;
+                        }
+                    }
+
+                    if (direction === 1) {
+                        const activationPrice = pos.entry_price * (1 + actPct);
+                        if (highPrice >= activationPrice) {
+                            const potentialSl = highPrice * (1 - trailingPct);
+                            if (potentialSl > newSlPrice) {
+                                newSlPrice = potentialSl;
+                                logger.info(`[PAPER TRADING] Trailing Stop updated for ${symbol} to ${potentialSl}`);
+                            }
+                        }
+                    } else {
+                        const activationPrice = pos.entry_price * (1 - actPct);
+                        if (lowPrice <= activationPrice) {
+                            const potentialSl = lowPrice * (1 + trailingPct);
+                            if (potentialSl < newSlPrice || newSlPrice === 0) {
+                                newSlPrice = potentialSl;
+                                logger.info(`[PAPER TRADING] Trailing Stop updated for ${symbol} to ${potentialSl}`);
+                            }
+                        }
+                    }
+                }
+
+                // Simple PnL calculation: (current_price - entry_price) * size * direction
+                const pnl = (closePrice - pos.entry_price) * pos.size * direction;
+                
+                db.updatePaperPosition({
+                    ...pos,
+                    mark_price: closePrice,
+                    sl_price: newSlPrice,
+                    unrealized_pnl: pnl
+                });
+
+                // Update account state to reflect unrealized PnL
+                const state = db.getPaperAccountState();
+                if (state) {
+                    const cfg = this.config.get();
+                    const positions = db.getPaperPositions();
+                    const aggregated = db.calculatePaperAggregatedPnl();
+                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                    const initialBalance = parseFloat(cfg.PAPER_TRADING_BALANCE) || 10000;
+                    
+                    let marginUsed = 0;
+                    for (const p of positions) {
+                        marginUsed += (p.size * p.entry_price) / leverage;
+                    }
+                    
+                    const walletBalance = initialBalance + (aggregated.total_pnl || 0);
+                    const totalValue = walletBalance; // Mimic exchange: only track realized PnL in wallet value
+                    const marginAvailable = Math.max(0, totalValue - marginUsed);
+
+                    db.updatePaperAccountState({
+                        total_value: totalValue,
+                        margin_used: marginUsed,
+                        margin_available: marginAvailable,
+                        daily_pnl: aggregated.daily_pnl || 0,
+                        weekly_pnl: aggregated.weekly_pnl || 0,
+                        monthly_pnl: aggregated.monthly_pnl || 0,
+                        yearly_pnl: aggregated.yearly_pnl || 0,
+                        total_pnl: aggregated.total_pnl || 0
+                    });
+                }
+            }, 
+            () => this.isRunning && this.activePaperWebsockets[symbol], 
+            (err) => logger.warn(`[PAPER TRADING] OHLCV Error for ${symbol}: ${err}`)
+        );
     }
 
     onBalanceUpdate(data) {
@@ -658,20 +811,49 @@ class TradingBot {
     async updatePnL() {
         if (!this.isRunning) return;
         try {
-            const closedPnls = await this.tradeExchange.fetchClosedPnls();
-            this.lastClosedPnlUpdate = new Date().toISOString();
-            if (closedPnls && closedPnls.length > 0) {
-                for (const pnl of closedPnls) {
-                    db.addClosedPnl(pnl);
+            const cfg = this.config.get();
+            if (cfg.ENABLE_PAPER_TRADING) {
+                const aggregated = db.calculatePaperAggregatedPnl();
+                const positions = db.getPaperPositions();
+                const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                const initialBalance = parseFloat(cfg.PAPER_TRADING_BALANCE) || 10000;
+                
+                let marginUsed = 0;
+                for (const p of positions) {
+                    marginUsed += (p.size * p.entry_price) / leverage;
                 }
+                
+                const walletBalance = initialBalance + (aggregated.total_pnl || 0);
+                const totalValue = walletBalance; // Mimic exchange: only track realized PnL in wallet value
+                const marginAvailable = Math.max(0, totalValue - marginUsed);
+
+                db.updatePaperAccountState({
+                    total_value: totalValue,
+                    margin_used: marginUsed,
+                    margin_available: marginAvailable,
+                    daily_pnl: aggregated.daily_pnl || 0,
+                    weekly_pnl: aggregated.weekly_pnl || 0,
+                    monthly_pnl: aggregated.monthly_pnl || 0,
+                    yearly_pnl: aggregated.yearly_pnl || 0,
+                    total_pnl: aggregated.total_pnl || 0
+                });
+                logger.debug(`[PAPER TRADING] Aggregated PnL updated. Daily: $${(aggregated.daily_pnl || 0).toFixed(2)}`);
+            } else {
+                const closedPnls = await this.tradeExchange.fetchClosedPnls();
+                this.lastClosedPnlUpdate = new Date().toISOString();
+                if (closedPnls && closedPnls.length > 0) {
+                    for (const pnl of closedPnls) {
+                        db.addClosedPnl(pnl);
+                    }
+                }
+
+                const aggregated = db.calculateAggregatedPnl();
+                db.updateAccountState(aggregated);
+                logger.debug(`Aggregated PnL updated. Daily: $${aggregated.daily_pnl.toFixed(2)}`);
+
+                // Execute automatic internal transfer (take profit) check
+                await this.checkAutoTransfer();
             }
-
-            const aggregated = db.calculateAggregatedPnl();
-            db.updateAccountState(aggregated);
-            logger.debug(`Aggregated PnL updated. Daily: $${aggregated.daily_pnl.toFixed(2)}`);
-
-            // Execute automatic internal transfer (take profit) check
-            await this.checkAutoTransfer();
         } catch (e) {
             logger.error(`Failed to update PnL loop: ${e.message}`);
         }
@@ -1153,7 +1335,7 @@ class TradingBot {
         }
 
         try {
-            const positions = db.getPositions();
+            const positions = cfg.ENABLE_PAPER_TRADING ? db.getPaperPositions() : db.getPositions();
             const openPosition = positions.find(p => p.symbol === symbol);
 
             let vwapSide = null;
@@ -1167,9 +1349,9 @@ class TradingBot {
             const vwapEnabled = cfg.ENABLE_VWAP_STRATEGY;
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
             const dmiEnabled = cfg.ENABLE_DMI_STRATEGY;
+            let activeTimeframes = [];
 
             if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
-                const activeTimeframes = [];
                 if (cbEnabled) activeTimeframes.push(cfg.CB_TIMEFRAME || '15m');
                 if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
                 if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
@@ -1688,8 +1870,14 @@ class TradingBot {
                 return;
             }
 
-            const balance = await this.tradeExchange.fetchBalance();
-            const totalWalletUSDT = balance.USDT ? balance.USDT.total : 0;
+            let totalWalletUSDT = 0;
+            if (cfg.ENABLE_PAPER_TRADING) {
+                const paperState = db.getPaperAccountState();
+                totalWalletUSDT = paperState ? paperState.total_value : 0;
+            } else {
+                const balance = await this.tradeExchange.fetchBalance();
+                totalWalletUSDT = balance.USDT ? balance.USDT.total : 0;
+            }
 
             if (totalWalletUSDT <= 0) {
                 logger.info('Insufficient total wallet balance to trade.');
@@ -1700,7 +1888,7 @@ class TradingBot {
             let amountInToken = tradeValue / entryPrice;
 
             if (cfg.ENABLE_DCA_MARTINGALE) {
-                const positions = db.getPositions();
+                const positions = cfg.ENABLE_PAPER_TRADING ? db.getPaperPositions() : db.getPositions();
                 const position = positions.find(p => p.symbol === symbol);
                 let multiplier = 1;
 
@@ -1736,13 +1924,63 @@ class TradingBot {
 
             await this.tradeExchange.setLeverage(cfg.TRADE_LEVERAGE, symbol);
 
-            logger.info(`Executing naked ${side.toUpperCase()} Market order for ${amountInToken} ${symbol}...`);
-            const order = await this.tradeExchange.exchange.createOrder(
-                symbol,
-                'market',
-                side,
-                amountInToken
-            );
+            let order;
+            if (cfg.ENABLE_PAPER_TRADING) {
+                logger.info(`[PAPER TRADING] Executing naked ${side.toUpperCase()} Market order for ${amountInToken} ${symbol}...`);
+                order = { id: `paper-${Date.now()}`, average: entryPrice, price: entryPrice };
+                let tpPercent = parseFloat(cfg.TAKE_PROFIT_PERCENTAGE) || 1;
+                let slPercent = parseFloat(cfg.STOP_LOSS_PERCENTAGE) || 1;
+                
+                if (cfg.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION) {
+                    const accState = db.getPaperAccountState() || {};
+                    const usedMarginPercent = accState.total_value > 0 ? (accState.margin_used / accState.total_value) * 100 : 0;
+                    const threshold = parseFloat(cfg.ISOLATION_MARGIN_THRESHOLD) || 10;
+                    if (cfg.ENABLE_ISOLATION_MODE && usedMarginPercent >= threshold) {
+                        tpPercent /= 2;
+                    }
+                }
+                
+                let targetTpPrice = 0;
+                let targetSlPrice = 0;
+                if (side.toLowerCase() === 'buy' || side.toLowerCase() === 'long') {
+                    targetTpPrice = entryPrice * (1 + tpPercent / 100);
+                    targetSlPrice = entryPrice * (1 - slPercent / 100);
+                } else {
+                    targetTpPrice = entryPrice * (1 - tpPercent / 100);
+                    targetSlPrice = entryPrice * (1 + slPercent / 100);
+                }
+
+                db.updatePaperPosition({
+                    symbol,
+                    side,
+                    size: amountInToken,
+                    entry_price: entryPrice,
+                    mark_price: entryPrice,
+                    liq_price: 0,
+                    tp_price: targetTpPrice,
+                    sl_price: targetSlPrice,
+                    unrealized_pnl: 0
+                });
+                
+                const state = db.getPaperAccountState();
+                if (state) {
+                    const marginRequired = (amountInToken * entryPrice) / parseFloat(cfg.TRADE_LEVERAGE);
+                    db.updatePaperAccountState({
+                        margin_available: Math.max(0, state.margin_available - marginRequired),
+                        margin_used: state.margin_used + marginRequired
+                    });
+                }
+                
+                this.startPaperWatchOHLCV(symbol);
+            } else {
+                logger.info(`Executing naked ${side.toUpperCase()} Market order for ${amountInToken} ${symbol}...`);
+                order = await this.tradeExchange.exchange.createOrder(
+                    symbol,
+                    'market',
+                    side,
+                    amountInToken
+                );
+            }
 
             logger.info(`Trade successfully executed! Order ID: ${order.id}`);
             db.logBotEvent({ event_type: 'TRADE_EXECUTE', symbol: symbol, side: side });
@@ -1770,9 +2008,55 @@ class TradingBot {
             this.handleError(`Error executing trade for ${symbol}: ${error.message}`);
         }
     }
-    async closePositionBySymbol(symbol) {
+    async closePositionBySymbol(symbol, overrideClosePrice = null) {
         if (!this.isRunning || !this.tradeExchange || !this.tradeExchange.exchange) {
             throw new Error('Bot is not running or exchange not configured.');
+        }
+
+        const cfg = this.config.get();
+        if (cfg.ENABLE_PAPER_TRADING) {
+            const position = db.getPaperPositions().find(p => p.symbol === symbol);
+            if (!position) throw new Error(`Position ${symbol} not found in database.`);
+            
+            logger.info(`[PAPER TRADING] Manual/Auto close requested for ${symbol}. Closing virtual position...`);
+            
+            // Calculate final PNL based on override mark price or existing mark price
+            const closePrice = overrideClosePrice !== null ? overrideClosePrice : position.mark_price;
+            const direction = position.side.toLowerCase() === 'long' || position.side.toLowerCase() === 'buy' ? 1 : -1;
+            const pnl = (closePrice - position.entry_price) * position.size * direction;
+            
+            // Log closed PNL
+            db.addPaperClosedPnl({
+                id: `paper-close-${Date.now()}`,
+                symbol: position.symbol,
+                side: position.side,
+                size: position.size,
+                entry_price: position.entry_price,
+                close_price: closePrice,
+                pnl: pnl,
+                timestamp: Date.now()
+            });
+            
+            // Update paper balance
+            const state = db.getPaperAccountState();
+            if (state) {
+                const marginRequired = (position.size * position.entry_price) / parseFloat(cfg.TRADE_LEVERAGE);
+                db.updatePaperAccountState({
+                    ...state,
+                    total_value: state.total_value + pnl,
+                    margin_used: Math.max(0, state.margin_used - marginRequired),
+                    margin_available: state.margin_available + marginRequired + pnl
+                });
+            }
+            
+            // Remove paper position and stop stream
+            db.removePaperPosition(symbol);
+            if (this.activePaperWebsockets && this.activePaperWebsockets[symbol]) {
+                delete this.activePaperWebsockets[symbol];
+            }
+            
+            logger.info(`[PAPER TRADING] Position ${symbol} closed with PnL of $${pnl.toFixed(2)}.`);
+            return;
         }
         
         const position = db.getPositions().find(p => p.symbol === symbol);

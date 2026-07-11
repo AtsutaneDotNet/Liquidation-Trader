@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -146,6 +146,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'flex';
                 }
 
+                // Toggle Paper Trading row on load
+                const paperEnableEl = document.getElementById('ENABLE_PAPER_TRADING');
+                if (paperEnableEl) {
+                    const row = document.getElementById('paperTradingBalanceRow');
+                    if (row) row.style.display = paperEnableEl.checked ? 'flex' : 'none';
+                }
+
                 // Toggle CB fields on load
                 const cbEnableEl = document.getElementById('ENABLE_CIRCUIT_BREAKER');
                 if (cbEnableEl) {
@@ -169,6 +176,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dmiEnableEl) {
                     const row = document.getElementById('dmiSettingsRow');
                     if (row) row.style.display = dmiEnableEl.checked ? 'block' : 'none';
+                }
+
+                // Update Trading Mode Badge
+                const modeBadge = document.getElementById('trading-mode-badge');
+                if (modeBadge) {
+                    const isPaper = data['ENABLE_PAPER_TRADING'] === true || data['ENABLE_PAPER_TRADING'] === 'true';
+                    if (isPaper) {
+                        modeBadge.textContent = 'PAPER';
+                        modeBadge.className = 'mode-badge mode-paper';
+                    } else {
+                        modeBadge.textContent = 'LIVE';
+                        modeBadge.className = 'mode-badge mode-live';
+                    }
+                    modeBadge.style.display = 'inline-block';
                 }
             })
             .catch(console.error);
@@ -216,6 +237,14 @@ document.addEventListener('DOMContentLoaded', () => {
         dmiEnableEl.addEventListener('change', (e) => {
             const row = document.getElementById('dmiSettingsRow');
             if (row) row.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const paperTradingCb = document.getElementById('ENABLE_PAPER_TRADING');
+    if (paperTradingCb) {
+        paperTradingCb.addEventListener('change', (e) => {
+            const row = document.getElementById('paperTradingBalanceRow');
+            if (row) row.style.display = e.target.checked ? 'flex' : 'none';
         });
     }
 
@@ -282,6 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const anonCb = document.getElementById('ENABLE_ANON_REPORTING');
         if (anonCb) formData.set('ENABLE_ANON_REPORTING', anonCb.checked ? 'true' : 'false');
+
+        const paperCb = document.getElementById('ENABLE_PAPER_TRADING');
+        if (paperCb) formData.set('ENABLE_PAPER_TRADING', paperCb.checked ? 'true' : 'false');
 
         const isVwapChecked = vwapCb && vwapCb.checked;
         const isRsiChecked = rsiCb && rsiCb.checked;
@@ -1351,7 +1383,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             tbodyClosedPnl.innerHTML = filtered.map(record => {
                 const timeStr = new Date(record.timestamp).toLocaleString();
-                const sideClz = record.side === 'BUY' ? 'side-buy' : (record.side === 'SELL' ? 'side-sell' : '');
+                const sideStr = (record.side || '').toUpperCase();
+                const sideClz = sideStr === 'BUY' || sideStr === 'LONG' ? 'side-buy' : (sideStr === 'SELL' || sideStr === 'SHORT' ? 'side-sell' : '');
                 const entryStr = record.entry_price ? parseFloat(record.entry_price).toFixed(4) : 'N/A';
                 const closeStr = record.close_price ? parseFloat(record.close_price).toFixed(4) : 'N/A';
                 const sizeStr = record.size ? record.size : 'N/A';
@@ -1359,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<tr>
                     <td style="color: var(--text-muted);">${timeStr}</td>
                     <td><strong>${record.symbol}</strong></td>
-                    <td><span class="${sideClz}">${record.side}</span></td>
+                    <td><span class="${sideClz}">${(record.side || '').toUpperCase()}</span></td>
                     <td>${sizeStr}</td>
                     <td>${entryStr}</td>
                     <td>${closeStr}</td>

@@ -27,6 +27,8 @@ function getConfig() {
         DMI_THRESHOLD: parseFloat(dbConfig.DMI_THRESHOLD) || 25,
         DMI_SPREAD_THRESHOLD: dbConfig.DMI_SPREAD_THRESHOLD !== undefined && dbConfig.DMI_SPREAD_THRESHOLD !== '' ? parseFloat(dbConfig.DMI_SPREAD_THRESHOLD) : 10,
         TRADE_EXCHANGE: dbConfig.TRADE_EXCHANGE || 'bybit',
+        ENABLE_PAPER_TRADING: dbConfig.ENABLE_PAPER_TRADING === 'true',
+        PAPER_TRADING_BALANCE: parseFloat(dbConfig.PAPER_TRADING_BALANCE) || 10000,
         LIQUIDATION_EXCHANGES: dbConfig.LIQUIDATION_EXCHANGES || 'bybit',
         LIQUIDATION_VALUE_CURRENCY: dbConfig.LIQUIDATION_VALUE_CURRENCY || 'USD',
         LIQUIDATION_VALUE_THRESHOLD: parseFloat(dbConfig.LIQUIDATION_VALUE_THRESHOLD) || 1000,

@@ -197,6 +197,30 @@ header {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.mode-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 12px;
+    vertical-align: middle;
+}
+.mode-badge.mode-live {
+    background: rgba(255, 59, 59, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(255, 59, 59, 0.2);
+}
+.mode-badge.mode-paper {
+    background: rgba(255, 171, 0, 0.1);
+    color: #ffab00;
+    border: 1px solid rgba(255, 171, 0, 0.2);
 }
 
 .currency-switcher-container {

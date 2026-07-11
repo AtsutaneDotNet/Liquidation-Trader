@@ -145,6 +145,25 @@ class OkxExchange extends BaseExchange {
         }
     }
 
+    async watchOHLCV(symbol, timeframe, callback, isRunningCheck, errorCallback) {
+        if (!this.exchange.has['watchOHLCV']) {
+            logger.info('[OKX] CCXT watchOHLCV not available. Paper Trading WS disabled.');
+            return;
+        }
+        while (isRunningCheck()) {
+            try {
+                const ohlcv = await this.exchange.watchOHLCV(symbol, timeframe);
+                if (!isRunningCheck()) break;
+                callback(ohlcv);
+            } catch (e) {
+                if (isRunningCheck()) {
+                    if (errorCallback) errorCallback(`[OKX] [OHLCV Stream] ${e.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+    }
+
     async fetchClosedPnls() {
         try {
             // OKX PNL is tricky, fetchIncome or fetchMyTrades might be needed
