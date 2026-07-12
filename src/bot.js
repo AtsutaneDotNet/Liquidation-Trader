@@ -1977,7 +1977,7 @@ class TradingBot {
 
                 db.updatePaperPosition({
                     symbol,
-                    side,
+                    side: side.toLowerCase() === 'buy' ? 'long' : 'short',
                     size: amountInToken,
                     entry_price: entryPrice,
                     mark_price: entryPrice,
