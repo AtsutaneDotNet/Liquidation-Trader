@@ -143,8 +143,9 @@ class WebServer {
         this.app.get('/api/status', (req, res) => {
             const db = require('./db');
             const currentConfig = config.get();
-            const positions = db.getPositions() || [];
-            const state = db.getAccountState() || {};
+            const isPaper = currentConfig.ENABLE_PAPER_TRADING;
+            const positions = isPaper ? (db.getPaperPositions() || []) : (db.getPositions() || []);
+            const state = isPaper ? (db.getPaperAccountState() || {}) : (db.getAccountState() || {});
             const usedMarginPercent = state.total_value > 0 ? (state.margin_used / state.total_value) * 100 : 0;
 
             res.json({
@@ -166,18 +167,30 @@ class WebServer {
             });
         });
 
-        // Account & Positions
         this.app.get('/api/account', (req, res) => {
             const db = require('./db');
-            res.json(db.getAccountState() || {});
+            const currentConfig = config.get();
+            if (currentConfig.ENABLE_PAPER_TRADING) {
+                res.json(db.getPaperAccountState() || {});
+            } else {
+                res.json(db.getAccountState() || {});
+            }
         });
 
         this.app.get('/api/positions', (req, res) => {
             const db = require('./db');
-            res.json(db.getPositions() || []);
+            const currentConfig = config.get();
+            if (currentConfig.ENABLE_PAPER_TRADING) {
+                res.json(db.getPaperPositions() || []);
+            } else {
+                res.json(db.getPositions() || []);
+            }
         });
 
         this.app.post('/api/positions/refresh', async (req, res) => {
+            if (config.get().ENABLE_PAPER_TRADING) {
+                return res.json({ success: true, message: 'Paper positions are updated locally.' });
+            }
             if (!this.bot.isRunning || !this.bot.tradeExchange || !this.bot.tradeExchange.exchange) {
                 return res.json({ success: false, message: 'Bot is not running or exchange not initialized.' });
             }
@@ -223,13 +236,23 @@ class WebServer {
 
         this.app.get('/api/closed-pnl', (req, res) => {
             const db = require('./db');
-            res.json(db.getClosedPnls(200) || []);
+            const currentConfig = config.get();
+            if (currentConfig.ENABLE_PAPER_TRADING) {
+                res.json(db.getPaperClosedPnls(200) || []);
+            } else {
+                res.json(db.getClosedPnls(200) || []);
+            }
         });
 
         this.app.get('/api/pnl/daily-history', (req, res) => {
             const db = require('./db');
+            const currentConfig = config.get();
             const days = parseInt(req.query.days) || 30;
-            res.json(db.getDailyPnLHistory(days) || []);
+            if (currentConfig.ENABLE_PAPER_TRADING) {
+                res.json(db.getPaperDailyPnLHistory(days) || []);
+            } else {
+                res.json(db.getDailyPnLHistory(days) || []);
+            }
         });
 
         this.app.get('/api/trade-decisions', (req, res) => {
@@ -309,9 +332,9 @@ class WebServer {
                 return res.json({ success: false, message: 'Bot is already running.' });
             }
             try {
-                // Ensure API keys exist
+                // Ensure API keys exist if not paper trading
                 const currentConfig = config.get();
-                if (!currentConfig.API_KEY || !currentConfig.API_SECRET) {
+                if (!currentConfig.ENABLE_PAPER_TRADING && (!currentConfig.API_KEY || !currentConfig.API_SECRET)) {
                     return res.json({ success: false, message: 'API Key and Secret must be configured for Trading.' });
                 }
 

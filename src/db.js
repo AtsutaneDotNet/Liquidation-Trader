@@ -77,6 +77,45 @@ db.exec(`
     value REAL,
     timestamp INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS paper_account_state (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    total_value REAL DEFAULT 0,
+    margin_used REAL DEFAULT 0,
+    margin_available REAL DEFAULT 0,
+    daily_pnl REAL DEFAULT 0,
+    weekly_pnl REAL DEFAULT 0,
+    monthly_pnl REAL DEFAULT 0,
+    yearly_pnl REAL DEFAULT 0,
+    total_pnl REAL DEFAULT 0,
+    updated_at INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS paper_positions (
+    symbol TEXT PRIMARY KEY,
+    side TEXT,
+    size REAL DEFAULT 0,
+    entry_price REAL DEFAULT 0,
+    mark_price REAL DEFAULT 0,
+    liq_price REAL DEFAULT 0,
+    tp_price REAL DEFAULT 0,
+    sl_price REAL DEFAULT 0,
+    unrealized_pnl REAL DEFAULT 0,
+    updated_at INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS paper_closed_pnl (
+    id TEXT PRIMARY KEY,
+    symbol TEXT,
+    side TEXT,
+    size REAL DEFAULT 0,
+    entry_price REAL DEFAULT 0,
+    close_price REAL DEFAULT 0,
+    pnl REAL DEFAULT 0,
+    timestamp INTEGER
+  );
+
+  INSERT OR IGNORE INTO paper_account_state (id) VALUES (1);
 `);
 
 // Add new columns dynamically if the table already existed
@@ -143,6 +182,8 @@ const defaults = {
     TRADE_LEVERAGE: '10',
     TRADE_AMOUNT_PERCENTAGE: '5',
     TRADE_EXCHANGE: 'bybit',
+    ENABLE_PAPER_TRADING: 'false',
+    PAPER_TRADING_BALANCE: '10000',
     LIQUIDATION_EXCHANGES: 'bybit',
     MAX_OPEN_POSITIONS: '3',
     CMC_API_KEY: '',
@@ -490,6 +531,22 @@ function getDailyPnLHistory(days = 30) {
     `).all(cutoffTimestamp);
 }
 
+function getPaperDailyPnLHistory(days = 30) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffTimestamp = cutoff.getTime();
+
+    return db.prepare(`
+        SELECT 
+            strftime('%Y-%m-%d', datetime(timestamp / 1000, 'unixepoch', 'localtime')) as date,
+            SUM(pnl) as daily_pnl
+        FROM paper_closed_pnl
+        WHERE timestamp >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    `).all(cutoffTimestamp);
+}
+
 function getPageStatistics(cutoffTimestamp) {
     const marginHistory = db.prepare('SELECT margin_percent, timestamp FROM margin_history WHERE timestamp >= ? ORDER BY timestamp ASC').all(cutoffTimestamp);
     const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
@@ -501,6 +558,76 @@ function getPageStatistics(cutoffTimestamp) {
         isolationModeCount,
         dynamicThresholds,
         closedPnls
+    };
+}
+
+function updatePaperAccountState(data) {
+    if (Object.keys(data).length === 0) return;
+    const keys = Object.keys(data).filter(k => k !== 'id');
+    const setClause = keys.map(k => `${k} = @${k}`).join(', ');
+    data.updated_at = Date.now();
+    data.id = 1;
+    db.prepare(`UPDATE paper_account_state SET ${setClause}, updated_at = @updated_at WHERE id = 1`).run(data);
+}
+
+function getPaperAccountState() {
+    return db.prepare('SELECT * FROM paper_account_state WHERE id = 1').get();
+}
+
+function updatePaperPosition(pos) {
+    pos.updated_at = Date.now();
+    db.prepare(`
+        INSERT INTO paper_positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, updated_at)
+        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
+        ON CONFLICT(symbol) DO UPDATE SET 
+            side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
+            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
+    `).run(pos);
+}
+
+function removePaperPosition(symbol) {
+    db.prepare('DELETE FROM paper_positions WHERE symbol = ?').run(symbol);
+}
+
+function getPaperPositions() {
+    return db.prepare('SELECT * FROM paper_positions ORDER BY updated_at DESC').all();
+}
+
+function addPaperClosedPnl(data) {
+    db.prepare(`
+        INSERT OR IGNORE INTO paper_closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, timestamp)
+        VALUES (@id, @symbol, @side, @size, @entry_price, @close_price, @pnl, @timestamp)
+    `).run(data);
+}
+
+function getPaperClosedPnls(limit = 100) {
+    return db.prepare('SELECT * FROM paper_closed_pnl ORDER BY timestamp DESC LIMIT ?').all(limit);
+}
+
+function calculatePaperAggregatedPnl() {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dayOfWeek = now.getDay() || 7; 
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1).getTime();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+
+    const row = db.prepare(`
+        SELECT 
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as daily_pnl,
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as weekly_pnl,
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as monthly_pnl,
+            SUM(CASE WHEN timestamp >= ? THEN pnl ELSE 0 END) as yearly_pnl,
+            SUM(pnl) as total_pnl
+        FROM paper_closed_pnl
+    `).get(startOfDay, startOfWeek, startOfMonth, startOfYear);
+
+    return {
+        daily_pnl: row.daily_pnl || 0,
+        weekly_pnl: row.weekly_pnl || 0,
+        monthly_pnl: row.monthly_pnl || 0,
+        yearly_pnl: row.yearly_pnl || 0,
+        total_pnl: row.total_pnl || 0
     };
 }
 
@@ -527,5 +654,14 @@ module.exports = {
     logBotEvent,
     get24HourStatistics,
     pruneBotEvents,
-    getPageStatistics
+    getPageStatistics,
+    updatePaperAccountState,
+    getPaperAccountState,
+    updatePaperPosition,
+    removePaperPosition,
+    getPaperPositions,
+    addPaperClosedPnl,
+    getPaperClosedPnls,
+    calculatePaperAggregatedPnl,
+    getPaperDailyPnLHistory
 };

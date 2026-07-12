@@ -248,6 +248,25 @@ class BinanceExchange extends BaseExchange {
         }
     }
 
+    async watchOHLCV(symbol, timeframe, callback, isRunningCheck, errorCallback) {
+        if (!this.exchange.has['watchOHLCV']) {
+            logger.info('[Binance] CCXT watchOHLCV not available. Paper Trading WS disabled.');
+            return;
+        }
+        while (isRunningCheck()) {
+            try {
+                const ohlcv = await this.exchange.watchOHLCV(symbol, timeframe);
+                if (!isRunningCheck()) break;
+                callback(ohlcv);
+            } catch (e) {
+                if (isRunningCheck()) {
+                    if (errorCallback) errorCallback(`[Binance] [OHLCV Stream] ${e.message}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+    }
+
     async fetchBalance() {
         return await this.exchange.fetchBalance();
     }

@@ -21,6 +21,18 @@ class BaseExchange {
     }
 
     /**
+     * Watch OHLCV data (e.g. for paper trading)
+     * @param {string} symbol - Symbol to watch
+     * @param {string} timeframe - Timeframe (e.g. '1m')
+     * @param {function} callback - Callback function for when a candle updates
+     * @param {function} isRunningCheck - Function returning boolean to keep the loop running
+     * @param {function} errorCallback - Callback for handling errors
+     */
+    async watchOHLCV(symbol, timeframe, callback, isRunningCheck, errorCallback) {
+        throw new Error('watchOHLCV() must be implemented');
+    }
+
+    /**
      * Watch for user's private trades (fills) in real-time
      * @param {function} callback - Callback function for when a trade occurs
      * @param {function} isRunningCheck - Function returning boolean to keep the loop running
