@@ -1965,21 +1965,34 @@ class TradingBot {
                     }
                 }
                 
+                let tradeSide = side.toLowerCase() === 'buy' ? 'long' : 'short';
+                let finalSize = amountInToken;
+                let finalEntryPrice = entryPrice;
+                
+                const existingPositions = db.getPaperPositions();
+                const existingPosition = existingPositions.find(p => p.symbol === symbol);
+
+                if (existingPosition && existingPosition.side === tradeSide) {
+                    finalSize = existingPosition.size + amountInToken;
+                    finalEntryPrice = ((existingPosition.size * existingPosition.entry_price) + (amountInToken * entryPrice)) / finalSize;
+                    logger.info(`[PAPER TRADING] Accumulating existing position for ${symbol}. New Size: ${finalSize}, New Avg Entry: ${finalEntryPrice}`);
+                }
+
                 let targetTpPrice = 0;
                 let targetSlPrice = 0;
-                if (side.toLowerCase() === 'buy' || side.toLowerCase() === 'long') {
-                    targetTpPrice = entryPrice * (1 + tpPercent / 100);
-                    targetSlPrice = entryPrice * (1 - slPercent / 100);
+                if (tradeSide === 'long') {
+                    targetTpPrice = finalEntryPrice * (1 + tpPercent / 100);
+                    targetSlPrice = finalEntryPrice * (1 - slPercent / 100);
                 } else {
-                    targetTpPrice = entryPrice * (1 - tpPercent / 100);
-                    targetSlPrice = entryPrice * (1 + slPercent / 100);
+                    targetTpPrice = finalEntryPrice * (1 - tpPercent / 100);
+                    targetSlPrice = finalEntryPrice * (1 + slPercent / 100);
                 }
 
                 db.updatePaperPosition({
                     symbol,
-                    side: side.toLowerCase() === 'buy' ? 'long' : 'short',
-                    size: amountInToken,
-                    entry_price: entryPrice,
+                    side: tradeSide,
+                    size: finalSize,
+                    entry_price: finalEntryPrice,
                     mark_price: entryPrice,
                     liq_price: 0,
                     tp_price: targetTpPrice,
