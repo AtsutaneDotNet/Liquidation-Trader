@@ -232,6 +232,16 @@ class BinanceExchange extends BaseExchange {
                                 if (!pnl.side || pnl.side === 'N/A') pnl.side = bestMatch.side ? bestMatch.side.toUpperCase() : 'N/A';
                                 if (!pnl.size || pnl.size === 0) pnl.size = bestMatch.amount;
                                 if (!pnl.close_price || pnl.close_price === 0) pnl.close_price = bestMatch.price;
+
+                                // Calculate entry price if missing
+                                if (pnl.size > 0 && pnl.close_price > 0 && pnl.side !== 'N/A' && pnl.entry_price === 0) {
+                                    const priceMovement = pnl.pnl / pnl.size;
+                                    if (pnl.side === 'BUY') {
+                                        pnl.entry_price = pnl.close_price + priceMovement;
+                                    } else if (pnl.side === 'SELL') {
+                                        pnl.entry_price = pnl.close_price - priceMovement;
+                                    }
+                                }
                             }
                         } catch (e) {
                             logger.error(`[Binance] Failed to fetch trades for ${pnl.symbol}: ${e.message}`);
