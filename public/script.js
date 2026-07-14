@@ -2278,6 +2278,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     backgroundColor: '#1a1a2e', // Match theme background
                     scale: 2, // Higher resolution
                     onclone: (clonedDoc) => {
+                        // Add padding to the captured area for better framing
+                        const clonedDashboard = clonedDoc.querySelector('#statistics-page .page-section');
+                        if (clonedDashboard) {
+                            clonedDashboard.style.padding = '30px';
+                            clonedDashboard.style.boxSizing = 'border-box';
+                        }
+
                         // html2canvas doesn't support background-clip: text properly.
                         // We need to replace the gradient with a solid color for the screenshot.
                         const highlightTexts = clonedDoc.querySelectorAll('.highlight-text');
