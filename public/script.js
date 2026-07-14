@@ -2281,7 +2281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Add padding to the captured area for better framing
                         const clonedDashboard = clonedDoc.querySelector('#statistics-page .page-section');
                         if (clonedDashboard) {
-                            clonedDashboard.style.padding = '30px';
+                            clonedDashboard.style.padding = '15px';
                             clonedDashboard.style.boxSizing = 'border-box';
                         }
 
