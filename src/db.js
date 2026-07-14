@@ -115,6 +115,12 @@ db.exec(`
     timestamp INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS paper_margin_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    margin_percent REAL,
+    timestamp INTEGER
+  );
+
   INSERT OR IGNORE INTO paper_account_state (id) VALUES (1);
 `);
 
@@ -547,11 +553,14 @@ function getPaperDailyPnLHistory(days = 30) {
     `).all(cutoffTimestamp);
 }
 
-function getPageStatistics(cutoffTimestamp) {
-    const marginHistory = db.prepare('SELECT margin_percent, timestamp FROM margin_history WHERE timestamp >= ? ORDER BY timestamp ASC').all(cutoffTimestamp);
+function getPageStatistics(cutoffTimestamp, isPaper = false) {
+    const marginTable = isPaper ? 'paper_margin_history' : 'margin_history';
+    const pnlTable = isPaper ? 'paper_closed_pnl' : 'closed_pnl';
+
+    const marginHistory = db.prepare(`SELECT margin_percent, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
     const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
     const dynamicThresholds = db.prepare('SELECT MAX(threshold) as max, MIN(threshold) as min FROM bot_events WHERE event_type = \'LIQUIDATION_MATCH\' AND strategy = \'DYNAMIC\' AND timestamp >= ?').get(cutoffTimestamp);
-    const closedPnls = db.prepare('SELECT symbol, side, pnl FROM closed_pnl WHERE timestamp >= ?').all(cutoffTimestamp);
+    const closedPnls = db.prepare(`SELECT symbol, side, pnl FROM ${pnlTable} WHERE timestamp >= ?`).all(cutoffTimestamp);
     
     return {
         marginHistory,
@@ -568,6 +577,26 @@ function updatePaperAccountState(data) {
     data.updated_at = Date.now();
     data.id = 1;
     db.prepare(`UPDATE paper_account_state SET ${setClause}, updated_at = @updated_at WHERE id = 1`).run(data);
+    
+    // Log margin history
+    const state = getPaperAccountState();
+    if (state && state.total_value > 0) {
+        const marginPercent = (state.margin_used / state.total_value) * 100;
+        db.prepare('INSERT INTO paper_margin_history (margin_percent, timestamp) VALUES (?, ?)').run(marginPercent, data.updated_at);
+        
+        // Track isolation mode
+        const currentConfig = getConfig();
+        if (currentConfig['ENABLE_ISOLATION_MODE'] === 'true') {
+            const threshold = parseFloat(currentConfig['ISOLATION_MARGIN_THRESHOLD']) || 10;
+            const isIsolation = marginPercent >= threshold;
+            if (isIsolation && !lastIsolationModeState) {
+                logBotEvent({ event_type: 'ISOLATION_MODE_TRIGGER', value: marginPercent, timestamp: data.updated_at });
+            }
+            lastIsolationModeState = isIsolation;
+        } else {
+            lastIsolationModeState = false;
+        }
+    }
 }
 
 function getPaperAccountState() {

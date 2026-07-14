@@ -267,7 +267,8 @@ class WebServer {
         this.app.get('/api/statistics/page-data', (req, res) => {
             const db = require('./db');
             const cutoffTimestamp = Date.now() - 24 * 60 * 60 * 1000;
-            res.json(db.getPageStatistics(cutoffTimestamp));
+            const currentConfig = config.get();
+            res.json(db.getPageStatistics(cutoffTimestamp, currentConfig.ENABLE_PAPER_TRADING));
         });
 
         // Dynamic Thresholds
