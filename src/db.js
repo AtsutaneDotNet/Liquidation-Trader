@@ -357,11 +357,20 @@ function updateAccountState(data) {
         } else {
             lastIsolationModeState = false;
         }
-    }
 }
 
-const lastKnownDrawdown = {};
-const lastKnownPaperDrawdown = {};
+const lastKnownPosition = {};
+const lastKnownPaperPosition = {};
+
+function getHistoricalPosition(symbol) {
+    const existing = db.prepare('SELECT * FROM positions WHERE symbol = ?').get(symbol);
+    return existing || lastKnownPosition[symbol] || null;
+}
+
+function getHistoricalPaperPosition(symbol) {
+    const existing = db.prepare('SELECT * FROM paper_positions WHERE symbol = ?').get(symbol);
+    return existing || lastKnownPaperPosition[symbol] || null;
+}
 
 function getAccountState() {
     return db.prepare('SELECT * FROM account_state WHERE id = 1').get();
@@ -391,9 +400,9 @@ function getStalePositions(timeoutMs = 60000) {
 }
 
 function removePosition(symbol) {
-    const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(symbol);
+    const existing = db.prepare('SELECT * FROM positions WHERE symbol = ?').get(symbol);
     if (existing) {
-        lastKnownDrawdown[symbol] = existing.max_drawdown;
+        lastKnownPosition[symbol] = existing;
     }
     db.prepare('DELETE FROM positions WHERE symbol = ?').run(symbol);
 }
@@ -434,10 +443,10 @@ function purgeLiquidations() {
 }
 
 function addClosedPnl(data) {
-    let memoryDrawdown = lastKnownDrawdown[data.symbol] || 0;
-    const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(data.symbol);
-    if (existing && existing.max_drawdown < memoryDrawdown) {
-        memoryDrawdown = existing.max_drawdown;
+    let memoryDrawdown = 0;
+    const histPos = getHistoricalPosition(data.symbol);
+    if (histPos) {
+        memoryDrawdown = histPos.max_drawdown || 0;
     }
     
     if (data.max_drawdown === undefined) {
@@ -672,9 +681,9 @@ function updatePaperPosition(pos) {
 }
 
 function removePaperPosition(symbol) {
-    const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(symbol);
+    const existing = db.prepare('SELECT * FROM paper_positions WHERE symbol = ?').get(symbol);
     if (existing) {
-        lastKnownPaperDrawdown[symbol] = existing.max_drawdown;
+        lastKnownPaperPosition[symbol] = existing;
     }
     db.prepare('DELETE FROM paper_positions WHERE symbol = ?').run(symbol);
 }
@@ -684,10 +693,10 @@ function getPaperPositions() {
 }
 
 function addPaperClosedPnl(data) {
-    let memoryDrawdown = lastKnownPaperDrawdown[data.symbol] || 0;
-    const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(data.symbol);
-    if (existing && existing.max_drawdown < memoryDrawdown) {
-        memoryDrawdown = existing.max_drawdown;
+    let memoryDrawdown = 0;
+    const histPos = getHistoricalPaperPosition(data.symbol);
+    if (histPos) {
+        memoryDrawdown = histPos.max_drawdown || 0;
     }
 
     if (data.max_drawdown === undefined) {
@@ -749,6 +758,8 @@ module.exports = {
     pruneLiquidations,
     purgeLiquidations,
     addClosedPnl,
+    getHistoricalPosition,
+    getHistoricalPaperPosition,
     getClosedPnls,
     calculateAggregatedPnl,
     getDailyPnLHistory,

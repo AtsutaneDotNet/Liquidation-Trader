@@ -882,6 +882,14 @@ class TradingBot {
                     const cfg = this.config.get();
                     const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
                     for (const pnl of closedPnls) {
+                        if (pnl.size === 0 || pnl.entry_price === 0) {
+                            const histPos = db.getHistoricalPosition(pnl.symbol);
+                            if (histPos) {
+                                pnl.size = pnl.size || histPos.size || 0;
+                                pnl.entry_price = pnl.entry_price || histPos.entry_price || 0;
+                            }
+                        }
+
                         if (pnl.size > 0 && pnl.entry_price > 0 && pnl.pnl !== 0) {
                             const margin = (pnl.size * pnl.entry_price) / leverage;
                             if (margin > 0) {
