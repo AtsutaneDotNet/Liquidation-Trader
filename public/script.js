@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetch('/api/paper/reset', { method: 'POST' })
                     .then(res => res.json())
                     .then(data => {
-                        showToast(data.message, data.success ? 'success' : 'error');
+                        showToast({ title: data.success ? 'Success' : 'Error', message: data.message, type: data.success ? 'success' : 'error' });
                         if (data.success) {
                             fetchAccountData();
                             fetch24HStatistics();
@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                     .catch(err => {
                         console.error(err);
-                        showToast('Error resetting paper account', 'error');
+                        showToast({ title: 'Error', message: 'Error resetting paper account', type: 'error' });
                     });
             }
         });
