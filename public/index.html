@@ -1498,7 +1498,10 @@
                         dynamically saved over SQLite.</p>
                     <div class="status-grid">
                         <div class="card stat-card">
-                            <h3>Total Wallet Value</h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Total Wallet Value</h3>
+                                <button id="btn-reset-paper" class="btn btn-outline" style="display: none; padding: 2px 8px; font-size: 0.8rem;">Reset Paper</button>
+                            </div>
                             <div class="stat-value" id="acc-total-value">$...</div>
                         </div>
                         <div class="card stat-card">

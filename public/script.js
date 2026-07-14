@@ -180,14 +180,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Update Trading Mode Badge
                 const modeBadge = document.getElementById('trading-mode-badge');
+                const btnResetPaper = document.getElementById('btn-reset-paper');
                 if (modeBadge) {
                     const isPaper = data['ENABLE_PAPER_TRADING'] === true || data['ENABLE_PAPER_TRADING'] === 'true';
                     if (isPaper) {
                         modeBadge.textContent = 'PAPER';
                         modeBadge.className = 'mode-badge mode-paper';
+                        if (btnResetPaper) btnResetPaper.style.display = 'inline-block';
                     } else {
                         modeBadge.textContent = 'LIVE';
                         modeBadge.className = 'mode-badge mode-live';
+                        if (btnResetPaper) btnResetPaper.style.display = 'none';
                     }
                     modeBadge.style.display = 'inline-block';
                 }
@@ -787,6 +790,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const positionsContainer = document.getElementById('positions-container');
     let currentPositionsList = [];
     let currentTvWidget = null;
+    
+    const btnResetPaper = document.getElementById('btn-reset-paper');
+    if (btnResetPaper) {
+        btnResetPaper.addEventListener('click', () => {
+            if (confirm("Are you sure you want to completely reset your Paper Trading account? This will wipe all paper positions and PnL history and reset your balance.")) {
+                fetch('/api/paper/reset', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        showToast(data.message, data.success ? 'success' : 'error');
+                        if (data.success) {
+                            fetchAccountData();
+                            fetch24HStatistics();
+                            fetchPageStatisticsData();
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast('Error resetting paper account', 'error');
+                    });
+            }
+        });
+    }
+
 
     window.openPositionDetail = function (symbol) {
         const position = currentPositionsList.find(p => p.symbol === symbol);

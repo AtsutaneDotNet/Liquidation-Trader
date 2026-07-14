@@ -271,6 +271,30 @@ class WebServer {
             res.json(db.getPageStatistics(cutoffTimestamp, currentConfig.ENABLE_PAPER_TRADING));
         });
 
+        this.app.post('/api/paper/reset', (req, res) => {
+            const currentConfig = config.get();
+            const initialBalance = parseFloat(currentConfig.PAPER_TRADING_BALANCE) || 10000;
+            const db = require('./db');
+            
+            // Delete all paper positions and PNL history to start fresh
+            db.db.prepare('DELETE FROM paper_positions').run();
+            db.db.prepare('DELETE FROM paper_closed_pnl').run();
+            db.db.prepare('DELETE FROM paper_margin_history').run();
+            
+            // Reset account state
+            db.updatePaperAccountState({
+                total_value: initialBalance,
+                margin_available: initialBalance,
+                margin_used: 0,
+                unrealized_pnl: 0,
+                daily_pnl: 0,
+                weekly_pnl: 0,
+                monthly_pnl: 0
+            });
+            
+            res.json({ success: true, message: 'Paper trading account has been completely reset to initial balance.' });
+        });
+
         // Dynamic Thresholds
         this.app.get('/api/dynamic-thresholds', (req, res) => {
             const currentConfig = config.get();
