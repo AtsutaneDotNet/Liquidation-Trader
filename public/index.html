@@ -720,7 +720,10 @@
                                     <div class="form-group row" id="paperTradingBalanceRow" style="display: none;">
                                         <div class="col">
                                             <label for="PAPER_TRADING_BALANCE">Initial Paper Trading Balance (USD)</label>
-                                            <input type="number" id="PAPER_TRADING_BALANCE" name="PAPER_TRADING_BALANCE" step="1" min="10">
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input type="number" id="PAPER_TRADING_BALANCE" name="PAPER_TRADING_BALANCE" step="1" min="10" style="flex: 1;">
+                                                <button type="button" id="btn-reset-paper" class="btn btn-outline" style="display: none; white-space: nowrap; padding: 0.4rem 1rem;">Reset Paper Balance</button>
+                                            </div>
                                             <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Set the starting balance for your virtual account.</p>
                                         </div>
                                     </div>
@@ -1515,10 +1518,7 @@
                         dynamically saved over SQLite.</p>
                     <div class="status-grid">
                         <div class="card stat-card">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3>Total Wallet Value</h3>
-                                <button id="btn-reset-paper" class="btn btn-outline" style="display: none; padding: 2px 8px; font-size: 0.8rem;">Reset Paper</button>
-                            </div>
+                            <h3>Total Wallet Value</h3>
                             <div class="stat-value" id="acc-total-value">$...</div>
                         </div>
                         <div class="card stat-card">
