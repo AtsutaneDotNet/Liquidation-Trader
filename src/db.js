@@ -357,6 +357,7 @@ function updateAccountState(data) {
         } else {
             lastIsolationModeState = false;
         }
+    }
 }
 
 const lastKnownPosition = {};
