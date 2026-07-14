@@ -286,10 +286,11 @@ class WebServer {
                 total_value: initialBalance,
                 margin_available: initialBalance,
                 margin_used: 0,
-                unrealized_pnl: 0,
                 daily_pnl: 0,
                 weekly_pnl: 0,
-                monthly_pnl: 0
+                monthly_pnl: 0,
+                yearly_pnl: 0,
+                total_pnl: 0
             });
             
             res.json({ success: true, message: 'Paper trading account has been completely reset to initial balance.' });
