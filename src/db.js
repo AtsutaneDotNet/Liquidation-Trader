@@ -360,6 +360,9 @@ function updateAccountState(data) {
     }
 }
 
+const lastKnownDrawdown = {};
+const lastKnownPaperDrawdown = {};
+
 function getAccountState() {
     return db.prepare('SELECT * FROM account_state WHERE id = 1').get();
 }
@@ -388,6 +391,10 @@ function getStalePositions(timeoutMs = 60000) {
 }
 
 function removePosition(symbol) {
+    const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(symbol);
+    if (existing) {
+        lastKnownDrawdown[symbol] = existing.max_drawdown;
+    }
     db.prepare('DELETE FROM positions WHERE symbol = ?').run(symbol);
 }
 
@@ -429,7 +436,7 @@ function purgeLiquidations() {
 function addClosedPnl(data) {
     if (data.max_drawdown === undefined) {
         const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(data.symbol);
-        data.max_drawdown = existing ? existing.max_drawdown : 0;
+        data.max_drawdown = existing ? existing.max_drawdown : (lastKnownDrawdown[data.symbol] || 0);
     }
     db.prepare(`
         INSERT OR IGNORE INTO closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, max_drawdown, timestamp)
@@ -658,6 +665,10 @@ function updatePaperPosition(pos) {
 }
 
 function removePaperPosition(symbol) {
+    const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(symbol);
+    if (existing) {
+        lastKnownPaperDrawdown[symbol] = existing.max_drawdown;
+    }
     db.prepare('DELETE FROM paper_positions WHERE symbol = ?').run(symbol);
 }
 
@@ -668,7 +679,7 @@ function getPaperPositions() {
 function addPaperClosedPnl(data) {
     if (data.max_drawdown === undefined) {
         const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(data.symbol);
-        data.max_drawdown = existing ? existing.max_drawdown : 0;
+        data.max_drawdown = existing ? existing.max_drawdown : (lastKnownPaperDrawdown[data.symbol] || 0);
     }
     db.prepare(`
         INSERT OR IGNORE INTO paper_closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, max_drawdown, timestamp)
