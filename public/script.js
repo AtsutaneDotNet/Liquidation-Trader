@@ -1964,6 +1964,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pnlSymbolChart = null;
     let pnlSideChart = null;
     let pnlWinRateChart = null;
+    let drawdownChart = null;
 
     function initStatisticsCharts() {
         const tradesCtx = document.getElementById('tradesChart');
@@ -2072,6 +2073,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: 'doughnut',
                 data: { labels: ['Win % (BUY pos)', 'Win % (SELL pos)'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+            });
+        }
+
+        const drawdownCtx = document.getElementById('drawdownChart');
+        if (drawdownCtx) {
+            drawdownChart = new Chart(drawdownCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Max Drawdown', data: [], backgroundColor: 'rgba(255, 59, 59, 0.8)', borderRadius: 4 }] },
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + '%';
+                                }
+                            }
+                        }
+                    }, 
+                    scales: { 
+                        x: { 
+                            beginAtZero: true, 
+                            max: 0, 
+                            reverse: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        } 
+                    } 
+                }
             });
         }
     }
@@ -2197,6 +2233,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('stats-pnl-buy-win').innerText = buyWinRate.toFixed(2) + '%';
                         document.getElementById('stats-pnl-sell-win').innerText = sellWinRate.toFixed(2) + '%';
                     }
+                }
+
+                if (data.drawdowns && drawdownChart) {
+                    const sortedDrawdowns = data.drawdowns.sort((a, b) => a.max_drawdown - b.max_drawdown);
+                    drawdownChart.data.labels = sortedDrawdowns.map(d => d.symbol);
+                    drawdownChart.data.datasets[0].data = sortedDrawdowns.map(d => d.max_drawdown.toFixed(2));
+                    drawdownChart.update();
                 }
             })
             .catch(console.error);

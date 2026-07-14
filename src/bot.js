@@ -414,11 +414,21 @@ class TradingBot {
                 // Simple PnL calculation: (current_price - entry_price) * size * direction
                 const pnl = (closePrice - pos.entry_price) * pos.size * direction;
                 
+                let pnlPercent = undefined;
+                const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                if (pos.size > 0 && pos.entry_price > 0) {
+                    const margin = (pos.size * pos.entry_price) / leverage;
+                    if (margin > 0) {
+                        pnlPercent = (pnl / margin) * 100;
+                    }
+                }
+                
                 db.updatePaperPosition({
                     ...pos,
                     mark_price: closePrice,
                     sl_price: newSlPrice,
-                    unrealized_pnl: pnl
+                    unrealized_pnl: pnl,
+                    max_drawdown: pnlPercent
                 });
 
                 // Runaway Helper Logic for Paper Trading
@@ -555,6 +565,16 @@ class TradingBot {
                 }
             }
 
+            let max_drawdown = undefined;
+            const cfg = this.config.get();
+            const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+            if (s_size > 0 && s_entryPrice > 0) {
+                const margin = (s_size * s_entryPrice) / leverage;
+                if (margin > 0) {
+                    max_drawdown = (s_unrealizedPnl / margin) * 100;
+                }
+            }
+
             const dbPos = {
                 symbol: p.symbol,
                 side: p.side || 'unknown',
@@ -564,7 +584,8 @@ class TradingBot {
                 liq_price: s_liqPrice || 0,
                 tp_price: currentTp || 0,
                 sl_price: currentSl || 0,
-                unrealized_pnl: s_unrealizedPnl || 0
+                unrealized_pnl: s_unrealizedPnl || 0,
+                max_drawdown: max_drawdown
             };
             db.updatePosition(dbPos);
 
