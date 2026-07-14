@@ -2251,6 +2251,98 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch24HStatistics();
     fetchPageStatisticsData();
 
+    // ── Share Statistics Button Logic ─────────────────────────────
+    const shareBtn = document.getElementById('share-statistics-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', async () => {
+            const originalText = shareBtn.innerHTML;
+            shareBtn.innerHTML = 'Generating...';
+            shareBtn.disabled = true;
+
+            try {
+                // Target the entire page-section inside statistics page to capture all charts and stats
+                const dashboard = document.querySelector('#statistics-page .page-section');
+                if (!dashboard) throw new Error('Dashboard not found');
+
+                // Add temporary header for the screenshot
+                const tempHeader = document.createElement('div');
+                tempHeader.style.display = 'flex';
+                tempHeader.style.justifyContent = 'center';
+                tempHeader.style.marginBottom = '25px';
+                tempHeader.style.marginTop = '10px';
+                tempHeader.innerHTML = '<h1 class="logo" style="margin:0; font-size: 2.2rem;">🚀 Liquidation <span class="highlight">Trader</span> <span style="color: var(--text-muted); font-weight: 500; margin-left: 8px;">Statistics</span></h1>';
+                dashboard.insertBefore(tempHeader, dashboard.firstChild);
+
+                // Generate canvas
+                const canvas = await html2canvas(dashboard, {
+                    backgroundColor: '#1a1a2e', // Match theme background
+                    scale: 2, // Higher resolution
+                    onclone: (clonedDoc) => {
+                        // html2canvas doesn't support background-clip: text properly.
+                        // We need to replace the gradient with a solid color for the screenshot.
+                        const highlightTexts = clonedDoc.querySelectorAll('.highlight-text');
+                        highlightTexts.forEach(el => {
+                            el.style.background = 'none';
+                            el.style.webkitBackgroundClip = 'initial';
+                            el.style.webkitTextFillColor = 'initial';
+                            el.style.color = '#00e676'; // Set to our primary green color
+                        });
+                    }
+                });
+
+                // Remove temporary header
+                dashboard.removeChild(tempHeader);
+
+                // Convert canvas to blob
+                canvas.toBlob(async (blob) => {
+                    if (!blob) throw new Error('Failed to create image blob');
+
+                    const file = new File([blob], 'statistics-snapshot.png', { type: 'image/png' });
+
+                    // Try Web Share API first
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'My Trading Statistics',
+                                text: 'Check out my latest trading statistics!'
+                            });
+                        } catch (err) {
+                            if (err.name !== 'AbortError') {
+                                console.error('Share failed:', err);
+                                downloadImage(blob);
+                            }
+                        }
+                    } else {
+                        // Fallback to direct download
+                        downloadImage(blob);
+                    }
+                    
+                    // Reset button state
+                    shareBtn.innerHTML = originalText;
+                    shareBtn.disabled = false;
+                }, 'image/png');
+
+            } catch (error) {
+                console.error('Error generating share image:', error);
+                shareBtn.innerHTML = originalText;
+                shareBtn.disabled = false;
+                showToast('Failed to generate image', 'error'); // Assuming a showToast function exists
+            }
+        });
+
+        function downloadImage(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'statistics-snapshot.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    }
+
 
     // ── Currency Switcher Selector Listener ───────────────────
     const currencySelect = document.getElementById('currency-select');
