@@ -420,6 +420,9 @@ class TradingBot {
                     const margin = (pos.size * pos.entry_price) / leverage;
                     if (margin > 0) {
                         pnlPercent = (pnl / margin) * 100;
+                        if (pnlPercent < 0) {
+                            db.recordDrawdown(pos.symbol, pnlPercent);
+                        }
                     }
                 }
                 
@@ -427,8 +430,7 @@ class TradingBot {
                     ...pos,
                     mark_price: closePrice,
                     sl_price: newSlPrice,
-                    unrealized_pnl: pnl,
-                    max_drawdown: pnlPercent
+                    unrealized_pnl: pnl
                 });
 
                 // Runaway Helper Logic for Paper Trading
@@ -565,13 +567,15 @@ class TradingBot {
                 }
             }
 
-            let max_drawdown = undefined;
             const cfg = this.config.get();
             const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
             if (s_size > 0 && s_entryPrice > 0) {
                 const margin = (s_size * s_entryPrice) / leverage;
                 if (margin > 0) {
-                    max_drawdown = (s_unrealizedPnl / margin) * 100;
+                    const current_drawdown = (s_unrealizedPnl / margin) * 100;
+                    if (current_drawdown < 0) {
+                        db.recordDrawdown(p.symbol, current_drawdown);
+                    }
                 }
             }
 
@@ -584,8 +588,7 @@ class TradingBot {
                 liq_price: s_liqPrice || 0,
                 tp_price: currentTp || 0,
                 sl_price: currentSl || 0,
-                unrealized_pnl: s_unrealizedPnl || 0,
-                max_drawdown: max_drawdown
+                unrealized_pnl: s_unrealizedPnl || 0
             };
             db.updatePosition(dbPos);
 
@@ -879,23 +882,7 @@ class TradingBot {
                 const closedPnls = await this.tradeExchange.fetchClosedPnls();
                 this.lastClosedPnlUpdate = new Date().toISOString();
                 if (closedPnls && closedPnls.length > 0) {
-                    const cfg = this.config.get();
-                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
                     for (const pnl of closedPnls) {
-                        if (pnl.size === 0 || pnl.entry_price === 0) {
-                            const histPos = db.getHistoricalPosition(pnl.symbol);
-                            if (histPos) {
-                                pnl.size = pnl.size || histPos.size || 0;
-                                pnl.entry_price = pnl.entry_price || histPos.entry_price || 0;
-                            }
-                        }
-
-                        if (pnl.size > 0 && pnl.entry_price > 0 && pnl.pnl !== 0) {
-                            const margin = (pnl.size * pnl.entry_price) / leverage;
-                            if (margin > 0) {
-                                pnl.max_drawdown = (pnl.pnl / margin) * 100;
-                            }
-                        }
                         db.addClosedPnl(pnl);
                     }
                 }

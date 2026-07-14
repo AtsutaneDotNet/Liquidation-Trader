@@ -125,6 +125,12 @@ db.exec(`
     timestamp INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS symbol_drawdowns (
+    symbol TEXT PRIMARY KEY,
+    max_drawdown REAL DEFAULT 0,
+    timestamp INTEGER
+  );
+
   INSERT OR IGNORE INTO paper_account_state (id) VALUES (1);
 `);
 
@@ -133,14 +139,6 @@ try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } ca
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE account_state ADD COLUMN yearly_pnl REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE bot_events ADD COLUMN threshold REAL DEFAULT 0;'); } catch(e) {}
-try { db.exec('ALTER TABLE positions ADD COLUMN max_drawdown REAL DEFAULT 0;'); } catch(e) {}
-try { db.exec('ALTER TABLE paper_positions ADD COLUMN max_drawdown REAL DEFAULT 0;'); } catch(e) {}
-try { db.exec('ALTER TABLE closed_pnl ADD COLUMN max_drawdown REAL DEFAULT 0;'); } catch(e) {}
-try { db.exec('ALTER TABLE paper_closed_pnl ADD COLUMN max_drawdown REAL DEFAULT 0;'); } catch(e) {}
-
-// Reset max drawdown for current open positions on startup
-try { db.exec('UPDATE positions SET max_drawdown = 0;'); } catch(e) {}
-try { db.exec('UPDATE paper_positions SET max_drawdown = 0;'); } catch(e) {}
 
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
@@ -360,38 +358,18 @@ function updateAccountState(data) {
     }
 }
 
-const lastKnownPosition = {};
-const lastKnownPaperPosition = {};
-
-function getHistoricalPosition(symbol) {
-    const existing = db.prepare('SELECT * FROM positions WHERE symbol = ?').get(symbol);
-    return existing || lastKnownPosition[symbol] || null;
-}
-
-function getHistoricalPaperPosition(symbol) {
-    const existing = db.prepare('SELECT * FROM paper_positions WHERE symbol = ?').get(symbol);
-    return existing || lastKnownPaperPosition[symbol] || null;
-}
-
 function getAccountState() {
     return db.prepare('SELECT * FROM account_state WHERE id = 1').get();
 }
 
 function updatePosition(pos) {
     pos.updated_at = Date.now();
-    const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(pos.symbol);
-    const existingDrawdown = existing ? existing.max_drawdown : 0;
-    
-    if (pos.max_drawdown === undefined || pos.max_drawdown > existingDrawdown) {
-        pos.max_drawdown = existingDrawdown;
-    }
-    
     db.prepare(`
-        INSERT INTO positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, max_drawdown, updated_at)
-        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @max_drawdown, @updated_at)
+        INSERT INTO positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, updated_at)
+        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
         ON CONFLICT(symbol) DO UPDATE SET 
             side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
-            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, max_drawdown=@max_drawdown, updated_at=@updated_at
+            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
     `).run(pos);
 }
 
@@ -401,10 +379,6 @@ function getStalePositions(timeoutMs = 60000) {
 }
 
 function removePosition(symbol) {
-    const existing = db.prepare('SELECT * FROM positions WHERE symbol = ?').get(symbol);
-    if (existing) {
-        lastKnownPosition[symbol] = existing;
-    }
     db.prepare('DELETE FROM positions WHERE symbol = ?').run(symbol);
 }
 
@@ -444,20 +418,9 @@ function purgeLiquidations() {
 }
 
 function addClosedPnl(data) {
-    let memoryDrawdown = 0;
-    const histPos = getHistoricalPosition(data.symbol);
-    if (histPos) {
-        memoryDrawdown = histPos.max_drawdown || 0;
-    }
-    
-    if (data.max_drawdown === undefined) {
-        data.max_drawdown = memoryDrawdown;
-    } else {
-        data.max_drawdown = Math.min(data.max_drawdown, memoryDrawdown);
-    }
     db.prepare(`
-        INSERT OR IGNORE INTO closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, max_drawdown, timestamp)
-        VALUES (@id, @symbol, @side, @size, @entry_price, @close_price, @pnl, @max_drawdown, @timestamp)
+        INSERT OR IGNORE INTO closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, timestamp)
+        VALUES (@id, @symbol, @side, @size, @entry_price, @close_price, @pnl, @timestamp)
     `).run(data);
 }
 
@@ -564,6 +527,7 @@ function pruneBotEvents() {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     db.prepare('DELETE FROM bot_events WHERE timestamp < ?').run(cutoff);
     db.prepare('DELETE FROM margin_history WHERE timestamp < ?').run(cutoff);
+    db.prepare('DELETE FROM symbol_drawdowns WHERE timestamp < ?').run(cutoff);
 }
 
 function getDailyPnLHistory(days = 30) {
@@ -600,26 +564,29 @@ function getPaperDailyPnLHistory(days = 30) {
     `).all(cutoffTimestamp);
 }
 
+function recordDrawdown(symbol, max_drawdown) {
+    if (max_drawdown >= 0) return;
+    
+    const existing = db.prepare('SELECT max_drawdown FROM symbol_drawdowns WHERE symbol = ?').get(symbol);
+    if (!existing || max_drawdown < existing.max_drawdown) {
+        db.prepare(`
+            INSERT INTO symbol_drawdowns (symbol, max_drawdown, timestamp) 
+            VALUES (?, ?, ?)
+            ON CONFLICT(symbol) DO UPDATE SET max_drawdown = ?, timestamp = ?
+        `).run(symbol, max_drawdown, Date.now(), max_drawdown, Date.now());
+    }
+}
+
 function getPageStatistics(cutoffTimestamp, isPaper = false) {
     const marginTable = isPaper ? 'paper_margin_history' : 'margin_history';
     const pnlTable = isPaper ? 'paper_closed_pnl' : 'closed_pnl';
-    const posTable = isPaper ? 'paper_positions' : 'positions';
 
     const marginHistory = db.prepare(`SELECT margin_percent, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
     const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
     const dynamicThresholds = db.prepare('SELECT MAX(threshold) as max, MIN(threshold) as min FROM bot_events WHERE event_type = \'LIQUIDATION_MATCH\' AND strategy = \'DYNAMIC\' AND timestamp >= ?').get(cutoffTimestamp);
     const closedPnls = db.prepare(`SELECT symbol, side, pnl FROM ${pnlTable} WHERE timestamp >= ?`).all(cutoffTimestamp);
     
-    const activeDrawdowns = db.prepare(`SELECT symbol, max_drawdown FROM ${posTable} WHERE max_drawdown < 0`).all();
-    const closedDrawdowns = db.prepare(`SELECT symbol, max_drawdown FROM ${pnlTable} WHERE timestamp >= ? AND max_drawdown < 0`).all(cutoffTimestamp);
-    
-    const drawdownMap = {};
-    for (const d of [...activeDrawdowns, ...closedDrawdowns]) {
-        if (drawdownMap[d.symbol] === undefined || d.max_drawdown < drawdownMap[d.symbol]) {
-            drawdownMap[d.symbol] = d.max_drawdown;
-        }
-    }
-    const drawdowns = Object.keys(drawdownMap).map(symbol => ({ symbol, max_drawdown: drawdownMap[symbol] }));
+    const drawdowns = db.prepare('SELECT symbol, max_drawdown FROM symbol_drawdowns WHERE timestamp >= ? ORDER BY max_drawdown ASC').all(cutoffTimestamp);
 
     return {
         marginHistory,
@@ -665,27 +632,16 @@ function getPaperAccountState() {
 
 function updatePaperPosition(pos) {
     pos.updated_at = Date.now();
-    const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(pos.symbol);
-    const existingDrawdown = existing ? existing.max_drawdown : 0;
-
-    if (pos.max_drawdown === undefined || pos.max_drawdown > existingDrawdown) {
-        pos.max_drawdown = existingDrawdown;
-    }
-
     db.prepare(`
-        INSERT INTO paper_positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, max_drawdown, updated_at)
-        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @max_drawdown, @updated_at)
+        INSERT INTO paper_positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, updated_at)
+        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
         ON CONFLICT(symbol) DO UPDATE SET 
             side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
-            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, max_drawdown=@max_drawdown, updated_at=@updated_at
+            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
     `).run(pos);
 }
 
 function removePaperPosition(symbol) {
-    const existing = db.prepare('SELECT * FROM paper_positions WHERE symbol = ?').get(symbol);
-    if (existing) {
-        lastKnownPaperPosition[symbol] = existing;
-    }
     db.prepare('DELETE FROM paper_positions WHERE symbol = ?').run(symbol);
 }
 
@@ -694,20 +650,9 @@ function getPaperPositions() {
 }
 
 function addPaperClosedPnl(data) {
-    let memoryDrawdown = 0;
-    const histPos = getHistoricalPaperPosition(data.symbol);
-    if (histPos) {
-        memoryDrawdown = histPos.max_drawdown || 0;
-    }
-
-    if (data.max_drawdown === undefined) {
-        data.max_drawdown = memoryDrawdown;
-    } else {
-        data.max_drawdown = Math.min(data.max_drawdown, memoryDrawdown);
-    }
     db.prepare(`
-        INSERT OR IGNORE INTO paper_closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, max_drawdown, timestamp)
-        VALUES (@id, @symbol, @side, @size, @entry_price, @close_price, @pnl, @max_drawdown, @timestamp)
+        INSERT OR IGNORE INTO paper_closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, timestamp)
+        VALUES (@id, @symbol, @side, @size, @entry_price, @close_price, @pnl, @timestamp)
     `).run(data);
 }
 
@@ -759,8 +704,7 @@ module.exports = {
     pruneLiquidations,
     purgeLiquidations,
     addClosedPnl,
-    getHistoricalPosition,
-    getHistoricalPaperPosition,
+    recordDrawdown,
     getClosedPnls,
     calculateAggregatedPnl,
     getDailyPnLHistory,
