@@ -2128,10 +2128,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     for (let pnl of data.closedPnls) {
                         symMap[pnl.symbol] = (symMap[pnl.symbol] || 0) + pnl.pnl;
-                        if (pnl.side === 'SELL') {
+                        const side = pnl.side ? pnl.side.toUpperCase() : '';
+                        if (side === 'SELL' || side === 'LONG' || side === 'BUY_POSITION') {
                             buyPosCount++;
                             if (pnl.pnl > 0) buyPosWin++;
-                        } else if (pnl.side === 'BUY') {
+                        } else if (side === 'BUY' || side === 'SHORT' || side === 'SELL_POSITION') {
                             sellPosCount++;
                             if (pnl.pnl > 0) sellPosWin++;
                         }
