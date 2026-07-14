@@ -434,9 +434,16 @@ function purgeLiquidations() {
 }
 
 function addClosedPnl(data) {
+    let memoryDrawdown = lastKnownDrawdown[data.symbol] || 0;
+    const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(data.symbol);
+    if (existing && existing.max_drawdown < memoryDrawdown) {
+        memoryDrawdown = existing.max_drawdown;
+    }
+    
     if (data.max_drawdown === undefined) {
-        const existing = db.prepare('SELECT max_drawdown FROM positions WHERE symbol = ?').get(data.symbol);
-        data.max_drawdown = existing ? existing.max_drawdown : (lastKnownDrawdown[data.symbol] || 0);
+        data.max_drawdown = memoryDrawdown;
+    } else {
+        data.max_drawdown = Math.min(data.max_drawdown, memoryDrawdown);
     }
     db.prepare(`
         INSERT OR IGNORE INTO closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, max_drawdown, timestamp)
@@ -677,9 +684,16 @@ function getPaperPositions() {
 }
 
 function addPaperClosedPnl(data) {
+    let memoryDrawdown = lastKnownPaperDrawdown[data.symbol] || 0;
+    const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(data.symbol);
+    if (existing && existing.max_drawdown < memoryDrawdown) {
+        memoryDrawdown = existing.max_drawdown;
+    }
+
     if (data.max_drawdown === undefined) {
-        const existing = db.prepare('SELECT max_drawdown FROM paper_positions WHERE symbol = ?').get(data.symbol);
-        data.max_drawdown = existing ? existing.max_drawdown : (lastKnownPaperDrawdown[data.symbol] || 0);
+        data.max_drawdown = memoryDrawdown;
+    } else {
+        data.max_drawdown = Math.min(data.max_drawdown, memoryDrawdown);
     }
     db.prepare(`
         INSERT OR IGNORE INTO paper_closed_pnl (id, symbol, side, size, entry_price, close_price, pnl, max_drawdown, timestamp)

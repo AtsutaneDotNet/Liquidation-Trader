@@ -879,7 +879,15 @@ class TradingBot {
                 const closedPnls = await this.tradeExchange.fetchClosedPnls();
                 this.lastClosedPnlUpdate = new Date().toISOString();
                 if (closedPnls && closedPnls.length > 0) {
+                    const cfg = this.config.get();
+                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
                     for (const pnl of closedPnls) {
+                        if (pnl.size > 0 && pnl.entry_price > 0 && pnl.pnl !== 0) {
+                            const margin = (pnl.size * pnl.entry_price) / leverage;
+                            if (margin > 0) {
+                                pnl.max_drawdown = (pnl.pnl / margin) * 100;
+                            }
+                        }
                         db.addClosedPnl(pnl);
                     }
                 }
