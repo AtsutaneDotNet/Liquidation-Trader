@@ -442,8 +442,13 @@ class TradingBot {
                         if (margin > 0) {
                             const pnlPercent = (pnl / margin) * 100;
                             if (pnlPercent < runawayThreshold) {
-                                logger.info(`[PAPER TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
-                                this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
+                                this.lastPaperRunaway = this.lastPaperRunaway || {};
+                                const now = Date.now();
+                                if (!this.lastPaperRunaway[symbol] || now - this.lastPaperRunaway[symbol] >= 10000) {
+                                    this.lastPaperRunaway[symbol] = now;
+                                    logger.info(`[PAPER TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
+                                    this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
+                                }
                             }
                         }
                     }
@@ -2091,7 +2096,7 @@ class TradingBot {
             db.addPaperClosedPnl({
                 id: `paper-close-${Date.now()}`,
                 symbol: position.symbol,
-                side: position.side,
+                side: position.side.toLowerCase() === 'long' ? 'buy' : 'sell',
                 size: position.size,
                 entry_price: position.entry_price,
                 close_price: closePrice,
