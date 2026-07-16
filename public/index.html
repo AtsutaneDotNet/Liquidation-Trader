@@ -14,7 +14,8 @@
 
 <body>
     <header class="main-header">
-        <h1 class="logo header-logo">🚀 Liquidation <span class="highlight">Trader</span> <span id="trading-mode-badge" class="mode-badge" style="display: none;"></span></h1>
+        <h1 class="logo header-logo">🚀 Liquidation <span class="highlight">Trader</span> <span id="trading-mode-badge"
+                class="mode-badge" style="display: none;"></span></h1>
         <div class="currency-switcher-container">
             <span class="currency-label">Display Currency:</span>
             <select id="currency-select" class="currency-select">
@@ -282,9 +283,12 @@
             <section id="statistics-page" class="page">
                 <header style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>Statistics</h2>
-                    <button id="share-statistics-btn" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+                    <button id="share-statistics-btn" class="btn btn-primary"
+                        style="display: flex; align-items: center; gap: 8px;">
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                            </path>
                         </svg>
                         Share
                     </button>
@@ -711,26 +715,37 @@
 
                                 <div class="page-subsection" style="margin-top: 1.5rem;">
                                     <h4>Paper Trading Mode</h4>
-                                    <p class="subtitle" style="margin-bottom: 1rem;">Simulate trades in real-time without risking actual funds.</p>
+                                    <p class="subtitle" style="margin-bottom: 1rem;">Simulate trades in real-time
+                                        without risking actual funds.</p>
 
                                     <div class="form-group row">
                                         <div class="col">
-                                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                                <input type="checkbox" id="ENABLE_PAPER_TRADING" name="ENABLE_PAPER_TRADING">
+                                            <label
+                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                                <input type="checkbox" id="ENABLE_PAPER_TRADING"
+                                                    name="ENABLE_PAPER_TRADING">
                                                 <span>Enable Paper Trading</span>
                                             </label>
-                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px; margin-left: 24px;">When enabled, orders will be executed virtually using market price streams.</p>
+                                            <p class="subtitle"
+                                                style="font-size: 11px; margin-top: 4px; margin-left: 24px;">When
+                                                enabled, orders will be executed virtually using market price streams.
+                                            </p>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="form-group row" id="paperTradingBalanceRow" style="display: none;">
                                         <div class="col">
-                                            <label for="PAPER_TRADING_BALANCE">Initial Paper Trading Balance (USD)</label>
+                                            <label for="PAPER_TRADING_BALANCE">Initial Paper Trading Balance
+                                                (USD)</label>
                                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                                <input type="number" id="PAPER_TRADING_BALANCE" name="PAPER_TRADING_BALANCE" step="1" min="10" style="flex: 1;">
-                                                <button type="button" id="btn-reset-paper" class="btn btn-outline" style="display: none; white-space: nowrap; padding: 0.4rem 1rem;">Reset Paper Balance</button>
+                                                <input type="number" id="PAPER_TRADING_BALANCE"
+                                                    name="PAPER_TRADING_BALANCE" step="1" min="10" style="flex: 1;">
+                                                <button type="button" id="btn-reset-paper" class="btn btn-outline"
+                                                    style="display: none; white-space: nowrap; padding: 0.4rem 1rem;">Reset
+                                                    Paper Balance</button>
                                             </div>
-                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Set the starting balance for your virtual account.</p>
+                                            <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Set the
+                                                starting balance for your virtual account.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -880,6 +895,17 @@
                                                 <label for="CB_VOLUME_MULTIPLIER">Volume Multiplier</label>
                                                 <input type="number" id="CB_VOLUME_MULTIPLIER"
                                                     name="CB_VOLUME_MULTIPLIER" placeholder="2.0" step="0.1" min="0.1">
+                                            </div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col">
+                                                <label for="CB_PRICE_MOVEMENT_PERCENT">Price Movement %
+                                                    Threshold</label>
+                                                <input type="number" id="CB_PRICE_MOVEMENT_PERCENT"
+                                                    name="CB_PRICE_MOVEMENT_PERCENT" placeholder="10.0" step="0.1"
+                                                    min="0.1">
+                                                <p class="subtitle" style="margin-top: 6px; font-size: 11px;">Skip trade
+                                                    if price moved more than this % over lookback period.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1055,7 +1081,8 @@
                                             </div>
                                             <div class="col">
                                                 <label for="DMI_SPREAD_THRESHOLD">DI Spread Threshold</label>
-                                                <input type="number" id="DMI_SPREAD_THRESHOLD" name="DMI_SPREAD_THRESHOLD" step="0.1" min="0"
+                                                <input type="number" id="DMI_SPREAD_THRESHOLD"
+                                                    name="DMI_SPREAD_THRESHOLD" step="0.1" min="0"
                                                     placeholder="e.g. 10 (empty = disabled)">
                                             </div>
                                         </div>
@@ -1594,16 +1621,20 @@
                     style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
                     Last Update: <span id="last-update-positions">Never</span>
                 </div>
-                <div class="card positions-summary-bar" id="positions-summary-bar" style="display: none; align-items: center; justify-content: space-between; padding: 16px 24px; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
-                    <h3 style="margin: 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+                <div class="card positions-summary-bar" id="positions-summary-bar"
+                    style="display: none; align-items: center; justify-content: space-between; padding: 16px 24px; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+                    <h3
+                        style="margin: 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
                         All Positions
                     </h3>
                     <div style="display: flex; gap: 24px; align-items: center;">
                         <div style="font-size: 14px; color: var(--text-muted);">
-                            Current Positions: <span id="summary-current-positions" style="font-size: 18px; font-weight: 600; color: var(--text-main); margin-left: 8px;">0</span>
+                            Current Positions: <span id="summary-current-positions"
+                                style="font-size: 18px; font-weight: 600; color: var(--text-main); margin-left: 8px;">0</span>
                         </div>
                         <div style="font-size: 14px; color: var(--text-muted);">
-                            Cumulative P&L: <span id="summary-cumulative-pnl" style="font-size: 18px; font-weight: 600; margin-left: 8px;">0.00 USD</span>
+                            Cumulative P&L: <span id="summary-cumulative-pnl"
+                                style="font-size: 18px; font-weight: 600; margin-left: 8px;">0.00 USD</span>
                         </div>
                     </div>
                 </div>
@@ -2002,7 +2033,8 @@
                     <div class="form-group row">
                         <div class="col">
                             <label>DMI Threshold Condition</label>
-                            <select id="DMI_THRESHOLD_DIR" class="styled-select" onchange="document.getElementById('dmi-upper-threshold-col').style.display = this.value === 'range' ? 'block' : 'none'">
+                            <select id="DMI_THRESHOLD_DIR" class="styled-select"
+                                onchange="document.getElementById('dmi-upper-threshold-col').style.display = this.value === 'range' ? 'block' : 'none'">
                                 <option value="under">DMI <= Threshold (Default)</option>
                                 <option value="above">DMI >= Threshold</option>
                                 <option value="range">Range (Threshold to Upper)</option>
@@ -2011,7 +2043,8 @@
                         </div>
                         <div class="col" id="dmi-upper-threshold-col" style="display: none;">
                             <label>DMI Upper Threshold</label>
-                            <input type="number" id="DMI_THRESHOLD_UPPER" class="styled-input" step="1" title="Used when DMI Threshold Condition is set to Range">
+                            <input type="number" id="DMI_THRESHOLD_UPPER" class="styled-input" step="1"
+                                title="Used when DMI Threshold Condition is set to Range">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -2106,8 +2139,10 @@
 
     <!-- TradingView Popup Modal -->
     <div id="tvPopupModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content card" style="width: 90vw; max-width: 1200px; height: 80vh; padding: 20px; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+        <div class="modal-content card"
+            style="width: 90vw; max-width: 1200px; height: 80vh; padding: 20px; display: flex; flex-direction: column;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <h2 style="margin: 0; font-size: 24px;" id="tvPopupModalSymbol">Symbol</h2>
                 </div>
@@ -2116,8 +2151,8 @@
                     onmouseover="this.style.color='var(--text-main)'; this.style.background='var(--border-color)';"
                     onmouseout="this.style.color='var(--text-muted)'; this.style.background='none';">
                     <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
