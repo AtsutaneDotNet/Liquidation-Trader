@@ -444,7 +444,7 @@ class TradingBot {
                             if (pnlPercent < runawayThreshold) {
                                 this.lastPaperRunaway = this.lastPaperRunaway || {};
                                 const now = Date.now();
-                                if (!this.lastPaperRunaway[symbol] || now - this.lastPaperRunaway[symbol] >= 10000) {
+                                if (!this.lastPaperRunaway[symbol] || now - this.lastPaperRunaway[symbol] >= 70000) {
                                     this.lastPaperRunaway[symbol] = now;
                                     logger.info(`[PAPER TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
                                     this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
