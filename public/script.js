@@ -71,6 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let cachedClosedPnls = [];
     let cachedDynamicThresholds = [];
     let cachedTradeDecisions = [];
+    
+    // Pagination states
+    const ITEMS_PER_PAGE = 100;
+    let currentLiquidationsPage = 1;
+    let currentTradeDecisionsPage = 1;
+    let currentClosedPnlsPage = 1;
+    let currentDynamicThresholdsPage = 1;
 
     // Interactive Tooltip Touch & Click Delegation Handler
     document.addEventListener('click', (e) => {
@@ -1333,6 +1340,23 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+        if (currentLiquidationsPage > totalPages) currentLiquidationsPage = totalPages;
+        if (currentLiquidationsPage < 1) currentLiquidationsPage = 1;
+
+        const startIndex = (currentLiquidationsPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageData = filtered.slice(startIndex, endIndex);
+
+        // Update pagination UI
+        const btnPrev = document.getElementById('btn-prev-liquidations');
+        const btnNext = document.getElementById('btn-next-liquidations');
+        const pageInfo = document.getElementById('liquidations-page-info');
+
+        if (btnPrev) btnPrev.disabled = currentLiquidationsPage === 1;
+        if (btnNext) btnNext.disabled = currentLiquidationsPage === totalPages;
+        if (pageInfo) pageInfo.textContent = `Page ${currentLiquidationsPage} of ${totalPages}`;
+
         const getThresholdForLiq = (liq) => {
             let currentThreshold = lastEffectiveThreshold;
             if (lastUseDynamic) {
@@ -1352,10 +1376,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return currentThreshold;
         };
 
-        if (filtered.length === 0) {
+        if (pageData.length === 0) {
             tbodyLiquidations.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching liquidations found for "${searchVal}" &mdash;` : '&mdash; No liquidations tracked yet &mdash;'}</td></tr>`;
         } else {
-            tbodyLiquidations.innerHTML = filtered.map(liq => {
+            tbodyLiquidations.innerHTML = pageData.map(liq => {
                 const sideStr = (liq.side || '').toLowerCase();
                 const isBuy = sideStr === 'buy' || sideStr === 'long';
                 const sideClz = isBuy ? 'side-buy' : 'side-sell';
@@ -1377,6 +1401,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>`;
             }).join('');
         }
+    }
+
+    const btnPrevLiq = document.getElementById('btn-prev-liquidations');
+    const btnNextLiq = document.getElementById('btn-next-liquidations');
+    if (btnPrevLiq) {
+        btnPrevLiq.addEventListener('click', () => {
+            if (currentLiquidationsPage > 1) {
+                currentLiquidationsPage--;
+                renderLiquidations();
+            }
+        });
+    }
+    if (btnNextLiq) {
+        btnNextLiq.addEventListener('click', () => {
+            const searchVal = (document.getElementById('liquidations-search')?.value || '').trim().toUpperCase();
+            let filtered = cachedLiquidations;
+            if (searchVal) filtered = cachedLiquidations.filter(liq => (liq.symbol || '').toUpperCase().includes(searchVal));
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+            if (currentLiquidationsPage < totalPages) {
+                currentLiquidationsPage++;
+                renderLiquidations();
+            }
+        });
     }
 
     function fetchLiquidations() {
@@ -1473,10 +1520,27 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        if (filtered.length === 0) {
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+        if (currentClosedPnlsPage > totalPages) currentClosedPnlsPage = totalPages;
+        if (currentClosedPnlsPage < 1) currentClosedPnlsPage = 1;
+
+        const startIndex = (currentClosedPnlsPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageData = filtered.slice(startIndex, endIndex);
+
+        // Update pagination UI
+        const btnPrev = document.getElementById('btn-prev-closed-pnl');
+        const btnNext = document.getElementById('btn-next-closed-pnl');
+        const pageInfo = document.getElementById('closed-pnl-page-info');
+
+        if (btnPrev) btnPrev.disabled = currentClosedPnlsPage === 1;
+        if (btnNext) btnNext.disabled = currentClosedPnlsPage === totalPages;
+        if (pageInfo) pageInfo.textContent = `Page ${currentClosedPnlsPage} of ${totalPages}`;
+
+        if (pageData.length === 0) {
             tbodyClosedPnl.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching records found for "${searchVal}" &mdash;` : '&mdash; No closed PnL records found &mdash;'}</td></tr>`;
         } else {
-            tbodyClosedPnl.innerHTML = filtered.map(record => {
+            tbodyClosedPnl.innerHTML = pageData.map(record => {
                 const timeStr = new Date(record.timestamp).toLocaleString();
                 const sideStr = (record.side || '').toUpperCase();
                 const sideClz = sideStr === 'BUY' || sideStr === 'LONG' ? 'side-buy' : (sideStr === 'SELL' || sideStr === 'SHORT' ? 'side-sell' : '');
@@ -1495,6 +1559,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>`;
             }).join('');
         }
+    }
+
+    const btnPrevClosedPnl = document.getElementById('btn-prev-closed-pnl');
+    const btnNextClosedPnl = document.getElementById('btn-next-closed-pnl');
+    if (btnPrevClosedPnl) {
+        btnPrevClosedPnl.addEventListener('click', () => {
+            if (currentClosedPnlsPage > 1) {
+                currentClosedPnlsPage--;
+                renderClosedPnlsTable();
+            }
+        });
+    }
+    if (btnNextClosedPnl) {
+        btnNextClosedPnl.addEventListener('click', () => {
+            const searchVal = (document.getElementById('closed-pnl-search')?.value || '').trim().toUpperCase();
+            let filtered = cachedClosedPnls;
+            if (searchVal) filtered = cachedClosedPnls.filter(record => (record.symbol || '').toUpperCase().includes(searchVal));
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+            if (currentClosedPnlsPage < totalPages) {
+                currentClosedPnlsPage++;
+                renderClosedPnlsTable();
+            }
+        });
     }
 
     function fetchClosedPnlsTable() {
@@ -1528,10 +1615,27 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        if (filtered.length === 0) {
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+        if (currentDynamicThresholdsPage > totalPages) currentDynamicThresholdsPage = totalPages;
+        if (currentDynamicThresholdsPage < 1) currentDynamicThresholdsPage = 1;
+
+        const startIndex = (currentDynamicThresholdsPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageData = filtered.slice(startIndex, endIndex);
+
+        // Update pagination UI
+        const btnPrev = document.getElementById('btn-prev-dynamic-thresholds');
+        const btnNext = document.getElementById('btn-next-dynamic-thresholds');
+        const pageInfo = document.getElementById('dynamic-thresholds-page-info');
+
+        if (btnPrev) btnPrev.disabled = currentDynamicThresholdsPage === 1;
+        if (btnNext) btnNext.disabled = currentDynamicThresholdsPage === totalPages;
+        if (pageInfo) pageInfo.textContent = `Page ${currentDynamicThresholdsPage} of ${totalPages}`;
+
+        if (pageData.length === 0) {
             tbodyDynamicThresholds.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching dynamic thresholds found for "${searchVal}" &mdash;` : '&mdash; Bot is stopped or no pairs loaded &mdash;'}</td></tr>`;
         } else {
-            tbodyDynamicThresholds.innerHTML = filtered.map(item => {
+            tbodyDynamicThresholds.innerHTML = pageData.map(item => {
                 const isDynamic = item.status === 'Dynamic (API)';
                 const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
                 return `<tr>
@@ -1541,6 +1645,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>`;
             }).join('');
         }
+    }
+
+    const btnPrevDynamic = document.getElementById('btn-prev-dynamic-thresholds');
+    const btnNextDynamic = document.getElementById('btn-next-dynamic-thresholds');
+    if (btnPrevDynamic) {
+        btnPrevDynamic.addEventListener('click', () => {
+            if (currentDynamicThresholdsPage > 1) {
+                currentDynamicThresholdsPage--;
+                renderDynamicThresholdTable();
+            }
+        });
+    }
+    if (btnNextDynamic) {
+        btnNextDynamic.addEventListener('click', () => {
+            const searchVal = (document.getElementById('dynamic-thresholds-search')?.value || '').trim().toUpperCase();
+            let filtered = cachedDynamicThresholds;
+            if (searchVal) filtered = cachedDynamicThresholds.filter(item => (item.symbol || '').toUpperCase().includes(searchVal));
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+            if (currentDynamicThresholdsPage < totalPages) {
+                currentDynamicThresholdsPage++;
+                renderDynamicThresholdTable();
+            }
+        });
     }
 
     function fetchDynamicThresholdTable() {
@@ -1701,11 +1828,51 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        if (filtered.length === 0) {
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+        if (currentTradeDecisionsPage > totalPages) currentTradeDecisionsPage = totalPages;
+        if (currentTradeDecisionsPage < 1) currentTradeDecisionsPage = 1;
+
+        const startIndex = (currentTradeDecisionsPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageData = filtered.slice(startIndex, endIndex);
+
+        // Update pagination UI
+        const btnPrev = document.getElementById('btn-prev-trade-decisions');
+        const btnNext = document.getElementById('btn-next-trade-decisions');
+        const pageInfo = document.getElementById('trade-decisions-page-info');
+
+        if (btnPrev) btnPrev.disabled = currentTradeDecisionsPage === 1;
+        if (btnNext) btnNext.disabled = currentTradeDecisionsPage === totalPages;
+        if (pageInfo) pageInfo.textContent = `Page ${currentTradeDecisionsPage} of ${totalPages}`;
+
+        if (pageData.length === 0) {
             tbodyTradeDecisions.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
         } else {
-            tbodyTradeDecisions.innerHTML = filtered.map(renderTradeDecisionRow).join('');
+            tbodyTradeDecisions.innerHTML = pageData.map(renderTradeDecisionRow).join('');
         }
+    }
+
+    const btnPrevTrade = document.getElementById('btn-prev-trade-decisions');
+    const btnNextTrade = document.getElementById('btn-next-trade-decisions');
+    if (btnPrevTrade) {
+        btnPrevTrade.addEventListener('click', () => {
+            if (currentTradeDecisionsPage > 1) {
+                currentTradeDecisionsPage--;
+                renderTradeDecisions();
+            }
+        });
+    }
+    if (btnNextTrade) {
+        btnNextTrade.addEventListener('click', () => {
+            const searchVal = (document.getElementById('trade-decisions-search')?.value || '').trim().toUpperCase();
+            let filtered = cachedTradeDecisions;
+            if (searchVal) filtered = cachedTradeDecisions.filter(record => (record.symbol || '').toUpperCase().includes(searchVal));
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+            if (currentTradeDecisionsPage < totalPages) {
+                currentTradeDecisionsPage++;
+                renderTradeDecisions();
+            }
+        });
     }
 
     function fetchTradeDecisions() {

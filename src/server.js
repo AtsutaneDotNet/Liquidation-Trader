@@ -284,16 +284,16 @@ class WebServer {
 
         this.app.get('/api/liquidations', (req, res) => {
             const db = require('./db');
-            res.json(db.getLiquidations(200) || []); // Fetch up to 200 liquidations for the UI
+            res.json(db.getLiquidations(500) || []); // Fetch up to 500 liquidations for the UI
         });
 
         this.app.get('/api/closed-pnl', (req, res) => {
             const db = require('./db');
             const currentConfig = config.get();
             if (currentConfig.ENABLE_PAPER_TRADING) {
-                res.json(db.getPaperClosedPnls(200) || []);
+                res.json(db.getPaperClosedPnls(500) || []);
             } else {
-                res.json(db.getClosedPnls(200) || []);
+                res.json(db.getClosedPnls(500) || []);
             }
         });
 

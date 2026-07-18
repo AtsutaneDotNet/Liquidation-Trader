@@ -208,7 +208,7 @@ class BinanceExchange extends BaseExchange {
                                 tradesBySymbol[pnl.symbol] = await this.exchange.fetchMyTrades(pnl.symbol);
                             }
                             const trades = tradesBySymbol[pnl.symbol];
-                            
+
                             let bestMatch = null;
                             let minDiff = Infinity;
 
@@ -219,7 +219,7 @@ class BinanceExchange extends BaseExchange {
                                     bestMatch = trade;
                                     break;
                                 }
-                                
+
                                 // Fallback to closest timestamp
                                 const diff = Math.abs(trade.timestamp - pnl.timestamp);
                                 if (diff < minDiff) {
@@ -323,13 +323,11 @@ class BinanceExchange extends BaseExchange {
 
             await this.exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', oppositeSide, size, undefined, {
                 stopPrice: tpStr,
-                reduceOnly: true,
                 closePosition: true
             });
 
             await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
                 stopPrice: slStr,
-                reduceOnly: true,
                 closePosition: true
             });
 

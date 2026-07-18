@@ -1364,7 +1364,7 @@ class TradingBot {
             decisionRecord.reason = reason;
             if (side) decisionRecord.side = side;
             this.tradeDecisions.unshift(decisionRecord);
-            if (this.tradeDecisions.length > 100) this.tradeDecisions.pop();
+            if (this.tradeDecisions.length > 500) this.tradeDecisions.pop();
         };
 
         const blacklistStr = cfg.COIN_BLACKLIST || '';
