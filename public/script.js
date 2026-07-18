@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     checkForUpdates();
+    // Also check once a day (every 24 hours) in case the page is left open
+    setInterval(checkForUpdates, 24 * 60 * 60 * 1000);
 
     // Caching for real-time table search/filtering
     let cachedLiquidations = [];
