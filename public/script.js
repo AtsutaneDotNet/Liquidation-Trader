@@ -2461,8 +2461,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     if (pnlWinRateChart) {
-                        const buyWinRate = buyPosCount > 0 ? (buyPosWin / buyPosCount) * 100 : 0;
-                        const sellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
+                        const rawBuyWinRate = buyPosCount > 0 ? (buyPosWin / buyPosCount) * 100 : 0;
+                        const rawSellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
+                        const totalRate = rawBuyWinRate + rawSellWinRate;
+                        
+                        const buyWinRate = totalRate > 0 ? (rawBuyWinRate / totalRate) * 100 : 0;
+                        const sellWinRate = totalRate > 0 ? (rawSellWinRate / totalRate) * 100 : 0;
+
                         pnlWinRateChart.data.datasets[0].data = [buyWinRate, sellWinRate];
                         pnlWinRateChart.update();
 
