@@ -867,10 +867,12 @@ document.addEventListener('DOMContentLoaded', () => {
             currentTvWidget = null;
         }
 
+        const savedInterval = localStorage.getItem('tvChartInterval') || "15";
+
         currentTvWidget = new TradingView.widget({
             "autosize": true,
             "symbol": tvSymbol,
-            "interval": "15",
+            "interval": savedInterval,
             "timezone": "Etc/UTC",
             "theme": "dark",
             "style": "8",
@@ -908,10 +910,12 @@ document.addEventListener('DOMContentLoaded', () => {
             popupTvWidget = null;
         }
 
+        const savedInterval = localStorage.getItem('tvChartInterval') || "15";
+
         popupTvWidget = new TradingView.widget({
             "autosize": true,
             "symbol": tvSymbol,
-            "interval": "15",
+            "interval": savedInterval,
             "timezone": "Etc/UTC",
             "theme": "dark",
             "style": "8",
@@ -944,6 +948,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 popupTvWidget.remove();
                 popupTvWidget = null;
             }
+        }
+    });
+
+    // Chart Settings Modal Logic
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.openTvSettingsBtn')) {
+            const savedInterval = localStorage.getItem('tvChartInterval') || "15";
+            document.getElementById('tv-settings-interval').value = savedInterval;
+            document.getElementById('tvSettingsModal').style.display = 'flex';
+        }
+    });
+
+    document.getElementById('closeTvSettingsModalBtn')?.addEventListener('click', () => {
+        document.getElementById('tvSettingsModal').style.display = 'none';
+    });
+    document.getElementById('cancelTvSettingsBtn')?.addEventListener('click', () => {
+        document.getElementById('tvSettingsModal').style.display = 'none';
+    });
+
+    document.getElementById('tvSettingsModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('tvSettingsModal')) {
+            document.getElementById('tvSettingsModal').style.display = 'none';
+        }
+    });
+
+    document.getElementById('saveTvSettingsBtn')?.addEventListener('click', () => {
+        const newInterval = document.getElementById('tv-settings-interval').value;
+        localStorage.setItem('tvChartInterval', newInterval);
+        document.getElementById('tvSettingsModal').style.display = 'none';
+
+        // Re-render whichever chart is currently visible
+        if (document.getElementById('position-detail-page').classList.contains('active')) {
+            const symbol = document.getElementById('detail-symbol-name').textContent;
+            if (symbol) openPositionDetail(symbol);
+        }
+        if (document.getElementById('tvPopupModal').style.display !== 'none') {
+            const symbol = document.getElementById('tvPopupModalSymbol').textContent;
+            if (symbol) openTvPopupModal(symbol);
         }
     });
 

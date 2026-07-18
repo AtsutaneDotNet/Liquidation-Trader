@@ -1674,7 +1674,15 @@
                         </svg>
                         Back
                     </button>
-                    <h2 style="margin: 0; padding: 0;">Position Detail: <span id="detail-symbol-name"></span></h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2 style="margin: 0; padding: 0;">Position Detail: <span id="detail-symbol-name"></span></h2>
+                        <button class="btn btn-secondary openTvSettingsBtn" style="padding: 4px 8px; margin: 0; background: transparent; border: none; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'" title="Chart Settings">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </header>
                 <div class="page-section">
                     <div class="card chart-container"
@@ -2152,6 +2160,12 @@
                 style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <h2 style="margin: 0; font-size: 24px;" id="tvPopupModalSymbol">Symbol</h2>
+                    <button class="btn btn-secondary openTvSettingsBtn" style="padding: 4px 8px; margin: 0; background: transparent; border: none; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'" title="Chart Settings">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </button>
                 </div>
                 <button id="closeTvPopupModalBtn"
                     style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s;"
@@ -2166,6 +2180,56 @@
             <div class="modal-body" style="flex: 1; min-height: 0;">
                 <!-- TV Container -->
                 <div id="tv_popup_chart_container" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Settings Modal -->
+    <div id="tvSettingsModal" class="modal-overlay" style="display: none; z-index: 2000;">
+        <div class="modal-content card" style="width: 90vw; max-width: 400px; padding: 20px;">
+            <header style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Chart Settings
+                </h3>
+                <button id="closeTvSettingsModalBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal-body form-container">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="tv-settings-interval" style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Default Interval</label>
+                    <select id="tv-settings-interval" class="styled-select" style="width: 100%;">
+                        <optgroup label="Minutes">
+                            <option value="1">1m</option>
+                            <option value="3">3m</option>
+                            <option value="5">5m</option>
+                            <option value="15">15m</option>
+                            <option value="30">30m</option>
+                            <option value="45">45m</option>
+                        </optgroup>
+                        <optgroup label="Hours">
+                            <option value="60">1h</option>
+                            <option value="120">2h</option>
+                            <option value="180">3h</option>
+                            <option value="240">4h</option>
+                        </optgroup>
+                        <optgroup label="Days">
+                            <option value="D">1D</option>
+                            <option value="W">1W</option>
+                            <option value="M">1M</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem;">
+                    <button id="cancelTvSettingsBtn" class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Cancel</button>
+                    <button id="saveTvSettingsBtn" class="btn btn-primary">Save Settings</button>
+                </div>
             </div>
         </div>
     </div>
