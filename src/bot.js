@@ -1484,8 +1484,10 @@ class TradingBot {
                             pushDecision('Circuit Breaker Active (Bypassed)');
                             return; // Skip new positions
                         } else {
-                            const priceMovementPercentThresh = parseFloat(cfg.CB_PRICE_MOVEMENT_PERCENT) || 10.0;
-                            if (lookbackClose > 0) {
+                            let priceMovementPercentThresh = parseFloat(cfg.CB_PRICE_MOVEMENT_PERCENT);
+                            if (isNaN(priceMovementPercentThresh)) priceMovementPercentThresh = 10.0;
+                            
+                            if (priceMovementPercentThresh > 0 && lookbackClose > 0) {
                                 const movementPercent = (movementAbsolute / lookbackClose) * 100;
                                 if (movementPercent >= priceMovementPercentThresh) {
                                     logger.info(`Circuit Breaker triggered for ${symbol}. Price Movement: ${movementPercent.toFixed(2)}% >= Threshold: ${priceMovementPercentThresh}%`);
