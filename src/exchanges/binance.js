@@ -321,13 +321,15 @@ class BinanceExchange extends BaseExchange {
             const slStr = this.exchange.priceToPrecision(symbol, stopLoss);
             const oppositeSide = side === 'buy' ? 'sell' : 'buy';
 
-            await this.exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', oppositeSide, undefined, undefined, {
+            await this.exchange.createOrder(symbol, 'TAKE_PROFIT_MARKET', oppositeSide, size, undefined, {
                 stopPrice: tpStr,
+                reduceOnly: true,
                 closePosition: true
             });
 
-            await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, undefined, undefined, {
+            await this.exchange.createOrder(symbol, 'STOP_MARKET', oppositeSide, size, undefined, {
                 stopPrice: slStr,
+                reduceOnly: true,
                 closePosition: true
             });
 
