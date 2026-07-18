@@ -39,6 +39,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return; // Stop further execution on login page
     }
 
+    // ── Check for Updates ─────────────────────────────────────────
+    function checkForUpdates() {
+        fetch('/api/check-update')
+            .then(res => res.json())
+            .then(data => {
+                if (data.updateAvailable) {
+                    const notification = document.getElementById('update-notification');
+                    if (notification) {
+                        notification.style.display = 'flex';
+                    }
+                }
+            })
+            .catch(err => console.error('Failed to check for updates:', err));
+    }
+
+    const updateDismissBtn = document.getElementById('update-dismiss');
+    if (updateDismissBtn) {
+        updateDismissBtn.addEventListener('click', () => {
+            const notification = document.getElementById('update-notification');
+            if (notification) {
+                notification.style.display = 'none';
+            }
+        });
+    }
+
+    checkForUpdates();
+
     // Caching for real-time table search/filtering
     let cachedLiquidations = [];
     let cachedClosedPnls = [];

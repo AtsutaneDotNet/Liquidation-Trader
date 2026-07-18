@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const config = require('./config');
 const logger = require('./logger');
 
@@ -165,6 +166,58 @@ class WebServer {
                 lastClosedPnlUpdate: this.bot.lastClosedPnlUpdate,
                 lastDynamicThresholdsUpdate: this.bot.lastDynamicThresholdsUpdate
             });
+        });
+
+        // Check for updates
+        this.app.get('/api/check-update', async (req, res) => {
+            try {
+                const gitPath = path.join(__dirname, '../.git');
+                const headPath = path.join(gitPath, 'HEAD');
+                if (!fs.existsSync(headPath)) {
+                    return res.json({ updateAvailable: false, message: 'Not a git repository' });
+                }
+
+                let headContent = fs.readFileSync(headPath, 'utf8').trim();
+                let localHash = '';
+                let branchName = 'main';
+
+                if (headContent.startsWith('ref: ')) {
+                    const refPath = headContent.substring(5);
+                    const absoluteRefPath = path.join(gitPath, refPath);
+                    if (fs.existsSync(absoluteRefPath)) {
+                        localHash = fs.readFileSync(absoluteRefPath, 'utf8').trim();
+                    }
+                    const branchParts = refPath.split('/');
+                    branchName = branchParts[branchParts.length - 1];
+                } else {
+                    localHash = headContent;
+                }
+
+                // Call GitHub API
+                const repoUrl = `https://api.github.com/repos/AtsutaneDotNet/Liquidation-Trader/commits/${branchName}`;
+                const response = await fetch(repoUrl, {
+                    headers: { 'User-Agent': 'Liquidation-Trader-App' }
+                });
+
+                if (!response.ok) {
+                    return res.json({ updateAvailable: false, message: 'Failed to fetch remote commit' });
+                }
+
+                const data = await response.json();
+                const remoteHash = data.sha;
+
+                const updateAvailable = !!(localHash && remoteHash && localHash !== remoteHash);
+                
+                res.json({
+                    updateAvailable,
+                    localHash,
+                    remoteHash,
+                    branch: branchName
+                });
+            } catch (error) {
+                logger.error('Failed to check for updates:', error);
+                res.status(500).json({ updateAvailable: false, message: 'Error checking updates' });
+            }
         });
 
         this.app.get('/api/account', (req, res) => {
