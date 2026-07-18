@@ -36,11 +36,11 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 
 ## ✨ Key Features
 
-- **Full-Featured Paper Trading Engine**: Test strategies securely without risking real capital! The paper engine accurately simulates live trading logic including local Take-Profit, Stop-Loss, Trailing Stops, real-time market entries, Runaway Helper rescues, and true Realized/Unrealized PnL wallet balance isolation.
+- **Full-Featured Paper Trading Engine**: Test strategies securely without risking real capital! The paper engine accurately simulates live trading logic including local Take-Profit, Stop-Loss, Trailing Stops, real-time market entries, Runaway Helper rescues, and true Realized/Unrealized PnL wallet balance isolation. Includes a one-click reset for paper trading history and balance.
 - **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, and **OKX** using the unified **CCXT Pro** engine.
 - **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events. Includes a dynamic minimum safeguard configuration (`REPLACE_BELOW_MIN_THRESHOLD`).
 - **Advanced Strategies**:
-  - **Circuit Breaker**: Detects extreme market volatility using ATR multiples and volume surges. Halts new trading entries during abnormal conditions to protect capital while allowing existing positions to be managed normally.
+  - **Circuit Breaker**: Detects extreme market volatility using ATR multiples, volume surges, and price movement percentage checks. Halts new trading entries during abnormal conditions to protect capital while allowing existing positions to be managed normally.
   - **Rolling & Session VWAP**: 
     - **Rolling VWAP**: Trade based on price deviations from a rolling Volume Weighted Average Price calculated dynamically from historical OHLCV data. Supports configurable timeframes (`VWAP_TIMEFRAME`) and period lengths (`VWAP_PERIOD`), with independent long and short offset percentages.
     - **Session VWAP**: Track price deviations against a session-anchored Volume Weighted Average Price (Daily, Weekly, Monthly) which resets cumulative calculations at the start of each session timeframe.
@@ -55,9 +55,9 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
   - **Value Threshold**: Filter liquidations by USD or BTC value.
 - **Robust Risk Management**:
-  - Dynamic **Take Profit** and **Stop Loss** placement.
+  - Dynamic **Take Profit** and **Stop Loss** placement utilizing precise `reduceOnly` market orders and exact size targeting.
   - **Native Trailing Stop**: Lock in gains during strong trends with exchange-native trailing stops and activation prices.
-  - **Unified PnL Tracking**: Calculate and display daily, weekly, monthly, yearly, and total PnL statistics across all supported exchanges.
+  - **Unified PnL Tracking**: Calculate and display daily, weekly, monthly, yearly, and total PnL statistics across all supported exchanges, including **Max Drawdown** tracking for both live and paper trading.
   - Configurable **Leverage** and **Trade Size** (as a percentage of wallet balance).
   - **Max Leverage Safeguard**: Automatically checks the maximum allowed leverage on the exchange for the specific symbol (via market limit cache or `fetchLeverageTiers` API) and skips the trade if the configured `TRADE_LEVERAGE` exceeds it, preventing API errors and protecting account health.
   - **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
@@ -66,6 +66,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **Automatic Internal Transfer**: Automatically takes profit by transferring a specified percentage of profit from the trading account to the funding account when the wallet value exceeds a predefined threshold.
 - **Premium Web UI**:
   - **Modern 6-Tab Interface**: A fully responsive, premium 6-tab configuration system with detailed descriptions, desktop drag-to-scroll swipe gestures, and glassmorphism design.
+  - **Share Statistics**: Export and share visual performance statistics via a built-in screenshot tool.
   - **Import/Export Settings**: Seamlessly backup and restore your strategy configurations without exposing sensitive API keys.
   - **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
   - **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
@@ -162,6 +163,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `CB_PRICE_LOOKBACK` | Number of candles to look back for price movement. | `5` |
 | `CB_VOLUME_PERIOD` | Number of candles for Volume SMA calculation. | `20` |
 | `CB_VOLUME_MULTIPLIER` | Volume spike multiplier threshold compared to SMA. | `2.0` |
+| `CB_PRICE_MOVEMENT_PERCENT` | Price movement percentage threshold to trigger circuit breaker. | `10.0` |
 | `CB_BYPASS_ON_POSITION` | Bypass the circuit breaker condition if there is an open position (`false`, `true`, `conditional`). | `false` |
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
 | `VWAP_TYPE` | Type of VWAP strategy: `rolling` or `session`. | `rolling` |
