@@ -65,6 +65,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS margin_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     margin_percent REAL,
+    position_count INTEGER DEFAULT 0,
     timestamp INTEGER
   );
 
@@ -122,6 +123,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS paper_margin_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     margin_percent REAL,
+    position_count INTEGER DEFAULT 0,
     timestamp INTEGER
   );
 
@@ -139,6 +141,8 @@ try { db.exec('ALTER TABLE positions ADD COLUMN tp_price REAL DEFAULT 0;'); } ca
 try { db.exec('ALTER TABLE positions ADD COLUMN sl_price REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE account_state ADD COLUMN yearly_pnl REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE bot_events ADD COLUMN threshold REAL DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE margin_history ADD COLUMN position_count INTEGER DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE paper_margin_history ADD COLUMN position_count INTEGER DEFAULT 0;'); } catch(e) {}
 
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
@@ -342,7 +346,8 @@ function updateAccountState(data) {
     const state = getAccountState();
     if (state && state.total_value > 0) {
         const marginPercent = (state.margin_used / state.total_value) * 100;
-        db.prepare('INSERT INTO margin_history (margin_percent, timestamp) VALUES (?, ?)').run(marginPercent, data.updated_at);
+        const posCount = db.prepare('SELECT COUNT(*) as count FROM positions').get().count;
+        db.prepare('INSERT INTO margin_history (margin_percent, position_count, timestamp) VALUES (?, ?, ?)').run(marginPercent, posCount, data.updated_at);
         
         // Track isolation mode
         if (currentConfig['ENABLE_ISOLATION_MODE'] === 'true') {
@@ -577,23 +582,28 @@ function recordDrawdown(symbol, max_drawdown) {
     }
 }
 
-function getPageStatistics(cutoffTimestamp, isPaper = false) {
+function getPageStatistics(cutoff, isPaper = false) {
     const marginTable = isPaper ? 'paper_margin_history' : 'margin_history';
     const pnlTable = isPaper ? 'paper_closed_pnl' : 'closed_pnl';
-
-    const marginHistory = db.prepare(`SELECT margin_percent, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
+    const cutoffTimestamp = cutoff || (Date.now() - 24 * 60 * 60 * 1000); // Default to last 24h
+    
+    const marginHistory = db.prepare(`SELECT margin_percent, position_count, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
     const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
     const dynamicThresholds = db.prepare('SELECT MAX(threshold) as max, MIN(threshold) as min FROM bot_events WHERE event_type = \'LIQUIDATION_MATCH\' AND strategy = \'DYNAMIC\' AND timestamp >= ?').get(cutoffTimestamp);
     const closedPnls = db.prepare(`SELECT symbol, side, pnl FROM ${pnlTable} WHERE timestamp >= ?`).all(cutoffTimestamp);
     
     const drawdowns = db.prepare('SELECT symbol, max_drawdown FROM symbol_drawdowns WHERE timestamp >= ? ORDER BY max_drawdown ASC').all(cutoffTimestamp);
+    
+    const currentConfig = getConfig();
+    const isolationThreshold = parseFloat(currentConfig['ISOLATION_MARGIN_THRESHOLD']) || 10;
 
     return {
         marginHistory,
         isolationModeCount,
         dynamicThresholds,
         closedPnls,
-        drawdowns
+        drawdowns,
+        isolationThreshold
     };
 }
 
@@ -609,7 +619,8 @@ function updatePaperAccountState(data) {
     const state = getPaperAccountState();
     if (state && state.total_value > 0) {
         const marginPercent = (state.margin_used / state.total_value) * 100;
-        db.prepare('INSERT INTO paper_margin_history (margin_percent, timestamp) VALUES (?, ?)').run(marginPercent, data.updated_at);
+        const posCount = db.prepare('SELECT COUNT(*) as count FROM paper_positions').get().count;
+        db.prepare('INSERT INTO paper_margin_history (margin_percent, position_count, timestamp) VALUES (?, ?, ?)').run(marginPercent, posCount, data.updated_at);
         
         // Track isolation mode
         const currentConfig = getConfig();

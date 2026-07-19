@@ -2282,8 +2282,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (marginCtx) {
             marginHistoryChart = new Chart(marginCtx, {
                 type: 'line',
-                data: { labels: [], datasets: [{ label: 'Used Margin (%)', data: [], borderColor: '#00e676', backgroundColor: 'rgba(0, 230, 118, 0.1)', fill: true, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: 20 } } }
+                data: { labels: [], datasets: [
+                    { label: 'Used Margin (%)', data: [], borderColor: '#00e676', backgroundColor: 'rgba(0, 230, 118, 0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
+                    { label: 'Position Count', data: [], borderColor: '#2196f3', backgroundColor: 'rgba(33, 150, 243, 0.1)', fill: false, tension: 0.4, yAxisID: 'y1', borderDash: [5, 5] },
+                    { label: 'Isolation Threshold', data: [], borderColor: '#ff3d00', backgroundColor: 'transparent', fill: false, tension: 0, yAxisID: 'y', pointRadius: 0, borderDash: [2, 2] }
+                ] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: true, labels: { color: 'rgba(255, 255, 255, 0.7)' } } }, 
+                    scales: { 
+                        y: { beginAtZero: true, suggestedMax: 20, position: 'left' },
+                        y1: { beginAtZero: true, suggestedMax: 5, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
+                    } 
+                }
             });
         }
 
@@ -2407,6 +2419,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     marginHistoryChart.data.labels = points.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                     marginHistoryChart.data.datasets[0].data = points.map(h => h.margin_percent.toFixed(2));
+                    marginHistoryChart.data.datasets[1].data = points.map(h => h.position_count || 0);
+                    marginHistoryChart.data.datasets[2].data = points.map(() => data.isolationThreshold || 10);
                     marginHistoryChart.update();
                 }
 
