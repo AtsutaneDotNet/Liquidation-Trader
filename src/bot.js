@@ -719,8 +719,8 @@ class TradingBot {
         let currentTp = parseFloat(p.takeProfitPrice || p.info?.takeProfit || p.info?.tpPrice || p.info?.takeProfitPrice || 0);
         let currentSl = parseFloat(p.stopLossPrice || p.info?.stopLoss || p.info?.slPrice || p.info?.stopLossPrice || 0);
 
-        const isTpMatch = !isNaN(currentTp) && currentTp > 0 && Math.abs(currentTp - formattedTp) / formattedTp < 0.005;
-        const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.005;
+        const isTpMatch = !isNaN(currentTp) && currentTp > 0 && Math.abs(currentTp - formattedTp) / formattedTp < 0.0005;
+        const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.0005;
 
         const trailingPercent = trailingPercentCfg;
 
