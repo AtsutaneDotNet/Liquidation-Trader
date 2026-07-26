@@ -2103,6 +2103,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── PnL Chart ────────────────────────────────────────────────
     let pnlChart = null;
+    let weeklyPnlChart = null;
+    let monthlyPnlChart = null;
+
+    function getPnlChartOptions() {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#949bab' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#949bab' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#14171f',
+                    titleColor: '#f0f2f5',
+                    bodyColor: '#f0f2f5',
+                    borderColor: '#2b303d',
+                    borderWidth: 1,
+                    displayColors: false,
+                    callbacks: {
+                        label: function (context) {
+                            const val = context.raw;
+                            const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                            const symbol = currencySymbols[cur] || '$';
+                            const formattedVal = cur === 'BTC' ? val.toFixed(6) : (cur === 'JPY' ? Math.round(val).toLocaleString() : val.toFixed(2));
+                            return (val >= 0 ? '+' : '') + symbol + formattedVal;
+                        }
+                    }
+                }
+            }
+        };
+    }
 
     function initPnlChart() {
         const ctx = document.getElementById('pnl-chart');
@@ -2120,51 +2160,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 0
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        },
-                        ticks: {
-                            color: '#949bab'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#949bab'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: '#14171f',
-                        titleColor: '#f0f2f5',
-                        bodyColor: '#f0f2f5',
-                        borderColor: '#2b303d',
-                        borderWidth: 1,
-                        displayColors: false,
-                        callbacks: {
-                            label: function (context) {
-                                const val = context.raw;
-                                const cur = localStorage.getItem('selectedCurrency') || 'USD';
-                                const symbol = currencySymbols[cur] || '$';
-                                const formattedVal = cur === 'BTC' ? val.toFixed(6) : (cur === 'JPY' ? Math.round(val).toLocaleString() : val.toFixed(2));
-                                return (val >= 0 ? '+' : '') + symbol + formattedVal;
-                            }
-                        }
-                    }
-                }
-            }
+            options: getPnlChartOptions()
+        });
+    }
+
+    function initWeeklyPnlChart() {
+        const ctx = document.getElementById('weekly-pnl-chart');
+        if (!ctx) return;
+
+        weeklyPnlChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: `Weekly PnL (${currencySymbols[localStorage.getItem('selectedCurrency') || 'USD'] || '$'})`,
+                    data: [],
+                    backgroundColor: [],
+                    borderRadius: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: getPnlChartOptions()
+        });
+    }
+
+    function initMonthlyPnlChart() {
+        const ctx = document.getElementById('monthly-pnl-chart');
+        if (!ctx) return;
+
+        monthlyPnlChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: `Monthly PnL (${currencySymbols[localStorage.getItem('selectedCurrency') || 'USD'] || '$'})`,
+                    data: [],
+                    backgroundColor: [],
+                    borderRadius: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: getPnlChartOptions()
         });
     }
 
@@ -2191,9 +2227,72 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(console.error);
     }
 
+    function fetchWeeklyPnLHistory() {
+        if (!weeklyPnlChart) return;
+        const pageActive = document.getElementById('account').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/pnl/weekly-history?weeks=26')
+            .then(res => res.json())
+            .then(data => {
+                const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                const symbol = currencySymbols[cur] || '$';
+                const labels = data.map(d => {
+                    const parts = d.date.split('-');
+                    return parts[1];
+                });
+                const values = data.map(d => convertFromUsd(d.weekly_pnl));
+                const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b');
+
+                weeklyPnlChart.data.labels = labels;
+                weeklyPnlChart.data.datasets[0].label = `Weekly PnL (${symbol})`;
+                weeklyPnlChart.data.datasets[0].data = values;
+                weeklyPnlChart.data.datasets[0].backgroundColor = colors;
+                weeklyPnlChart.update();
+            })
+            .catch(console.error);
+    }
+
+    function fetchMonthlyPnLHistory() {
+        if (!monthlyPnlChart) return;
+        const pageActive = document.getElementById('account').classList.contains('active');
+        if (!pageActive) return;
+
+        fetch('/api/pnl/monthly-history?months=12')
+            .then(res => res.json())
+            .then(data => {
+                const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                const symbol = currencySymbols[cur] || '$';
+                const labels = data.map(d => {
+                    const parts = d.date.split('-');
+                    const date = new Date(parts[0], parts[1] - 1);
+                    return date.toLocaleString('default', { month: 'short' });
+                });
+                const values = data.map(d => convertFromUsd(d.monthly_pnl));
+                const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b');
+
+                monthlyPnlChart.data.labels = labels;
+                monthlyPnlChart.data.datasets[0].label = `Monthly PnL (${symbol})`;
+                monthlyPnlChart.data.datasets[0].data = values;
+                monthlyPnlChart.data.datasets[0].backgroundColor = colors;
+                monthlyPnlChart.update();
+            })
+            .catch(console.error);
+    }
+
     initPnlChart();
-    setInterval(fetchPnLHistory, 5000);
+    initWeeklyPnlChart();
+    initMonthlyPnlChart();
+    
+    setInterval(() => {
+        fetchPnLHistory();
+        fetchWeeklyPnLHistory();
+        fetchMonthlyPnLHistory();
+    }, 5000);
+    
     fetchPnLHistory();
+    fetchWeeklyPnLHistory();
+    fetchMonthlyPnLHistory();
 
     // ── 24H Statistics Dashboard ──────────────────────────────────
     let tradesChartInst = null;

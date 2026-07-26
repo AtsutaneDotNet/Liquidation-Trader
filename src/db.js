@@ -575,6 +575,70 @@ function getPaperDailyPnLHistory(days = 30) {
     `).all(cutoffTimestamp);
 }
 
+function getWeeklyPnLHistory(weeks = 26) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (weeks * 7));
+    const cutoffTimestamp = cutoff.getTime();
+
+    return db.prepare(`
+        SELECT 
+            strftime('%Y-%W', datetime(timestamp / 1000, 'unixepoch', 'localtime')) as date,
+            SUM(pnl) as weekly_pnl
+        FROM closed_pnl
+        WHERE timestamp >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    `).all(cutoffTimestamp);
+}
+
+function getPaperWeeklyPnLHistory(weeks = 26) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (weeks * 7));
+    const cutoffTimestamp = cutoff.getTime();
+
+    return db.prepare(`
+        SELECT 
+            strftime('%Y-%W', datetime(timestamp / 1000, 'unixepoch', 'localtime')) as date,
+            SUM(pnl) as weekly_pnl
+        FROM paper_closed_pnl
+        WHERE timestamp >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    `).all(cutoffTimestamp);
+}
+
+function getMonthlyPnLHistory(months = 12) {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const cutoffTimestamp = cutoff.getTime();
+
+    return db.prepare(`
+        SELECT 
+            strftime('%Y-%m', datetime(timestamp / 1000, 'unixepoch', 'localtime')) as date,
+            SUM(pnl) as monthly_pnl
+        FROM closed_pnl
+        WHERE timestamp >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    `).all(cutoffTimestamp);
+}
+
+function getPaperMonthlyPnLHistory(months = 12) {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const cutoffTimestamp = cutoff.getTime();
+
+    return db.prepare(`
+        SELECT 
+            strftime('%Y-%m', datetime(timestamp / 1000, 'unixepoch', 'localtime')) as date,
+            SUM(pnl) as monthly_pnl
+        FROM paper_closed_pnl
+        WHERE timestamp >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    `).all(cutoffTimestamp);
+}
+
 function recordDrawdown(symbol, max_drawdown) {
     if (max_drawdown >= 0) return;
     
@@ -739,5 +803,9 @@ module.exports = {
     addPaperClosedPnl,
     getPaperClosedPnls,
     calculatePaperAggregatedPnl,
-    getPaperDailyPnLHistory
+    getPaperDailyPnLHistory,
+    getWeeklyPnLHistory,
+    getPaperWeeklyPnLHistory,
+    getMonthlyPnLHistory,
+    getPaperMonthlyPnLHistory
 };

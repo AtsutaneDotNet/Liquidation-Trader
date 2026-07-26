@@ -308,6 +308,28 @@ class WebServer {
             }
         });
 
+        this.app.get('/api/pnl/weekly-history', (req, res) => {
+            const db = require('./db');
+            const currentConfig = config.get();
+            const weeks = parseInt(req.query.weeks) || 26;
+            if (currentConfig.ENABLE_PAPER_TRADING) {
+                res.json(db.getPaperWeeklyPnLHistory(weeks) || []);
+            } else {
+                res.json(db.getWeeklyPnLHistory(weeks) || []);
+            }
+        });
+
+        this.app.get('/api/pnl/monthly-history', (req, res) => {
+            const db = require('./db');
+            const currentConfig = config.get();
+            const months = parseInt(req.query.months) || 12;
+            if (currentConfig.ENABLE_PAPER_TRADING) {
+                res.json(db.getPaperMonthlyPnLHistory(months) || []);
+            } else {
+                res.json(db.getMonthlyPnLHistory(months) || []);
+            }
+        });
+
         this.app.get('/api/trade-decisions', (req, res) => {
             res.json(this.bot.tradeDecisions || []);
         });
