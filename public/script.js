@@ -2290,7 +2290,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    plugins: { legend: { display: true, labels: { color: 'rgba(255, 255, 255, 0.7)' } } }, 
+                    plugins: { 
+                        legend: { display: true, labels: { color: 'rgba(255, 255, 255, 0.7)' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y;
+                                    if (context.dataset.label === 'Position Count' && context.dataset.openSymbols) {
+                                        const symbols = context.dataset.openSymbols[context.dataIndex];
+                                        if (symbols) {
+                                            label += ` (${symbols})`;
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }, 
                     scales: { 
                         y: { beginAtZero: true, suggestedMax: 20, position: 'left' },
                         y1: { beginAtZero: true, suggestedMax: 5, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
@@ -2420,6 +2438,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     marginHistoryChart.data.labels = points.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                     marginHistoryChart.data.datasets[0].data = points.map(h => h.margin_percent.toFixed(2));
                     marginHistoryChart.data.datasets[1].data = points.map(h => h.position_count || 0);
+                    marginHistoryChart.data.datasets[1].openSymbols = points.map(h => h.open_symbols || '');
                     marginHistoryChart.data.datasets[2].data = points.map(() => data.isolationThreshold || 10);
                     marginHistoryChart.update();
                 }

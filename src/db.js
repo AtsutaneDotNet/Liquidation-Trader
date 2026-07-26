@@ -66,6 +66,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     margin_percent REAL,
     position_count INTEGER DEFAULT 0,
+    open_symbols TEXT DEFAULT '',
     timestamp INTEGER
   );
 
@@ -124,6 +125,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     margin_percent REAL,
     position_count INTEGER DEFAULT 0,
+    open_symbols TEXT DEFAULT '',
     timestamp INTEGER
   );
 
@@ -143,6 +145,8 @@ try { db.exec('ALTER TABLE account_state ADD COLUMN yearly_pnl REAL DEFAULT 0;')
 try { db.exec('ALTER TABLE bot_events ADD COLUMN threshold REAL DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE margin_history ADD COLUMN position_count INTEGER DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE paper_margin_history ADD COLUMN position_count INTEGER DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE margin_history ADD COLUMN open_symbols TEXT DEFAULT \'\';'); } catch(e) {}
+try { db.exec('ALTER TABLE paper_margin_history ADD COLUMN open_symbols TEXT DEFAULT \'\';'); } catch(e) {}
 
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
@@ -346,8 +350,10 @@ function updateAccountState(data) {
     const state = getAccountState();
     if (state && state.total_value > 0) {
         const marginPercent = (state.margin_used / state.total_value) * 100;
-        const posCount = db.prepare('SELECT COUNT(*) as count FROM positions').get().count;
-        db.prepare('INSERT INTO margin_history (margin_percent, position_count, timestamp) VALUES (?, ?, ?)').run(marginPercent, posCount, data.updated_at);
+        const positions = db.prepare('SELECT symbol FROM positions').all();
+        const posCount = positions.length;
+        const openSymbols = positions.map(p => p.symbol).join(',');
+        db.prepare('INSERT INTO margin_history (margin_percent, position_count, open_symbols, timestamp) VALUES (?, ?, ?, ?)').run(marginPercent, posCount, openSymbols, data.updated_at);
         
         // Track isolation mode
         if (currentConfig['ENABLE_ISOLATION_MODE'] === 'true') {
@@ -587,7 +593,7 @@ function getPageStatistics(cutoff, isPaper = false) {
     const pnlTable = isPaper ? 'paper_closed_pnl' : 'closed_pnl';
     const cutoffTimestamp = cutoff || (Date.now() - 24 * 60 * 60 * 1000); // Default to last 24h
     
-    const marginHistory = db.prepare(`SELECT margin_percent, position_count, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
+    const marginHistory = db.prepare(`SELECT margin_percent, position_count, open_symbols, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
     const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
     const dynamicThresholds = db.prepare('SELECT MAX(threshold) as max, MIN(threshold) as min FROM bot_events WHERE event_type = \'LIQUIDATION_MATCH\' AND strategy = \'DYNAMIC\' AND timestamp >= ?').get(cutoffTimestamp);
     const closedPnls = db.prepare(`SELECT symbol, side, pnl FROM ${pnlTable} WHERE timestamp >= ?`).all(cutoffTimestamp);
@@ -619,8 +625,10 @@ function updatePaperAccountState(data) {
     const state = getPaperAccountState();
     if (state && state.total_value > 0) {
         const marginPercent = (state.margin_used / state.total_value) * 100;
-        const posCount = db.prepare('SELECT COUNT(*) as count FROM paper_positions').get().count;
-        db.prepare('INSERT INTO paper_margin_history (margin_percent, position_count, timestamp) VALUES (?, ?, ?)').run(marginPercent, posCount, data.updated_at);
+        const paperPositions = db.prepare('SELECT symbol FROM paper_positions').all();
+        const posCount = paperPositions.length;
+        const openSymbols = paperPositions.map(p => p.symbol).join(',');
+        db.prepare('INSERT INTO paper_margin_history (margin_percent, position_count, open_symbols, timestamp) VALUES (?, ?, ?, ?)').run(marginPercent, posCount, openSymbols, data.updated_at);
         
         // Track isolation mode
         const currentConfig = getConfig();
