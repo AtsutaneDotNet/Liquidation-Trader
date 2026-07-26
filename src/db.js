@@ -352,7 +352,7 @@ function updateAccountState(data) {
         const marginPercent = (state.margin_used / state.total_value) * 100;
         const positions = db.prepare('SELECT symbol FROM positions').all();
         const posCount = positions.length;
-        const openSymbols = positions.map(p => p.symbol).join(',');
+        const openSymbols = positions.map(p => p.symbol.replace('/USDT:USDT', '')).join(',');
         db.prepare('INSERT INTO margin_history (margin_percent, position_count, open_symbols, timestamp) VALUES (?, ?, ?, ?)').run(marginPercent, posCount, openSymbols, data.updated_at);
         
         // Track isolation mode
@@ -691,7 +691,7 @@ function updatePaperAccountState(data) {
         const marginPercent = (state.margin_used / state.total_value) * 100;
         const paperPositions = db.prepare('SELECT symbol FROM paper_positions').all();
         const posCount = paperPositions.length;
-        const openSymbols = paperPositions.map(p => p.symbol).join(',');
+        const openSymbols = paperPositions.map(p => p.symbol.replace('/USDT:USDT', '')).join(',');
         db.prepare('INSERT INTO paper_margin_history (margin_percent, position_count, open_symbols, timestamp) VALUES (?, ?, ?, ?)').run(marginPercent, posCount, openSymbols, data.updated_at);
         
         // Track isolation mode
