@@ -1557,8 +1557,8 @@
                     <p class="subtitle" style="margin-bottom: 1.5rem;">Live wallet overview and aggregated trade metrics
                         dynamically saved over SQLite.</p>
                     <div class="status-grid">
-                        <div class="card stat-card">
-                            <h3>Total Wallet Value</h3>
+                        <div class="card stat-card glow-effect" style="cursor: pointer;" onclick="openAccountHistoryModal()">
+                            <h3 title="Click to view Account History">Total Wallet Value</h3>
                             <div class="stat-value" id="acc-total-value">$...</div>
                         </div>
                         <div class="card stat-card">
@@ -2275,6 +2275,43 @@
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem;">
                     <button id="cancelTvSettingsBtn" class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-color); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">Cancel</button>
                     <button id="saveTvSettingsBtn" class="btn btn-primary">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account History Modal -->
+    <div id="accountHistoryModal" class="modal-overlay" style="display: none; z-index: 2000;">
+        <div class="modal-content card" style="max-width: 900px; width: 95%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                <h2 style="margin: 0;">Account History</h2>
+                <span class="close" id="closeAccountHistoryBtn" style="font-size: 1.5rem; cursor: pointer;">&times;</span>
+            </div>
+            <div class="modal-body form-container" style="max-height: 75vh; overflow-y: auto;">
+                <div class="chart-container" style="position: relative; height:400px; width:100%; margin-bottom: 2rem;">
+                    <canvas id="accountHistoryChart"></canvas>
+                </div>
+                
+                <h3>Internal Transfers (Take Profit)</h3>
+                <div class="table-container" style="overflow-x: auto; margin-top: 1rem;">
+                    <table class="data-table" id="transfersTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount (USDT)</th>
+                                <th>From</th>
+                                <th style="text-align: right;">To</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transfersTableBody">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <button id="prevTransfersBtn" class="btn btn-secondary" disabled>Previous</button>
+                    <span id="transfersPageInfo">Page 1</span>
+                    <button id="nextTransfersBtn" class="btn btn-secondary" disabled>Next</button>
                 </div>
             </div>
         </div>

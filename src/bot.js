@@ -895,10 +895,21 @@ class TradingBot {
                 const aggregated = db.calculateAggregatedPnl();
                 db.updateAccountState(aggregated);
                 logger.debug(`Aggregated PnL updated. Daily: $${aggregated.daily_pnl.toFixed(2)}`);
-
-                // Execute automatic internal transfer (take profit) check
-                await this.checkAutoTransfer();
             }
+
+            // Snapshot check (applies to both paper and live modes)
+            const currentState = cfg.ENABLE_PAPER_TRADING ? db.getPaperAccountState() : db.getAccountState();
+            if (currentState && currentState.total_value > 0) {
+                const now = new Date();
+                const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                if (!db.hasSnapshotForToday(dateStr)) {
+                    db.recordDailySnapshot(dateStr, currentState.total_value);
+                    logger.info(`Recorded daily account snapshot for ${dateStr}: $${currentState.total_value.toFixed(2)} (${cfg.ENABLE_PAPER_TRADING ? 'PAPER' : 'LIVE'})`);
+                }
+            }
+
+            // Execute automatic internal transfer (take profit) check
+            await this.checkAutoTransfer();
         } catch (e) {
             logger.error(`Failed to update PnL loop: ${e.message}`);
         }
@@ -944,6 +955,7 @@ class TradingBot {
                         const success = await this.tradeExchange.internalTransfer('USDT', amountToTransfer, fromAccount, toAccount);
                         if (success) {
                             this.lastSuccessfulTransfer = new Date().toISOString();
+                            db.recordInternalTransfer(amountToTransfer, fromAccount, toAccount, Date.now());
                             logger.info(`Auto Transfer Completed: Moved $${amountToTransfer} USDT from ${fromAccount} to ${toAccount}.`);
                         }
                     } else {

@@ -168,6 +168,18 @@ class WebServer {
             });
         });
 
+        this.app.get('/api/account-history', (req, res) => {
+            try {
+                const db = require('./db');
+                const chartData = db.getAccountHistoryData();
+                const transfers = db.getInternalTransfers();
+                res.json({ success: true, chartData, transfers });
+            } catch (e) {
+                logger.error(`Failed to fetch account history: ${e.message}`);
+                res.status(500).json({ success: false, message: 'Internal server error' });
+            }
+        });
+
         // Check for updates
         this.app.get('/api/check-update', async (req, res) => {
             try {

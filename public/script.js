@@ -2996,4 +2996,166 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+// --- Account History Modal Logic ---
+window.openAccountHistoryModal = function() {
+    const modal = document.getElementById('accountHistoryModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        fetchAccountHistory();
+    }
+};
 
+let accountHistoryChartInstance = null;
+let cachedTransfers = [];
+let currentTransfersPage = 1;
+const TRANSFERS_PER_PAGE = 10;
+
+function fetchAccountHistory() {
+    fetch('/api/account-history')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderAccountHistoryChart(data.chartData);
+                cachedTransfers = data.transfers || [];
+                currentTransfersPage = 1;
+                renderTransfersTable();
+            }
+        })
+        .catch(err => console.error('Error fetching account history', err));
+}
+
+function renderAccountHistoryChart(chartData) {
+    const ctx = document.getElementById('accountHistoryChart');
+    if (!ctx) return;
+    
+    if (accountHistoryChartInstance) {
+        accountHistoryChartInstance.destroy();
+    }
+    
+    const labels = chartData.map(d => d.date);
+    const walletValues = chartData.map(d => d.total_wallet_value);
+    const cumulativeTransfers = chartData.map(d => d.cumulative_transfer);
+
+    accountHistoryChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Wallet Value',
+                    data: walletValues,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Cumulative Transfer (TP)',
+                    data: cumulativeTransfers,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                title: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#8b949e' }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#8b949e' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: '#8b949e' }
+                }
+            }
+        }
+    });
+}
+
+function renderTransfersTable() {
+    const tbody = document.getElementById('transfersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    const startIdx = (currentTransfersPage - 1) * TRANSFERS_PER_PAGE;
+    const endIdx = startIdx + TRANSFERS_PER_PAGE;
+    const pageData = cachedTransfers.slice(startIdx, endIdx);
+    
+    pageData.forEach(tr => {
+        const row = document.createElement('tr');
+        const date = new Date(tr.timestamp).toLocaleString();
+        row.innerHTML = `
+            <td>${date}</td>
+            <td style="color: var(--success-color)">+$${tr.amount.toFixed(2)}</td>
+            <td>${tr.from_account}</td>
+            <td style="text-align: right;">${tr.to_account}</td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No internal transfers recorded.</td></tr>';
+    }
+    
+    document.getElementById('transfersPageInfo').textContent = `Page ${currentTransfersPage} of ${Math.max(1, Math.ceil(cachedTransfers.length / TRANSFERS_PER_PAGE))}`;
+    document.getElementById('prevTransfersBtn').disabled = currentTransfersPage === 1;
+    document.getElementById('nextTransfersBtn').disabled = endIdx >= cachedTransfers.length;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Modal events
+    const closeBtn = document.getElementById('closeAccountHistoryBtn');
+    const modal = document.getElementById('accountHistoryModal');
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    
+    const prevBtn = document.getElementById('prevTransfersBtn');
+    const nextBtn = document.getElementById('nextTransfersBtn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentTransfersPage > 1) {
+                currentTransfersPage--;
+                renderTransfersTable();
+            }
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if ((currentTransfersPage * TRANSFERS_PER_PAGE) < cachedTransfers.length) {
+                currentTransfersPage++;
+                renderTransfersTable();
+            }
+        });
+    }
+});

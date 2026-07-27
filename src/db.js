@@ -136,6 +136,20 @@ db.exec(`
   );
 
   INSERT OR IGNORE INTO paper_account_state (id) VALUES (1);
+
+  CREATE TABLE IF NOT EXISTS account_snapshots (
+    date TEXT PRIMARY KEY,
+    total_wallet_value REAL,
+    timestamp INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS internal_transfers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    amount REAL,
+    from_account TEXT,
+    to_account TEXT,
+    timestamp INTEGER
+  );
 `);
 
 // Add new columns dynamically if the table already existed
@@ -770,6 +784,57 @@ function calculatePaperAggregatedPnl() {
     };
 }
 
+function recordDailySnapshot(dateStr, totalWalletValue) {
+    db.prepare(`
+        INSERT OR IGNORE INTO account_snapshots (date, total_wallet_value, timestamp)
+        VALUES (?, ?, ?)
+    `).run(dateStr, totalWalletValue, Date.now());
+}
+
+function hasSnapshotForToday(dateStr) {
+    const row = db.prepare('SELECT 1 FROM account_snapshots WHERE date = ?').get(dateStr);
+    return !!row;
+}
+
+function recordInternalTransfer(amount, fromAccount, toAccount, timestamp) {
+    db.prepare(`
+        INSERT INTO internal_transfers (amount, from_account, to_account, timestamp)
+        VALUES (?, ?, ?, ?)
+    `).run(amount, fromAccount, toAccount, timestamp);
+}
+
+function getAccountHistoryData() {
+    const snapshots = db.prepare('SELECT date, total_wallet_value FROM account_snapshots ORDER BY date ASC').all();
+    
+    // Calculate cumulative internal transfers up to each snapshot date
+    // We can aggregate in JS or SQL. SQL is cleaner.
+    const result = [];
+    for (const snap of snapshots) {
+        // End of the day timestamp for this snapshot's date
+        // Format of date is YYYY-MM-DD
+        const parts = snap.date.split('-');
+        const endOfDay = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999).getTime();
+        
+        const tr = db.prepare(`
+            SELECT SUM(amount) as cumulative_transfer
+            FROM internal_transfers
+            WHERE timestamp <= ?
+        `).get(endOfDay);
+        
+        result.push({
+            date: snap.date,
+            total_wallet_value: snap.total_wallet_value,
+            cumulative_transfer: tr.cumulative_transfer || 0
+        });
+    }
+    
+    return result;
+}
+
+function getInternalTransfers() {
+    return db.prepare('SELECT * FROM internal_transfers ORDER BY timestamp DESC').all();
+}
+
 module.exports = {
     db,
     getConfig,
@@ -803,6 +868,11 @@ module.exports = {
     addPaperClosedPnl,
     getPaperClosedPnls,
     calculatePaperAggregatedPnl,
+    recordDailySnapshot,
+    hasSnapshotForToday,
+    recordInternalTransfer,
+    getAccountHistoryData,
+    getInternalTransfers,
     getPaperDailyPnLHistory,
     getWeeklyPnLHistory,
     getPaperWeeklyPnLHistory,
