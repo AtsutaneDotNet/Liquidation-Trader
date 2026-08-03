@@ -451,6 +451,7 @@ class TradingBot {
                     sl_price: newSlPrice,
                     unrealized_pnl: pnl
                 });
+                this.lastPositionsUpdate = new Date().toISOString();
 
                 // Runaway Helper Logic for Paper Trading
                 if (cfg.ENABLE_RUNAWAY_HELPER) {
@@ -568,6 +569,7 @@ class TradingBot {
                     mark_price: closePrice,
                     unrealized_pnl: formattedPnl
                 });
+                this.lastPositionsUpdate = new Date().toISOString();
 
                 // Runaway Helper Logic for Live Trading
                 if (cfg.ENABLE_RUNAWAY_HELPER && pnlPercent !== undefined) {
