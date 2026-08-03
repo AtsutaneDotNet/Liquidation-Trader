@@ -52,6 +52,12 @@ class TradingBot {
         this.lastPositionsUpdate = null;
         this.lastClosedPnlUpdate = null;
         this.lastDynamicThresholdsUpdate = null;
+
+        // Active Price WebSocket Stream Registries
+        this.activePaperWebsockets = {};
+        this.activeLiveWebsockets = {};
+        this.lastPaperRunaway = {};
+        this.lastLiveRunaway = {};
     }
 
     async handleError(errMessage) {
@@ -197,6 +203,13 @@ class TradingBot {
                     this.startPaperWatchOHLCV(pos.symbol);
                 }
             } else {
+                this.activeLiveWebsockets = {};
+                const activeLivePos = db.getPositions();
+                for (const pos of activeLivePos) {
+                    if (pos.size > 0) {
+                        this.startLiveWatchOHLCV(pos.symbol);
+                    }
+                }
                 this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
                 this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
                 this.tradeExchange.watchPrivateTrades(this.onTradeUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
@@ -253,6 +266,8 @@ class TradingBot {
         this.isRunning = false;
         this.symbols = [];
         this.errorCount = 0;
+        this.activePaperWebsockets = {};
+        this.activeLiveWebsockets = {};
         clearTimeout(this.errorTimer);
         clearInterval(this.pnlInterval);
         clearInterval(this.cleanupInterval);
@@ -289,6 +304,7 @@ class TradingBot {
                     if (stillOpen) {
                         logger.info(`Stale position ${stale.symbol} is actually still open. Syncing...`);
                         this.onPositionUpdate([apiMatch]);
+                        this.startLiveWatchOHLCV(stale.symbol);
 
                         const cfg = this.config.get();
                         if (cfg.ENABLE_RUNAWAY_HELPER) {
@@ -313,6 +329,9 @@ class TradingBot {
                     } else {
                         logger.info(`Stale position ${stale.symbol} confirmed closed. Removing.`);
                         db.removePosition(stale.symbol);
+                        if (this.activeLiveWebsockets && this.activeLiveWebsockets[stale.symbol]) {
+                            delete this.activeLiveWebsockets[stale.symbol];
+                        }
                     }
                 }
             } else {
@@ -334,7 +353,7 @@ class TradingBot {
             symbol, 
             '1m', 
             (ohlcv) => {
-                const candle = Array.isArray(ohlcv) ? ohlcv[0] : ohlcv;
+                const candle = Array.isArray(ohlcv) ? (Array.isArray(ohlcv[0]) ? ohlcv[ohlcv.length - 1] : ohlcv) : ohlcv;
                 if (!candle || !candle.length) return;
                 
                 const closePrice = candle[4];
@@ -484,8 +503,88 @@ class TradingBot {
                     });
                 }
             }, 
-            () => this.isRunning && this.activePaperWebsockets[symbol], 
+            () => this.isRunning && this.activePaperWebsockets && this.activePaperWebsockets[symbol], 
             (err) => logger.warn(`[PAPER TRADING] OHLCV Error for ${symbol}: ${err}`)
+        );
+    }
+
+    startLiveWatchOHLCV(symbol) {
+        if (this.activeLiveWebsockets && this.activeLiveWebsockets[symbol]) return; // Already running
+        
+        logger.info(`[LIVE TRADING] Starting 1m price stream for ${symbol} to track live position...`);
+        this.activeLiveWebsockets = this.activeLiveWebsockets || {};
+        this.activeLiveWebsockets[symbol] = true;
+
+        this.tradeExchange.watchOHLCV(
+            symbol,
+            '1m',
+            (ohlcv) => {
+                const candle = Array.isArray(ohlcv) ? (Array.isArray(ohlcv[0]) ? ohlcv[ohlcv.length - 1] : ohlcv) : ohlcv;
+                if (!candle || !candle.length) return;
+
+                const closePrice = candle[4];
+                const positions = db.getPositions();
+                const pos = positions.find(p => p.symbol === symbol);
+
+                if (!pos || pos.size <= 0) {
+                    // Position closed or removed, stop the stream
+                    delete this.activeLiveWebsockets[symbol];
+                    logger.info(`[LIVE TRADING] Position for ${symbol} closed or no longer open. Stopping price stream.`);
+                    return;
+                }
+
+                const direction = pos.side.toLowerCase() === 'long' || pos.side.toLowerCase() === 'buy' ? 1 : -1;
+                const cfg = this.config.get();
+                const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+
+                // Real-time PnL calculation: (current_price - entry_price) * size * direction
+                let pnl = (closePrice - pos.entry_price) * pos.size * direction;
+                let formattedPnl = pnl;
+
+                if (this.tradeExchange && this.tradeExchange.exchange) {
+                    try {
+                        const sign = Math.sign(pnl);
+                        const absPnl = Math.abs(pnl);
+                        formattedPnl = sign * parseFloat(this.tradeExchange.exchange.priceToPrecision(symbol, absPnl));
+                    } catch (e) {
+                        // Keep raw calculated PnL if precision formatting fails
+                    }
+                }
+
+                let pnlPercent = undefined;
+                if (pos.size > 0 && pos.entry_price > 0) {
+                    const margin = (pos.size * pos.entry_price) / leverage;
+                    if (margin > 0) {
+                        pnlPercent = (pnl / margin) * 100;
+                        if (pnlPercent < 0) {
+                            db.recordDrawdown(pos.symbol, pnlPercent);
+                        }
+                    }
+                }
+
+                // Update position in SQLite with live mark price and unrealized PnL
+                db.updatePosition({
+                    ...pos,
+                    mark_price: closePrice,
+                    unrealized_pnl: formattedPnl
+                });
+
+                // Runaway Helper Logic for Live Trading
+                if (cfg.ENABLE_RUNAWAY_HELPER && pnlPercent !== undefined) {
+                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    if (pnlPercent < runawayThreshold) {
+                        this.lastLiveRunaway = this.lastLiveRunaway || {};
+                        const now = Date.now();
+                        if (!this.lastLiveRunaway[symbol] || now - this.lastLiveRunaway[symbol] >= 70000) {
+                            this.lastLiveRunaway[symbol] = now;
+                            logger.info(`[LIVE TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
+                            this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Live Runaway evaluateTrade error: ${e.message}`));
+                        }
+                    }
+                }
+            },
+            () => this.isRunning && this.activeLiveWebsockets && this.activeLiveWebsockets[symbol],
+            (err) => logger.warn(`[LIVE TRADING] Price Stream Error for ${symbol}: ${err}`)
         );
     }
 
@@ -515,7 +614,12 @@ class TradingBot {
         for (const p of positions) {
             const contracts = p.contracts || parseFloat(p.info?.size) || 0;
             if (contracts === 0 || contracts === undefined) {
-                if (p.symbol) db.db.prepare('DELETE FROM positions WHERE symbol = ?').run(p.symbol);
+                if (p.symbol) {
+                    db.db.prepare('DELETE FROM positions WHERE symbol = ?').run(p.symbol);
+                    if (this.activeLiveWebsockets && this.activeLiveWebsockets[p.symbol]) {
+                        delete this.activeLiveWebsockets[p.symbol];
+                    }
+                }
                 continue;
             }
 
@@ -597,6 +701,10 @@ class TradingBot {
             };
             db.updatePosition(dbPos);
 
+            if (contracts > 0 && p.symbol) {
+                this.startLiveWatchOHLCV(p.symbol);
+            }
+
             this.handleTpSl(p, contracts).catch(err => logger.error(`TP/SL handler error: ${err.message}`));
         }
     }
@@ -654,6 +762,9 @@ class TradingBot {
                 // Remove the position from the DB so the UI reflects the closure immediately
                 if (trade.symbol) {
                     db.removePosition(trade.symbol);
+                    if (this.activeLiveWebsockets && this.activeLiveWebsockets[trade.symbol]) {
+                        delete this.activeLiveWebsockets[trade.symbol];
+                    }
                 }
             }
         }
@@ -2072,6 +2183,7 @@ class TradingBot {
                     side,
                     amountInToken
                 );
+                this.startLiveWatchOHLCV(symbol);
             }
 
             logger.info(`Trade successfully executed! Order ID: ${order.id}`);
@@ -2181,6 +2293,10 @@ class TradingBot {
         if (this.tradeExchange.exchange.has['fetchPositions']) {
             const apiPositions = await this.tradeExchange.exchange.fetchPositions();
             await this.onPositionUpdate(apiPositions);
+        }
+
+        if (this.activeLiveWebsockets && this.activeLiveWebsockets[symbol]) {
+            delete this.activeLiveWebsockets[symbol];
         }
         
         return order;
