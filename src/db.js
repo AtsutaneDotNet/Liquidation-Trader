@@ -399,11 +399,12 @@ function updatePosition(pos) {
 }
 
 function updatePositionMarkPrice(symbol, markPrice, unrealizedPnl) {
+    const updatedAt = Date.now();
     return db.prepare(`
         UPDATE positions 
-        SET mark_price = ?, unrealized_pnl = ?
+        SET mark_price = ?, unrealized_pnl = ?, updated_at = ?
         WHERE symbol = ?
-    `).run(markPrice, unrealizedPnl, symbol);
+    `).run(markPrice, unrealizedPnl, updatedAt, symbol);
 }
 
 function getStalePositions(timeoutMs = 60000) {
@@ -747,11 +748,12 @@ function updatePaperPosition(pos) {
 }
 
 function updatePaperPositionMarkPrice(symbol, markPrice, slPrice, unrealizedPnl) {
+    const updatedAt = Date.now();
     return db.prepare(`
         UPDATE paper_positions 
-        SET mark_price = ?, sl_price = ?, unrealized_pnl = ?
+        SET mark_price = ?, sl_price = ?, unrealized_pnl = ?, updated_at = ?
         WHERE symbol = ?
-    `).run(markPrice, slPrice, unrealizedPnl, symbol);
+    `).run(markPrice, slPrice, unrealizedPnl, updatedAt, symbol);
 }
 
 function removePaperPosition(symbol) {
