@@ -1194,6 +1194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentPositionsList = [];
                     positionsContainer.innerHTML = '<div class="empty-msg">&mdash; No active positions tracked yet &mdash;</div>';
                 } else {
+                    data.sort((a, b) => (a.symbol || '').localeCompare(b.symbol || ''));
                     currentPositionsList = data;
                     positionsContainer.innerHTML = data.map(p => {
                         const sideStr = (p.side || '').toLowerCase();

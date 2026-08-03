@@ -422,7 +422,7 @@ function removeStalePositions(timeoutMs = 60000) {
 }
 
 function getPositions() {
-    return db.prepare('SELECT * FROM positions ORDER BY updated_at DESC').all();
+    return db.prepare('SELECT * FROM positions ORDER BY symbol ASC').all();
 }
 
 function addLiquidation(data) {
@@ -761,7 +761,7 @@ function removePaperPosition(symbol) {
 }
 
 function getPaperPositions() {
-    return db.prepare('SELECT * FROM paper_positions ORDER BY updated_at DESC').all();
+    return db.prepare('SELECT * FROM paper_positions ORDER BY symbol ASC').all();
 }
 
 function addPaperClosedPnl(data) {
