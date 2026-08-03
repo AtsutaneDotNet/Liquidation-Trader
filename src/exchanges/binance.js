@@ -44,41 +44,46 @@ class BinanceExchange extends BaseExchange {
             return;
         }
 
-        logger.info(`[Binance] Starting to watch liquidations for ${symbols.length} symbols...`);
-        // Note: For Binance, ccxt does not support an aggregate liquidation stream for multiple symbols easily,
-        // or watching them independently might hit limits if limits are strict, 
-        // but let's conform to the structure.
-        for (const symbol of symbols) {
-            this._watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback);
+        logger.info(`[Binance] Starting to watch liquidations for ${symbols.length} symbols in batched streams...`);
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+            if (!isRunningCheck()) break;
+            const chunk = symbols.slice(i, i + BATCH_SIZE);
+            this._watchSymbolGroupLiquidations(chunk, callback, isRunningCheck, errorCallback);
+            // Stagger batch subscriptions by 400ms to respect Binance's 5 messages/sec limit
+            await new Promise(resolve => setTimeout(resolve, 400));
         }
     }
 
-    async _watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback) {
+    async _watchSymbolGroupLiquidations(symbolsChunk, callback, isRunningCheck, errorCallback) {
+        let retryDelay = 2000;
         while (isRunningCheck()) {
             try {
-                const liquidations = await this.exchange.watchLiquidations(symbol);
+                const liquidations = await this.exchange.watchLiquidationsForSymbols(symbolsChunk);
                 if (!isRunningCheck()) break;
+                retryDelay = 2000;
 
                 if (Array.isArray(liquidations)) {
                     for (const liq of liquidations) {
                         const amount = liq.contracts || liq.baseVolume || 0;
-                        const value = liq.price * amount;
-                        logger.debug(`[Binance] Liquidation for ${symbol} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
+                        const value = (liq.price || 0) * amount;
+                        logger.debug(`[Binance] Liquidation for ${liq.symbol || 'N/A'} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
                         callback(liq);
                     }
-                } else {
-                    const liq = liquidations;
-                    const amount = liq.contracts || liq.baseVolume || 0;
-                    const value = liq.price * amount;
-                    logger.debug(`[Binance] Liquidation for ${symbol} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
-                    callback(liq);
+                } else if (liquidations) {
+                    const amount = liquidations.contracts || liquidations.baseVolume || 0;
+                    const value = (liquidations.price || 0) * amount;
+                    logger.debug(`[Binance] Liquidation for ${liquidations.symbol || 'N/A'} | Price: ${liquidations.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
+                    callback(liquidations);
                 }
             } catch (e) {
                 if (isRunningCheck()) {
-                    if (errorCallback) errorCallback(`[Binance] [${symbol} Stream] ${e.message}`);
-                    else logger.error(`[Binance] Error watching liquidations for ${symbol}:`, e.message);
+                    if (errorCallback) errorCallback(`[Binance] [Liquidations Batch] ${e.message}`);
+                    else logger.error(`[Binance] Error watching liquidations batch: ${e.message}`);
                 }
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const jitter = Math.floor(Math.random() * 2000);
+                await new Promise(resolve => setTimeout(resolve, retryDelay + jitter));
+                retryDelay = Math.min(retryDelay * 1.5, 30000);
             }
         }
     }
@@ -263,16 +268,20 @@ class BinanceExchange extends BaseExchange {
             logger.info('[Binance] CCXT watchOHLCV not available. Paper Trading WS disabled.');
             return;
         }
+        let retryDelay = 3000;
         while (isRunningCheck()) {
             try {
                 const ohlcv = await this.exchange.watchOHLCV(symbol, timeframe);
                 if (!isRunningCheck()) break;
+                retryDelay = 3000;
                 callback(ohlcv);
             } catch (e) {
                 if (isRunningCheck()) {
                     if (errorCallback) errorCallback(`[Binance] [OHLCV Stream] ${e.message}`);
                 }
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const jitter = Math.floor(Math.random() * 3000);
+                await new Promise(resolve => setTimeout(resolve, retryDelay + jitter));
+                retryDelay = Math.min(retryDelay * 1.5, 30000);
             }
         }
     }

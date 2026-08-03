@@ -1096,46 +1096,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.refreshPositions = function () {
-        const btn = document.getElementById('refresh-positions-btn');
-        if (!btn || btn.disabled) return;
-
-        btn.disabled = true;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px; animation: spin 1s linear infinite;">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Refreshing...`;
-
-        fetch('/api/positions/refresh', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToast({ title: 'Success', message: 'Positions manually refreshed.', type: 'success' });
-                    fetchAccountData(); // Update UI
-                } else {
-                    showToast({ title: 'Error', message: data.message || 'Failed to refresh positions.', type: 'error' });
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showToast({ title: 'Error', message: 'Failed to trigger refresh.', type: 'error' });
-            })
-            .finally(() => {
-                let countdown = 60;
-                btn.innerHTML = `Wait ${countdown}s`;
-                const timer = setInterval(() => {
-                    countdown--;
-                    if (countdown <= 0) {
-                        clearInterval(timer);
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                    } else {
-                        btn.innerHTML = `Wait ${countdown}s`;
-                    }
-                }, 1000);
-            });
-    };
 
     window.closePositionMarket = function () {
         const symbol = document.getElementById('detail-symbol-name').textContent;

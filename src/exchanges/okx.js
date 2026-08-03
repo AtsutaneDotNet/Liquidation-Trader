@@ -48,39 +48,45 @@ class OkxExchange extends BaseExchange {
             return;
         }
 
-        logger.info(`[OKX] Starting to watch liquidations for ${symbols.length} symbols...`);
-        // OKX supports batch watching or individual
-        for (const symbol of symbols) {
-            this._watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback);
+        logger.info(`[OKX] Starting to watch liquidations for ${symbols.length} symbols in batched streams...`);
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+            if (!isRunningCheck()) break;
+            const chunk = symbols.slice(i, i + BATCH_SIZE);
+            this._watchSymbolGroupLiquidations(chunk, callback, isRunningCheck, errorCallback);
+            await new Promise(resolve => setTimeout(resolve, 300));
         }
     }
 
-    async _watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback) {
+    async _watchSymbolGroupLiquidations(symbolsChunk, callback, isRunningCheck, errorCallback) {
+        let retryDelay = 2000;
         while (isRunningCheck()) {
             try {
-                const liquidations = await this.exchange.watchLiquidations(symbol);
+                const liquidations = await this.exchange.watchLiquidationsForSymbols(symbolsChunk);
                 if (!isRunningCheck()) break;
+                retryDelay = 2000;
 
                 if (Array.isArray(liquidations)) {
                     for (const liq of liquidations) {
                         const amount = liq.contracts || liq.baseVolume || 0;
-                        const value = liq.price * amount;
-                        logger.debug(`[OKX] Liquidation for ${symbol} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
+                        const value = (liq.price || 0) * amount;
+                        logger.debug(`[OKX] Liquidation for ${liq.symbol || 'N/A'} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
                         callback(liq);
                     }
-                } else {
-                    const liq = liquidations;
-                    const amount = liq.contracts || liq.baseVolume || 0;
-                    const value = liq.price * amount;
-                    logger.debug(`[OKX] Liquidation for ${symbol} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
-                    callback(liq);
+                } else if (liquidations) {
+                    const amount = liquidations.contracts || liquidations.baseVolume || 0;
+                    const value = (liquidations.price || 0) * amount;
+                    logger.debug(`[OKX] Liquidation for ${liquidations.symbol || 'N/A'} | Price: ${liquidations.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
+                    callback(liquidations);
                 }
             } catch (e) {
                 if (isRunningCheck()) {
-                    if (errorCallback) errorCallback(`[OKX] [${symbol} Stream] ${e.message}`);
-                    else logger.error(`[OKX] Error watching liquidations for ${symbol}:`, e.message);
+                    if (errorCallback) errorCallback(`[OKX] [Liquidations Batch] ${e.message}`);
+                    else logger.error(`[OKX] Error watching liquidations batch: ${e.message}`);
                 }
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const jitter = Math.floor(Math.random() * 2000);
+                await new Promise(resolve => setTimeout(resolve, retryDelay + jitter));
+                retryDelay = Math.min(retryDelay * 1.5, 30000);
             }
         }
     }
@@ -150,16 +156,20 @@ class OkxExchange extends BaseExchange {
             logger.info('[OKX] CCXT watchOHLCV not available. Paper Trading WS disabled.');
             return;
         }
+        let retryDelay = 3000;
         while (isRunningCheck()) {
             try {
                 const ohlcv = await this.exchange.watchOHLCV(symbol, timeframe);
                 if (!isRunningCheck()) break;
+                retryDelay = 3000;
                 callback(ohlcv);
             } catch (e) {
                 if (isRunningCheck()) {
                     if (errorCallback) errorCallback(`[OKX] [OHLCV Stream] ${e.message}`);
                 }
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const jitter = Math.floor(Math.random() * 3000);
+                await new Promise(resolve => setTimeout(resolve, retryDelay + jitter));
+                retryDelay = Math.min(retryDelay * 1.5, 30000);
             }
         }
     }
