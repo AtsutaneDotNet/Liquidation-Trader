@@ -44,38 +44,44 @@ class BybitExchange extends BaseExchange {
             return;
         }
 
-        logger.info(`[Bybit] Starting to watch liquidations for ${symbols.length} symbols...`);
+        logger.info(`[Bybit] Starting to watch liquidations for ${symbols.length} symbols in throttled streams...`);
         for (const symbol of symbols) {
+            if (!isRunningCheck()) break;
             this._watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback);
+            // Stagger individual subscriptions by 50ms to prevent connection rate-limiting spikes
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
     }
 
     async _watchSymbolLiquidations(symbol, callback, isRunningCheck, errorCallback) {
+        let retryDelay = 2000;
         while (isRunningCheck()) {
             try {
                 const liquidations = await this.exchange.watchLiquidations(symbol);
                 if (!isRunningCheck()) break;
+                retryDelay = 2000;
 
                 if (Array.isArray(liquidations)) {
                     for (const liq of liquidations) {
                         const amount = liq.contracts || liq.baseVolume || 0;
-                        const value = liq.price * amount;
+                        const value = (liq.price || 0) * amount;
                         logger.debug(`[Bybit] Liquidation for ${symbol} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
                         callback(liq);
                     }
-                } else {
-                    const liq = liquidations;
-                    const amount = liq.contracts || liq.baseVolume || 0;
-                    const value = liq.price * amount;
-                    logger.debug(`[Bybit] Liquidation for ${symbol} | Price: ${liq.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
-                    callback(liq);
+                } else if (liquidations) {
+                    const amount = liquidations.contracts || liquidations.baseVolume || 0;
+                    const value = (liquidations.price || 0) * amount;
+                    logger.debug(`[Bybit] Liquidation for ${symbol} | Price: ${liquidations.price} | Amount: ${amount} | Value: $${value.toFixed(2)}`);
+                    callback(liquidations);
                 }
             } catch (e) {
                 if (isRunningCheck()) {
                     if (errorCallback) errorCallback(`[Bybit] [${symbol} Stream] ${e.message}`);
                     else logger.error(`[Bybit] Error watching liquidations for ${symbol}:`, e.message);
                 }
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const jitter = Math.floor(Math.random() * 2000);
+                await new Promise(resolve => setTimeout(resolve, retryDelay + jitter));
+                retryDelay = Math.min(retryDelay * 1.5, 30000);
             }
         }
     }
@@ -175,16 +181,20 @@ class BybitExchange extends BaseExchange {
             logger.info('[Bybit] CCXT watchOHLCV not available. Paper Trading WS disabled.');
             return;
         }
+        let retryDelay = 3000;
         while (isRunningCheck()) {
             try {
                 const ohlcv = await this.exchange.watchOHLCV(symbol, timeframe);
                 if (!isRunningCheck()) break;
+                retryDelay = 3000;
                 callback(ohlcv);
             } catch (e) {
                 if (isRunningCheck()) {
                     if (errorCallback) errorCallback(`[Bybit] [OHLCV Stream] ${e.message}`);
                 }
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                const jitter = Math.floor(Math.random() * 3000);
+                await new Promise(resolve => setTimeout(resolve, retryDelay + jitter));
+                retryDelay = Math.min(retryDelay * 1.5, 30000);
             }
         }
     }
