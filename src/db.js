@@ -398,6 +398,15 @@ function updatePosition(pos) {
     `).run(pos);
 }
 
+function updatePositionMarkPrice(symbol, markPrice, unrealizedPnl) {
+    const updatedAt = Date.now();
+    return db.prepare(`
+        UPDATE positions 
+        SET mark_price = ?, unrealized_pnl = ?, updated_at = ?
+        WHERE symbol = ?
+    `).run(markPrice, unrealizedPnl, updatedAt, symbol);
+}
+
 function getStalePositions(timeoutMs = 60000) {
     const cutoff = Date.now() - timeoutMs;
     return db.prepare('SELECT * FROM positions WHERE updated_at < ?').all(cutoff);
@@ -738,6 +747,15 @@ function updatePaperPosition(pos) {
     `).run(pos);
 }
 
+function updatePaperPositionMarkPrice(symbol, markPrice, slPrice, unrealizedPnl) {
+    const updatedAt = Date.now();
+    return db.prepare(`
+        UPDATE paper_positions 
+        SET mark_price = ?, sl_price = ?, unrealized_pnl = ?, updated_at = ?
+        WHERE symbol = ?
+    `).run(markPrice, slPrice, unrealizedPnl, updatedAt, symbol);
+}
+
 function removePaperPosition(symbol) {
     db.prepare('DELETE FROM paper_positions WHERE symbol = ?').run(symbol);
 }
@@ -843,6 +861,7 @@ module.exports = {
     updateAccountState,
     getAccountState,
     updatePosition,
+    updatePositionMarkPrice,
     getStalePositions,
     removePosition,
     removeStalePositions,
@@ -863,6 +882,7 @@ module.exports = {
     updatePaperAccountState,
     getPaperAccountState,
     updatePaperPosition,
+    updatePaperPositionMarkPrice,
     removePaperPosition,
     getPaperPositions,
     addPaperClosedPnl,

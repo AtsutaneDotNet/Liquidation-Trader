@@ -204,12 +204,7 @@ class TradingBot {
                 }
             } else {
                 this.activeLiveWebsockets = {};
-                const activeLivePos = db.getPositions();
-                for (const pos of activeLivePos) {
-                    if (pos.size > 0) {
-                        this.startLiveWatchOHLCV(pos.symbol);
-                    }
-                }
+                await this.checkAndRemoveStalePositions();
                 this.tradeExchange.watchPrivateBalance(this.onBalanceUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
                 this.tradeExchange.watchPrivatePositions(this.onPositionUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
                 this.tradeExchange.watchPrivateTrades(this.onTradeUpdate.bind(this), () => this.isRunning, (err) => logger.warn(err));
@@ -289,56 +284,43 @@ class TradingBot {
         if (!this.isRunning) return;
         if (this.config.get().ENABLE_PAPER_TRADING) return;
 
-        const stalePositions = db.getStalePositions(60000);
-        if (!stalePositions || stalePositions.length === 0) return;
-
-        logger.info(`Found ${stalePositions.length} stale position(s). Double-checking via API...`);
         try {
             if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.has['fetchPositions']) {
                 const apiPositions = await this.tradeExchange.exchange.fetchPositions();
+                const dbPositions = db.getPositions();
 
-                for (const stale of stalePositions) {
-                    const apiMatch = apiPositions.find(p => p.symbol === stale.symbol);
-                    const stillOpen = apiMatch && (parseFloat(apiMatch.contracts) > 0 || parseFloat(apiMatch.info?.size) > 0);
+                // 1. Check all DB positions against live exchange positions
+                for (const dbPos of dbPositions) {
+                    const apiMatch = apiPositions.find(p => p.symbol === dbPos.symbol);
+                    const contracts = apiMatch ? (parseFloat(apiMatch.contracts) || parseFloat(apiMatch.info?.size) || Math.abs(parseFloat(apiMatch.info?.positionAmt || 0)) || 0) : 0;
+                    const stillOpen = contracts > 0;
 
                     if (stillOpen) {
-                        logger.info(`Stale position ${stale.symbol} is actually still open. Syncing...`);
-                        this.onPositionUpdate([apiMatch]);
-                        this.startLiveWatchOHLCV(stale.symbol);
-
-                        const cfg = this.config.get();
-                        if (cfg.ENABLE_RUNAWAY_HELPER) {
-                            const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
-                            const contracts = parseFloat(apiMatch.contracts) || parseFloat(apiMatch.info?.size) || 0;
-                            const entryPrice = parseFloat(apiMatch.entryPrice);
-                            const markPrice = parseFloat(apiMatch.markPrice);
-                            const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
-                            const unrealizedPnl = parseFloat(apiMatch.unrealizedPnl || apiMatch.info?.unrealisedPnl || 0);
-
-                            if (contracts > 0 && entryPrice > 0) {
-                                const margin = (contracts * entryPrice) / leverage;
-                                if (margin > 0) {
-                                    const pnlPercent = (unrealizedPnl / margin) * 100;
-                                    if (pnlPercent < runawayThreshold) {
-                                        logger.info(`Runaway Helper triggered for ${stale.symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
-                                        this.evaluateTrade(stale.symbol, markPrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
-                                    }
-                                }
-                            }
-                        }
+                        // Ensure live price stream is running for active positions
+                        this.startLiveWatchOHLCV(dbPos.symbol);
                     } else {
-                        logger.info(`Stale position ${stale.symbol} confirmed closed. Removing.`);
-                        db.removePosition(stale.symbol);
-                        if (this.activeLiveWebsockets && this.activeLiveWebsockets[stale.symbol]) {
-                            delete this.activeLiveWebsockets[stale.symbol];
+                        logger.info(`[Sync] Stale/closed position ${dbPos.symbol} detected. Removing from DB and stopping price stream.`);
+                        db.removePosition(dbPos.symbol);
+                        if (this.activeLiveWebsockets && this.activeLiveWebsockets[dbPos.symbol]) {
+                            delete this.activeLiveWebsockets[dbPos.symbol];
                         }
                     }
                 }
-            } else {
-                db.removeStalePositions(60000);
+
+                // 2. Sync any active exchange positions not yet in DB
+                for (const apiPos of apiPositions) {
+                    const contracts = parseFloat(apiPos.contracts) || parseFloat(apiPos.info?.size) || Math.abs(parseFloat(apiPos.info?.positionAmt || 0)) || 0;
+                    if (contracts > 0) {
+                        const inDb = dbPositions.find(p => p.symbol === apiPos.symbol);
+                        if (!inDb) {
+                            logger.info(`[Sync] Discovered active exchange position ${apiPos.symbol}. Syncing to bot...`);
+                            await this.onPositionUpdate([apiPos]);
+                        }
+                    }
+                }
             }
         } catch (e) {
-            logger.error(`Error checking stale positions: ${e.message}`);
+            logger.error(`Error checking stale/closed positions: ${e.message}`);
         }
     }
 
@@ -445,12 +427,7 @@ class TradingBot {
                     }
                 }
                 
-                db.updatePaperPosition({
-                    ...pos,
-                    mark_price: closePrice,
-                    sl_price: newSlPrice,
-                    unrealized_pnl: pnl
-                });
+                db.updatePaperPositionMarkPrice(pos.symbol, closePrice, newSlPrice, pnl);
                 this.lastPositionsUpdate = new Date().toISOString();
 
                 // Runaway Helper Logic for Paper Trading
@@ -564,11 +541,7 @@ class TradingBot {
                 }
 
                 // Update position in SQLite with live mark price and unrealized PnL
-                db.updatePosition({
-                    ...pos,
-                    mark_price: closePrice,
-                    unrealized_pnl: formattedPnl
-                });
+                db.updatePositionMarkPrice(pos.symbol, closePrice, formattedPnl);
                 this.lastPositionsUpdate = new Date().toISOString();
 
                 // Runaway Helper Logic for Live Trading
@@ -600,10 +573,8 @@ class TradingBot {
         if (!Array.isArray(positions)) positions = [positions];
 
         const state = db.getAccountState();
-        const hasZeroOrEmpty = positions.length === 0 || positions.every(p => p.contracts === 0 || p.contracts === undefined);
-
-        if (hasZeroOrEmpty && state && state.margin_used > 0) {
-            logger.info("Position WS returned empty/0 but used margin is > 0. Fetching via API fetchPositions...");
+        if (positions.length === 0 && state && state.margin_used > 0) {
+            logger.info("Position WS returned empty array but used margin is > 0. Fetching via API fetchPositions...");
             try {
                 if (this.tradeExchange.exchange.has['fetchPositions']) {
                     positions = await this.tradeExchange.exchange.fetchPositions();
@@ -614,10 +585,10 @@ class TradingBot {
         }
 
         for (const p of positions) {
-            const contracts = p.contracts || parseFloat(p.info?.size) || 0;
+            const contracts = p.contracts || parseFloat(p.info?.size) || Math.abs(parseFloat(p.info?.positionAmt || 0)) || 0;
             if (contracts === 0 || contracts === undefined) {
                 if (p.symbol) {
-                    db.db.prepare('DELETE FROM positions WHERE symbol = ?').run(p.symbol);
+                    db.removePosition(p.symbol);
                     if (this.activeLiveWebsockets && this.activeLiveWebsockets[p.symbol]) {
                         delete this.activeLiveWebsockets[p.symbol];
                     }
