@@ -2852,17 +2852,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     if (pnlWinRateChart) {
-                        const rawBuyWinRate = buyPosCount > 0 ? (buyPosWin / buyPosCount) * 100 : 0;
-                        const rawSellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
                         const totalPositions = buyPosCount + sellPosCount;
                         const totalWins = buyPosWin + sellPosWin;
                         const overallWinRate = totalPositions > 0 ? (totalWins / totalPositions) * 100 : 0;
+                        const buyWinShare = totalWins > 0 ? (buyPosWin / totalWins) * 100 : 0;
+                        const sellWinShare = totalWins > 0 ? (sellPosWin / totalWins) * 100 : 0;
 
-                        pnlWinRateChart.data.datasets[0].data = [rawBuyWinRate, rawSellWinRate];
+                        pnlWinRateChart.data.datasets[0].data = [buyWinShare, sellWinShare];
                         pnlWinRateChart.update();
 
-                        document.getElementById('stats-pnl-buy-win').innerText = rawBuyWinRate.toFixed(2) + '%';
-                        document.getElementById('stats-pnl-sell-win').innerText = rawSellWinRate.toFixed(2) + '%';
+                        const buyWinEl = document.getElementById('stats-pnl-buy-win');
+                        if (buyWinEl) buyWinEl.innerText = buyWinShare.toFixed(2) + '%';
+                        const sellWinEl = document.getElementById('stats-pnl-sell-win');
+                        if (sellWinEl) sellWinEl.innerText = sellWinShare.toFixed(2) + '%';
 
                         const winRateAvgEl = document.getElementById('stats-donut-winrate-avg');
                         if (winRateAvgEl) {
