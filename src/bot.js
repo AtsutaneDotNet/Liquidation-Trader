@@ -5,6 +5,7 @@ const OkxExchange = require('./exchanges/okx');
 const logger = require('./logger');
 const db = require('./db');
 const cmc = require('./cmc');
+const connectionStatus = require('./connectionStatus');
 
 class TradingBot {
     constructor() {
@@ -272,6 +273,15 @@ class TradingBot {
         clearInterval(this.volumeInterval);
         clearInterval(this.marketSentimentInterval);
         clearInterval(this.anonReportInterval);
+
+        // Update WebSocket streams to idle
+        connectionStatus.updateStatus('ws_liq_bybit', 'idle');
+        connectionStatus.updateStatus('ws_liq_binance', 'idle');
+        connectionStatus.updateStatus('ws_liq_okx', 'idle');
+        connectionStatus.updateStatus('ws_priv_balance', 'idle');
+        connectionStatus.updateStatus('ws_priv_positions', 'idle');
+        connectionStatus.updateStatus('ws_priv_trades', 'idle');
+        connectionStatus.updateStatus('ws_ohlcv_tracking', 'idle');
     }
 
     async refreshCmcRankings() {
@@ -1094,10 +1104,17 @@ class TradingBot {
 
     async update24hVolume() {
         if (!this.config.get().ENABLE_24H_VOLUME_FILTER) return;
+        const start = Date.now();
         try {
             if (this.tradeExchange?.exchange?.has['fetchTickers']) {
                 logger.info('Fetching 24h volume for all tickers...');
                 const tickers = await this.tradeExchange.exchange.fetchTickers();
+                const latency = Date.now() - start;
+                connectionStatus.recordActivity('rest_ex_tickers', {
+                    latencyMs: latency,
+                    incrementReq: 1,
+                    details: { action: 'fetchTickers_24hVolume', tickersCount: Object.keys(tickers || {}).length }
+                });
                 for (const symbol in tickers) {
                     this.tickersVolume[symbol] = tickers[symbol].quoteVolume || 0;
                 }
@@ -1105,17 +1122,25 @@ class TradingBot {
                 logger.warn('Exchange does not support fetchTickers. 24h volume filter will not work.');
             }
         } catch (error) {
+            connectionStatus.recordError('rest_ex_tickers', error.message, { action: 'fetchTickers_24hVolume' });
             logger.error(`Error updating 24h volume: ${error.message}`);
         }
     }
 
     async updateBtcPrice() {
         if (!this.isRunning) return;
+        const start = Date.now();
         try {
             if (this.tradeExchange && this.tradeExchange.exchange) {
                 // If CCXT provides fetchTicker, use it for BTC/USDT to get the current conversion rate
                 if (this.tradeExchange.exchange.has['fetchTicker']) {
                     const ticker = await this.tradeExchange.exchange.fetchTicker('BTC/USDT');
+                    const latency = Date.now() - start;
+                    connectionStatus.recordActivity('rest_ex_tickers', {
+                        latencyMs: latency,
+                        incrementReq: 1,
+                        details: { symbol: 'BTC/USDT', btcPrice: ticker?.last }
+                    });
                     if (ticker && ticker.last) {
                         this.btcUsdPrice = ticker.last;
                         logger.debug(`BTC conversion price updated: $${this.btcUsdPrice}`);
@@ -1123,6 +1148,7 @@ class TradingBot {
                 }
             }
         } catch (e) {
+            connectionStatus.recordError('rest_ex_tickers', e.message, { symbol: 'BTC/USDT' });
             logger.warn(`Failed to update BTC conversion price: ${e.message}`);
         }
     }
@@ -1131,9 +1157,12 @@ class TradingBot {
         if (!this.isRunning) return;
         const cfg = this.config.get();
         if (!cfg.ENABLE_DYNAMIC_THRESHOLDS || !cfg.RAPIDAPI_KEY) {
+            connectionStatus.updateStatus('rest_rapidapi_thresholds', 'disabled', null, { reason: !cfg.RAPIDAPI_KEY ? 'No RapidAPI Key' : 'Dynamic Thresholds Disabled' });
             return;
         }
 
+        const start = Date.now();
+        connectionStatus.updateStatus('rest_rapidapi_thresholds', 'connecting');
         try {
             logger.info('Fetching dynamic liquidation thresholds from liquidation.report...');
             const response = await fetch('https://liquidation-trader.p.rapidapi.com/data', {
@@ -1143,8 +1172,12 @@ class TradingBot {
                 }
             });
 
+            const latency = Date.now() - start;
+
             if (!response.ok) {
-                throw new Error(`API returned status ${response.status}`);
+                const errMsg = `API returned status ${response.status}`;
+                connectionStatus.recordError('rest_rapidapi_thresholds', errMsg);
+                throw new Error(errMsg);
             }
 
             const json = await response.json();
@@ -1157,9 +1190,15 @@ class TradingBot {
                 }
                 this.dynamicThresholds = newThresholds;
                 this.lastDynamicThresholdsUpdate = new Date().toISOString();
+                connectionStatus.recordActivity('rest_rapidapi_thresholds', {
+                    latencyMs: latency,
+                    incrementReq: 1,
+                    details: { thresholdsCount: Object.keys(newThresholds).length }
+                });
                 logger.info(`Successfully updated dynamic thresholds for ${Object.keys(newThresholds).length} base assets.`);
             }
         } catch (e) {
+            connectionStatus.recordError('rest_rapidapi_thresholds', e.message);
             logger.warn(`Failed to fetch dynamic thresholds: ${e.message}`);
         }
     }
@@ -1169,9 +1208,12 @@ class TradingBot {
         const cfg = this.config.get();
         if (!cfg.RAPIDAPI_KEY) {
             this.marketSentiment = null;
+            connectionStatus.updateStatus('rest_rapidapi_sentiment', 'disabled', null, { reason: 'No RapidAPI Key configured' });
             return;
         }
 
+        const start = Date.now();
+        connectionStatus.updateStatus('rest_rapidapi_sentiment', 'connecting');
         try {
             const response = await fetch('https://liquidation-trader.p.rapidapi.com/sentiment', {
                 headers: {
@@ -1180,8 +1222,12 @@ class TradingBot {
                 }
             });
 
+            const latency = Date.now() - start;
+
             if (!response.ok) {
-                throw new Error(`API returned status ${response.status}`);
+                const errMsg = `API returned status ${response.status}`;
+                connectionStatus.recordError('rest_rapidapi_sentiment', errMsg);
+                throw new Error(errMsg);
             }
 
             const json = await response.json();
@@ -1194,11 +1240,17 @@ class TradingBot {
                     marketScore: market.score,
                     marketLabel: market.label
                 };
+                connectionStatus.recordActivity('rest_rapidapi_sentiment', {
+                    latencyMs: latency,
+                    incrementReq: 1,
+                    details: { score: market.score, label: market.label, fgValue: fg.value }
+                });
                 logger.debug(`Updated Market Sentiment: ${market.label} (Score: ${market.score}) | F&G: ${fg.value} (${fg.label})`);
             } else {
                 this.marketSentiment = null;
             }
         } catch (e) {
+            connectionStatus.recordError('rest_rapidapi_sentiment', e.message);
             logger.warn(`Failed to update Market Sentiment: ${e.message}`);
         }
     }
@@ -1206,8 +1258,13 @@ class TradingBot {
     async sendAnonReport() {
         if (!this.isRunning) return;
         const cfg = this.config.get();
-        if (!cfg.ENABLE_ANON_REPORTING) return;
+        if (!cfg.ENABLE_ANON_REPORTING) {
+            connectionStatus.updateStatus('rest_report_sync', 'disabled', null, { reason: 'Anonymous Reporting Disabled' });
+            return;
+        }
 
+        const start = Date.now();
+        connectionStatus.updateStatus('rest_report_sync', 'connecting');
         try {
             const aggregated = db.calculateAggregatedPnl();
             const payload = {
@@ -1228,12 +1285,21 @@ class TradingBot {
                 body: JSON.stringify(payload)
             });
 
+            const latency = Date.now() - start;
+
             if (!response.ok) {
+                connectionStatus.recordError('rest_report_sync', `HTTP ${response.status}`, { uid: payload.uid });
                 logger.debug(`Failed to send anonymous report. Status: ${response.status}`);
             } else {
+                connectionStatus.recordActivity('rest_report_sync', {
+                    latencyMs: latency,
+                    incrementReq: 1,
+                    details: { uid: payload.uid, totalPnl: payload.total }
+                });
                 logger.debug(`Anonymous report sent successfully for UID: ${payload.uid}`);
             }
         } catch (e) {
+            connectionStatus.recordError('rest_report_sync', e.message);
             logger.debug(`Error sending anonymous report: ${e.message}`);
         }
     }

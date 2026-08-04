@@ -104,11 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigation
     const navBtns = document.querySelectorAll('.nav-btn');
     const pages = document.querySelectorAll('.page');
+    const sidebarConnWidget = document.getElementById('sidebar-conn-widget');
 
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             navBtns.forEach(b => b.classList.remove('active'));
             pages.forEach(p => p.classList.remove('active'));
+            if (sidebarConnWidget) sidebarConnWidget.classList.remove('active');
 
             btn.classList.add('active');
             const targetId = btn.dataset.target;
@@ -136,6 +138,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Sidebar Connection Widget Shortcut Click
+    if (sidebarConnWidget) {
+        sidebarConnWidget.addEventListener('click', () => {
+            navBtns.forEach(b => b.classList.remove('active'));
+            pages.forEach(p => p.classList.remove('active'));
+            sidebarConnWidget.classList.add('active');
+
+            const pageEl = document.getElementById('connection-status-page');
+            if (pageEl) pageEl.classList.add('active');
+
+            fetchConnectionStatus();
+        });
+    }
 
     // Form Loading and Saving
     const form = document.getElementById('config-form');
@@ -3119,4 +3135,474 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // ── Connection Status Diagnostics & Health Monitor ─────────────
+    let cachedConnections = [];
+    let cachedConnectionSummary = null;
+    let selectedConnCategory = 'all';
+    let connSearchQuery = '';
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatTimeAgo(timestamp) {
+        if (!timestamp) return 'Never';
+        const diffMs = Date.now() - timestamp;
+        const diffSec = Math.floor(diffMs / 1000);
+        if (diffSec < 5) return 'Just now';
+        if (diffSec < 60) return `${diffSec}s ago`;
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) return `${diffHr}h ago`;
+        return `${Math.floor(diffHr / 24)}d ago`;
+    }
+
+    function formatUptime(seconds) {
+        if (!seconds && seconds !== 0) return '--';
+        if (seconds < 60) return `${seconds}s`;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        if (m < 60) return `${m}m ${s}s`;
+        const h = Math.floor(m / 60);
+        const rm = m % 60;
+        return `${h}h ${rm}m`;
+    }
+
+    function getLatencyClass(latency) {
+        if (!latency || latency <= 0) return '';
+        if (latency < 150) return 'latency-good';
+        if (latency < 400) return 'latency-warn';
+        return 'latency-slow';
+    }
+
+    function getProtocolTag(protocol) {
+        const p = (protocol || 'REST').toUpperCase();
+        if (p === 'WSS' || p === 'WS') return '<span class="proto-tag tag-wss">WSS</span>';
+        if (p === 'HTTPS' || p === 'HTTP') return '<span class="proto-tag tag-http">HTTPS</span>';
+        return '<span class="proto-tag tag-rest">REST</span>';
+    }
+
+    function fetchConnectionStatus() {
+        return fetch('/api/connections/status')
+            .then(res => res.json())
+            .then(data => {
+                cachedConnections = data.connections || [];
+                cachedConnectionSummary = data.summary || null;
+
+                updateSidebarConnectionWidget(cachedConnectionSummary, cachedConnections);
+                renderConnectionHeroMetrics(cachedConnectionSummary, cachedConnections);
+                renderFilteredConnections();
+            })
+            .catch(err => {
+                console.error('Failed to fetch connection status:', err);
+            });
+    }
+
+    function updateSidebarConnectionWidget(summary, connections) {
+        if (!summary) return;
+
+        const badgeEl = document.getElementById('sidebar-overall-badge');
+        const dotConsolidated = document.getElementById('dot-consolidated');
+        const dotWs = document.getElementById('dot-ws');
+        const valWs = document.getElementById('val-ws');
+        const dotRest = document.getElementById('dot-rest');
+        const valRest = document.getElementById('val-rest');
+        const dotExt = document.getElementById('dot-ext');
+        const valExt = document.getElementById('val-ext');
+
+        // Consolidated status dot for collapsed sidebar
+        if (dotConsolidated) {
+            dotConsolidated.className = 'conn-dot';
+            if (summary.error > 0) {
+                dotConsolidated.classList.add('dot-error');
+            } else if (summary.connecting > 0) {
+                dotConsolidated.classList.add('dot-warning');
+            } else if (summary.connected > 0) {
+                dotConsolidated.classList.add('dot-connected');
+            } else {
+                dotConsolidated.classList.add('dot-idle');
+            }
+        }
+
+        // Overall status badge
+        if (badgeEl) {
+            badgeEl.className = 'conn-widget-badge';
+            if (summary.error > 0) {
+                badgeEl.classList.add('badge-danger');
+                badgeEl.textContent = `${summary.error} Err`;
+            } else if (summary.connecting > 0) {
+                badgeEl.classList.add('badge-warning');
+                badgeEl.textContent = 'Connecting';
+            } else if (summary.connected > 0) {
+                badgeEl.classList.add('badge-healthy');
+                badgeEl.textContent = 'Operational';
+            } else {
+                badgeEl.textContent = 'Idle';
+            }
+        }
+
+        // Category 1: WebSocket
+        const wsCat = summary.categories?.websocket || {};
+        if (dotWs && valWs) {
+            dotWs.className = 'conn-dot';
+            if (wsCat.error > 0) {
+                dotWs.classList.add('dot-error');
+                valWs.textContent = 'ERR';
+                valWs.style.color = '#ff3b3b';
+            } else if (wsCat.connected > 0) {
+                dotWs.classList.add('dot-connected');
+                valWs.textContent = `${wsCat.connected} Active`;
+                valWs.style.color = '#00e676';
+            } else {
+                dotWs.classList.add('dot-idle');
+                valWs.textContent = 'Idle';
+                valWs.style.color = 'var(--text-muted)';
+            }
+        }
+
+        // Category 2: Exchange REST
+        const restCat = summary.categories?.exchange_rest || {};
+        if (dotRest && valRest) {
+            dotRest.className = 'conn-dot';
+            if (restCat.error > 0) {
+                dotRest.classList.add('dot-error');
+                valRest.textContent = 'ERR';
+                valRest.style.color = '#ff3b3b';
+            } else if (restCat.avgLatencyMs) {
+                dotRest.classList.add('dot-connected');
+                valRest.textContent = `${restCat.avgLatencyMs}ms`;
+                valRest.style.color = '#00e676';
+            } else if (restCat.connected > 0) {
+                dotRest.classList.add('dot-connected');
+                valRest.textContent = 'OK';
+                valRest.style.color = '#00e676';
+            } else {
+                dotRest.classList.add('dot-idle');
+                valRest.textContent = 'Idle';
+                valRest.style.color = 'var(--text-muted)';
+            }
+        }
+
+        // Category 3: External APIs
+        const extCat = summary.categories?.external_api || {};
+        if (dotExt && valExt) {
+            dotExt.className = 'conn-dot';
+            if (extCat.error > 0) {
+                dotExt.classList.add('dot-error');
+                valExt.textContent = 'ERR';
+                valExt.style.color = '#ff3b3b';
+            } else if (extCat.avgLatencyMs) {
+                dotExt.classList.add('dot-connected');
+                valExt.textContent = `${extCat.avgLatencyMs}ms`;
+                valExt.style.color = '#00e676';
+            } else if (extCat.connected > 0) {
+                dotExt.classList.add('dot-connected');
+                valExt.textContent = 'OK';
+                valExt.style.color = '#00e676';
+            } else {
+                dotExt.classList.add('dot-idle');
+                valExt.textContent = 'Idle';
+                valExt.style.color = 'var(--text-muted)';
+            }
+        }
+    }
+
+    function renderConnectionHeroMetrics(summary, connections) {
+        if (!summary) return;
+
+        // Overall
+        const heroOverallVal = document.getElementById('hero-overall-val');
+        const heroOverallSub = document.getElementById('hero-overall-sub');
+        const heroUptimeMeta = document.getElementById('hero-uptime-meta');
+
+        const activeTotal = summary.connected;
+        const totalTracked = summary.total - (summary.disabled || 0);
+        const healthPct = totalTracked > 0 ? Math.round((activeTotal / totalTracked) * 100) : 0;
+
+        if (heroOverallVal) heroOverallVal.textContent = `${healthPct}%`;
+        if (heroOverallSub) heroOverallSub.textContent = `${summary.connected}/${summary.total} Active`;
+        if (heroUptimeMeta) heroUptimeMeta.textContent = `Uptime: ${formatUptime(summary.uptimeSeconds)} · ${summary.error} Errors`;
+
+        // WS
+        const wsCat = summary.categories?.websocket || {};
+        const heroWsVal = document.getElementById('hero-ws-val');
+        const heroWsSub = document.getElementById('hero-ws-sub');
+        if (heroWsVal) heroWsVal.textContent = `${wsCat.connected} / ${wsCat.total} Active`;
+        if (heroWsSub) heroWsSub.textContent = `${(wsCat.messageCount || 0).toLocaleString()} msgs`;
+
+        // Exchange REST
+        const restCat = summary.categories?.exchange_rest || {};
+        const heroRestVal = document.getElementById('hero-rest-val');
+        const heroRestSub = document.getElementById('hero-rest-sub');
+        if (heroRestVal) heroRestVal.textContent = restCat.avgLatencyMs ? `${restCat.avgLatencyMs} ms avg` : (restCat.connected > 0 ? 'Active' : 'Idle');
+        if (heroRestSub) heroRestSub.textContent = `${(restCat.requestCount || 0).toLocaleString()} reqs`;
+
+        // External APIs
+        const extCat = summary.categories?.external_api || {};
+        const heroExtVal = document.getElementById('hero-ext-val');
+        const heroExtSub = document.getElementById('hero-ext-sub');
+        if (heroExtVal) heroExtVal.textContent = extCat.avgLatencyMs ? `${extCat.avgLatencyMs} ms avg` : (extCat.connected > 0 ? 'Active' : 'Idle');
+        if (heroExtSub) heroExtSub.textContent = `${(extCat.requestCount || 0).toLocaleString()} reqs`;
+
+        // Tab counts
+        const countAll = document.getElementById('count-all');
+        const countWs = document.getElementById('count-ws');
+        const countRest = document.getElementById('count-rest');
+        const countExt = document.getElementById('count-ext');
+
+        if (countAll) countAll.textContent = summary.total;
+        if (countWs) countWs.textContent = wsCat.total || 0;
+        if (countRest) countRest.textContent = restCat.total || 0;
+        if (countExt) countExt.textContent = extCat.total || 0;
+    }
+
+    function renderFilteredConnections() {
+        const grid = document.getElementById('connections-grid');
+        if (!grid) return;
+
+        let filtered = cachedConnections.slice();
+
+        // Filter by category
+        if (selectedConnCategory !== 'all') {
+            filtered = filtered.filter(c => c.category === selectedConnCategory);
+        }
+
+        // Filter by search query
+        if (connSearchQuery.trim()) {
+            const q = connSearchQuery.toLowerCase().trim();
+            filtered = filtered.filter(c => 
+                (c.name && c.name.toLowerCase().includes(q)) ||
+                (c.target && c.target.toLowerCase().includes(q)) ||
+                (c.id && c.id.toLowerCase().includes(q)) ||
+                (c.protocol && c.protocol.toLowerCase().includes(q)) ||
+                (c.details?.type && c.details.type.toLowerCase().includes(q))
+            );
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                    No connection endpoints match the current filter or search criteria.
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(conn => {
+            const status = conn.status || 'idle';
+            const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+            const latencyText = conn.lastLatencyMs !== null && conn.lastLatencyMs !== undefined ? `${conn.lastLatencyMs} ms` : '--';
+            const latencyClass = getLatencyClass(conn.lastLatencyMs);
+            const isWs = conn.category === 'websocket';
+            const counterTitle = isWs ? 'Messages' : 'Requests';
+            const counterVal = (isWs ? conn.messageCount : conn.requestCount) || 0;
+            const errorCount = conn.errorCount || 0;
+            const lastActiveText = formatTimeAgo(conn.lastActivity);
+
+            let errorHtml = '';
+            if (conn.lastError && (status === 'error' || errorCount > 0)) {
+                errorHtml = `
+                    <div class="conn-error-banner" title="${escapeHtml(conn.lastError)}">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(conn.lastError)}</span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="conn-item-card status-${status}" id="conn-card-${conn.id}">
+                    <div class="conn-item-top">
+                        <div class="conn-item-title-wrap">
+                            <div class="conn-item-title-row">
+                                ${getProtocolTag(conn.protocol)}
+                                <span class="conn-item-name">${escapeHtml(conn.name)}</span>
+                            </div>
+                            <span class="conn-item-desc">${escapeHtml(conn.details?.type || conn.category)}</span>
+                        </div>
+                        <div class="conn-status-badge badge-${status}">
+                            <span class="conn-dot dot-${status}"></span>
+                            <span>${statusLabel}</span>
+                        </div>
+                    </div>
+
+                    <div class="conn-item-target-box" title="${escapeHtml(conn.target)}">
+                        ${escapeHtml(conn.target)}
+                    </div>
+
+                    <div class="conn-item-metrics">
+                        <div class="conn-metric-col">
+                            <span class="conn-metric-title">Latency</span>
+                            <span class="conn-metric-num ${latencyClass}">${latencyText}</span>
+                        </div>
+                        <div class="conn-metric-col">
+                            <span class="conn-metric-title">${counterTitle}</span>
+                            <span class="conn-metric-num">${counterVal.toLocaleString()}</span>
+                        </div>
+                        <div class="conn-metric-col">
+                            <span class="conn-metric-title">Errors</span>
+                            <span class="conn-metric-num" style="${errorCount > 0 ? 'color: #ff3b3b;' : ''}">${errorCount}</span>
+                        </div>
+                    </div>
+
+                    ${errorHtml}
+
+                    <div class="conn-item-footer">
+                        <span>Last seen: <strong>${lastActiveText}</strong></span>
+                        <button class="btn-test-conn" data-conn-id="${conn.id}" title="Ping / Test connection now">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Test</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Attach event listeners to test buttons
+        grid.querySelectorAll('.btn-test-conn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.connId;
+                testIndividualConnection(id, btn);
+            });
+        });
+    }
+
+    function testIndividualConnection(id, btn) {
+        if (!btn) return;
+        const origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg class="spinning-icon" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" fill="none"></circle>
+            </svg>
+            <span>Testing...</span>
+        `;
+
+        fetch('/api/connections/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                if (data.success && (data.result?.success || data.result?.latencyMs !== undefined)) {
+                    showToast({
+                        title: 'Connection Test Passed',
+                        message: `${id}: Latency ${data.result?.latencyMs !== undefined ? data.result.latencyMs + 'ms' : 'OK'}`,
+                        type: 'success'
+                    });
+                } else {
+                    showToast({
+                        title: 'Connection Test Result',
+                        message: `${id}: ${data.result?.message || data.error || 'Status: ' + (data.result?.status || 'idle')}`,
+                        type: data.result?.status === 'disabled' ? 'info' : 'warning'
+                    });
+                }
+                fetchConnectionStatus();
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                showToast({
+                    title: 'Test Failed',
+                    message: err.message,
+                    type: 'error'
+                });
+                fetchConnectionStatus();
+            });
+    }
+
+    function testAllConnections() {
+        const btn = document.getElementById('btn-test-all-connections');
+        if (!btn) return;
+
+        const origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg class="spinning-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" fill="none"></circle>
+            </svg>
+            <span>Testing All...</span>
+        `;
+
+        fetch('/api/connections/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: 'all' })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                showToast({
+                    title: 'Health Probe Complete',
+                    message: 'Finished running diagnostics across all endpoints.',
+                    type: 'success'
+                });
+                fetchConnectionStatus();
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                showToast({
+                    title: 'Probe Error',
+                    message: err.message,
+                    type: 'error'
+                });
+                fetchConnectionStatus();
+            });
+    }
+
+    // Connect toolbar controls
+    const tabButtons = document.querySelectorAll('.conn-tab');
+    tabButtons.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabButtons.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            selectedConnCategory = tab.dataset.category || 'all';
+            renderFilteredConnections();
+        });
+    });
+
+    const searchInput = document.getElementById('conn-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            connSearchQuery = e.target.value;
+            renderFilteredConnections();
+        });
+    }
+
+    const refreshBtn = document.getElementById('btn-refresh-connections');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            fetchConnectionStatus();
+            showToast({ title: 'Refreshed', message: 'Connection statuses updated.', type: 'info' });
+        });
+    }
+
+    const testAllBtn = document.getElementById('btn-test-all-connections');
+    if (testAllBtn) {
+        testAllBtn.addEventListener('click', testAllConnections);
+    }
+
+    // Initial connection fetch & background periodic update (every 3.5s)
+    fetchConnectionStatus();
+    setInterval(() => {
+        fetchConnectionStatus();
+    }, 3500);
 });

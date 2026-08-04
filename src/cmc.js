@@ -1,4 +1,5 @@
 const logger = require('./logger');
+const connectionStatus = require('./connectionStatus');
 
 class CmcService {
     constructor() {
@@ -22,10 +23,13 @@ class CmcService {
         }
 
         if (!apiKey) {
+            connectionStatus.updateStatus('rest_cmc_listings', 'disabled', null, { reason: 'No CMC API Key configured' });
             logger.warn('CMC API Key is missing. Cannot fetch rankings.');
             return this.cache || new Set();
         }
 
+        const start = Date.now();
+        connectionStatus.updateStatus('rest_cmc_listings', 'connecting');
         try {
             logger.info(`Refreshing CMC rankings (Top ${limit})...`);
             const response = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=${limit}`, {
@@ -35,13 +39,18 @@ class CmcService {
                 }
             });
 
+            const latency = Date.now() - start;
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.status?.error_message || `HTTP ${response.status}`);
+                const errMsg = errorData.status?.error_message || `HTTP ${response.status}`;
+                connectionStatus.recordError('rest_cmc_listings', errMsg, { limit });
+                throw new Error(errMsg);
             }
 
             const json = await response.json();
             if (!json.data || !Array.isArray(json.data)) {
+                connectionStatus.recordError('rest_cmc_listings', 'Invalid response format from CMC', { limit });
                 throw new Error('Invalid response format from CMC');
             }
 
@@ -49,10 +58,16 @@ class CmcService {
 
             this.cache = symbols;
             this.lastFetch = now;
+            connectionStatus.recordActivity('rest_cmc_listings', {
+                latencyMs: latency,
+                incrementReq: 1,
+                details: { cachedSymbolsCount: symbols.size, limit }
+            });
             logger.info(`Successfully cached ${symbols.size} symbols from CMC.`);
 
             return symbols;
         } catch (error) {
+            connectionStatus.recordError('rest_cmc_listings', error.message);
             logger.error(`Failed to refresh CMC rankings: ${error.message}`);
 
             if (this.cache) {

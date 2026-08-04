@@ -119,8 +119,7 @@
                     </svg>
                     <span class="nav-text">Settings</span>
                 </button>
-                <div style="flex-grow: 1;"></div>
-                <button id="btn-logout" class="nav-btn" style="display: none; margin-top: 20px;">
+                <button id="btn-logout" class="nav-btn" style="display: none; margin-top: 10px;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
@@ -129,6 +128,52 @@
                     <span class="nav-text">Logout</span>
                 </button>
             </nav>
+
+            <!-- 3 Category Connection Status Shortcut Widget at Bottom of Sidebar -->
+            <div class="sidebar-conn-widget" id="sidebar-conn-widget" data-target="connection-status-page" title="Live Connection Health & Diagnostics">
+                <!-- Single Consolidated Indicator in Collapsed State -->
+                <div class="conn-widget-collapsed">
+                    <div class="conn-collapsed-wrap">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0">
+                            </path>
+                        </svg>
+                        <span class="conn-dot dot-idle" id="dot-consolidated"></span>
+                    </div>
+                </div>
+
+                <!-- Full Detail View in Expanded State -->
+                <div class="conn-widget-expanded">
+                    <div class="conn-widget-header">
+                        <span class="conn-widget-title">Live Connections</span>
+                        <span class="conn-widget-badge" id="sidebar-overall-badge">Checking...</span>
+                    </div>
+                    <div class="conn-widget-list">
+                        <div class="conn-widget-row" id="pill-ws" title="WebSocket Streams">
+                            <div class="conn-row-left">
+                                <span class="conn-dot dot-idle" id="dot-ws"></span>
+                                <span class="conn-row-label">WebSockets</span>
+                            </div>
+                            <span class="conn-row-val" id="val-ws">--</span>
+                        </div>
+                        <div class="conn-widget-row" id="pill-rest" title="Exchange REST API">
+                            <div class="conn-row-left">
+                                <span class="conn-dot dot-idle" id="dot-rest"></span>
+                                <span class="conn-row-label">Exchange REST</span>
+                            </div>
+                            <span class="conn-row-val" id="val-rest">--</span>
+                        </div>
+                        <div class="conn-widget-row" id="pill-ext" title="External Services (CMC/RapidAPI/Report/GitHub)">
+                            <div class="conn-row-left">
+                                <span class="conn-dot dot-idle" id="dot-ext"></span>
+                                <span class="conn-row-label">External APIs</span>
+                            </div>
+                            <span class="conn-row-val" id="val-ext">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Workspace -->
@@ -1961,6 +2006,140 @@
                         <button id="btn-prev-dynamic-thresholds" class="btn btn-secondary" disabled>Previous</button>
                         <span id="dynamic-thresholds-page-info" style="color: var(--text-muted);">Page 1 of 1</span>
                         <button id="btn-next-dynamic-thresholds" class="btn btn-secondary" disabled>Next</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Connection Status Page -->
+            <section id="connection-status-page" class="page">
+                <header class="conn-page-header">
+                    <div>
+                        <h2>Connection & API Health Monitor</h2>
+                        <p class="subtitle">Live in-memory status, latency, throughput, and error diagnostics for all external feeds & endpoints.</p>
+                    </div>
+                    <div class="conn-page-actions">
+                        <div class="conn-auto-refresh">
+                            <span class="pulse-dot-live"></span>
+                            <span style="font-size: 13px; color: var(--text-muted);">Live Sync (3s)</span>
+                        </div>
+                        <button id="btn-test-all-connections" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <span>Test All Endpoints</span>
+                        </button>
+                        <button id="btn-refresh-connections" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Hero Status Metric Cards -->
+                <div class="conn-metrics-grid">
+                    <div class="conn-hero-card" id="hero-overall">
+                        <div class="hero-card-icon overall-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="hero-card-info">
+                            <span class="hero-card-label">System Connectivity</span>
+                            <div class="hero-card-val-row">
+                                <span class="hero-card-val" id="hero-overall-val">--%</span>
+                                <span class="hero-card-sub" id="hero-overall-sub">0/0 Active</span>
+                            </div>
+                            <span class="hero-card-meta" id="hero-uptime-meta">Uptime: --</span>
+                        </div>
+                    </div>
+
+                    <div class="conn-hero-card" id="hero-ws">
+                        <div class="hero-card-icon ws-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="hero-card-info">
+                            <span class="hero-card-label">WebSocket Streams (WSS)</span>
+                            <div class="hero-card-val-row">
+                                <span class="hero-card-val" id="hero-ws-val">0 Active</span>
+                                <span class="hero-card-sub" id="hero-ws-sub">0 msgs</span>
+                            </div>
+                            <span class="hero-card-meta" id="hero-ws-meta">Streams: Bybit, Binance, OKX, User Data</span>
+                        </div>
+                    </div>
+
+                    <div class="conn-hero-card" id="hero-rest">
+                        <div class="hero-card-icon rest-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="hero-card-info">
+                            <span class="hero-card-label">Exchange REST Endpoints</span>
+                            <div class="hero-card-val-row">
+                                <span class="hero-card-val" id="hero-rest-val">-- ms</span>
+                                <span class="hero-card-sub" id="hero-rest-sub">0 requests</span>
+                            </div>
+                            <span class="hero-card-meta" id="hero-rest-meta">Markets, Tickers, Balance, Orders, PnL</span>
+                        </div>
+                    </div>
+
+                    <div class="conn-hero-card" id="hero-ext">
+                        <div class="hero-card-icon ext-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                            </svg>
+                        </div>
+                        <div class="hero-card-info">
+                            <span class="hero-card-label">External Intelligence APIs</span>
+                            <div class="hero-card-val-row">
+                                <span class="hero-card-val" id="hero-ext-val">-- ms</span>
+                                <span class="hero-card-sub" id="hero-ext-sub">0 requests</span>
+                            </div>
+                            <span class="hero-card-meta" id="hero-ext-meta">CMC Rankings, RapidAPI, Report Sync, GitHub</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Navigation Tabs & Search -->
+                <div class="conn-toolbar card">
+                    <div class="conn-filter-tabs">
+                        <button class="conn-tab active" data-category="all">
+                            <span>All Connections</span>
+                            <span class="conn-tab-count" id="count-all">0</span>
+                        </button>
+                        <button class="conn-tab" data-category="websocket">
+                            <span class="proto-tag tag-wss">WSS</span>
+                            <span>WebSockets</span>
+                            <span class="conn-tab-count" id="count-ws">0</span>
+                        </button>
+                        <button class="conn-tab" data-category="exchange_rest">
+                            <span class="proto-tag tag-rest">REST</span>
+                            <span>Exchange REST</span>
+                            <span class="conn-tab-count" id="count-rest">0</span>
+                        </button>
+                        <button class="conn-tab" data-category="external_api">
+                            <span class="proto-tag tag-http">HTTPS</span>
+                            <span>External APIs</span>
+                            <span class="conn-tab-count" id="count-ext">0</span>
+                        </button>
+                    </div>
+                    <div class="conn-search-wrap">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" id="conn-search-input" placeholder="Search connection or target...">
+                    </div>
+                </div>
+
+                <!-- Connections List / Grid Container -->
+                <div class="connections-list-grid" id="connections-grid">
+                    <!-- Dynamic Connection Cards Injected by JS -->
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                        Loading connection diagnostics from memory...
                     </div>
                 </div>
             </section>

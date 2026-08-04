@@ -1,3 +1,5 @@
+const connectionStatus = require('../connectionStatus');
+
 class BaseExchange {
     constructor(config) {
         this.config = config;

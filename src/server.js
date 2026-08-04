@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('./config');
 const logger = require('./logger');
+const connectionStatus = require('./connectionStatus');
 
 class WebServer {
     constructor(bot) {
@@ -182,10 +183,12 @@ class WebServer {
 
         // Check for updates
         this.app.get('/api/check-update', async (req, res) => {
+            const start = Date.now();
             try {
                 const gitPath = path.join(__dirname, '../.git');
                 const headPath = path.join(gitPath, 'HEAD');
                 if (!fs.existsSync(headPath)) {
+                    connectionStatus.recordActivity('rest_github_update', { latencyMs: 0, incrementReq: 1, details: { notGit: true } });
                     return res.json({ updateAvailable: false, message: 'Not a git repository' });
                 }
 
@@ -211,7 +214,10 @@ class WebServer {
                     headers: { 'User-Agent': 'Liquidation-Trader-App' }
                 });
 
+                const latency = Date.now() - start;
+
                 if (!response.ok) {
+                    connectionStatus.recordError('rest_github_update', `HTTP ${response.status}`, { branch: branchName });
                     return res.json({ updateAvailable: false, message: 'Failed to fetch remote commit' });
                 }
 
@@ -219,6 +225,12 @@ class WebServer {
                 const remoteHash = data.sha;
 
                 const updateAvailable = !!(localHash && remoteHash && localHash !== remoteHash);
+
+                connectionStatus.recordActivity('rest_github_update', {
+                    latencyMs: latency,
+                    incrementReq: 1,
+                    details: { branch: branchName, updateAvailable }
+                });
                 
                 res.json({
                     updateAvailable,
@@ -227,6 +239,7 @@ class WebServer {
                     branch: branchName
                 });
             } catch (error) {
+                connectionStatus.recordError('rest_github_update', error.message);
                 logger.error('Failed to check for updates:', error);
                 res.status(500).json({ updateAvailable: false, message: 'Error checking updates' });
             }
@@ -448,6 +461,43 @@ class WebServer {
             res.json(unseen);
         });
 
+        // External Connections Status Snapshot & Summary
+        this.app.get('/api/connections/status', (req, res) => {
+            try {
+                res.json({
+                    connections: connectionStatus.getAll(),
+                    summary: connectionStatus.getSummary(),
+                    botRunning: !!this.bot.isRunning
+                });
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
+        // Test external connection (on-demand health check)
+        this.app.post('/api/connections/test', async (req, res) => {
+            const { id } = req.body || {};
+            try {
+                if (!id || id === 'all') {
+                    const all = connectionStatus.getAll();
+                    const results = {};
+                    for (const conn of all) {
+                        try {
+                            results[conn.id] = await this.testConnection(conn.id);
+                        } catch (err) {
+                            results[conn.id] = { success: false, error: err.message };
+                        }
+                    }
+                    return res.json({ success: true, results, summary: connectionStatus.getSummary() });
+                }
+
+                const result = await this.testConnection(id);
+                res.json({ success: true, id, result, connection: connectionStatus.get(id), summary: connectionStatus.getSummary() });
+            } catch (error) {
+                res.status(500).json({ success: false, id, error: error.message });
+            }
+        });
+
         this.app.post('/api/bot/stop', async (req, res) => {
             if (!this.bot.isRunning) {
                 return res.json({ success: false, message: 'Bot is not running.' });
@@ -460,6 +510,134 @@ class WebServer {
                 res.json({ success: false, message: error.message });
             }
         });
+    }
+
+    async testConnection(id) {
+        const cfg = config.get();
+        const start = Date.now();
+        const conn = connectionStatus.get(id);
+        if (!conn) throw new Error(`Unknown connection ID: ${id}`);
+
+        if (id === 'rest_github_update') {
+            const response = await fetch('https://api.github.com/repos/AtsutaneDotNet/Liquidation-Trader', {
+                headers: { 'User-Agent': 'Liquidation-Trader-App' }
+            });
+            const latency = Date.now() - start;
+            if (!response.ok) {
+                connectionStatus.recordError(id, `HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
+            }
+            connectionStatus.recordActivity(id, { latencyMs: latency, incrementReq: 1 });
+            return { success: true, latencyMs: latency, status: 'connected' };
+        }
+
+        if (id === 'rest_cmc_listings') {
+            if (!cfg.CMC_API_KEY) {
+                connectionStatus.updateStatus(id, 'disabled', null, { reason: 'No CMC API Key configured' });
+                return { success: false, status: 'disabled', message: 'No CMC API Key configured' };
+            }
+            const response = await fetch('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=1', {
+                headers: { 'X-CMC_PRO_API_KEY': cfg.CMC_API_KEY, 'Accept': 'application/json' }
+            });
+            const latency = Date.now() - start;
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                const msg = err.status?.error_message || `HTTP ${response.status}`;
+                connectionStatus.recordError(id, msg);
+                throw new Error(msg);
+            }
+            connectionStatus.recordActivity(id, { latencyMs: latency, incrementReq: 1 });
+            return { success: true, latencyMs: latency, status: 'connected' };
+        }
+
+        if (id === 'rest_rapidapi_thresholds') {
+            if (!cfg.RAPIDAPI_KEY) {
+                connectionStatus.updateStatus(id, 'disabled', null, { reason: 'No RapidAPI Key configured' });
+                return { success: false, status: 'disabled', message: 'No RapidAPI Key configured' };
+            }
+            const response = await fetch('https://liquidation-trader.p.rapidapi.com/data', {
+                headers: { 'X-RapidAPI-Key': cfg.RAPIDAPI_KEY, 'X-RapidAPI-Host': 'liquidation-trader.p.rapidapi.com' }
+            });
+            const latency = Date.now() - start;
+            if (!response.ok) {
+                connectionStatus.recordError(id, `HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
+            }
+            connectionStatus.recordActivity(id, { latencyMs: latency, incrementReq: 1 });
+            return { success: true, latencyMs: latency, status: 'connected' };
+        }
+
+        if (id === 'rest_rapidapi_sentiment') {
+            if (!cfg.RAPIDAPI_KEY) {
+                connectionStatus.updateStatus(id, 'disabled', null, { reason: 'No RapidAPI Key configured' });
+                return { success: false, status: 'disabled', message: 'No RapidAPI Key configured' };
+            }
+            const response = await fetch('https://liquidation-trader.p.rapidapi.com/sentiment', {
+                headers: { 'X-RapidAPI-Key': cfg.RAPIDAPI_KEY, 'X-RapidAPI-Host': 'liquidation-trader.p.rapidapi.com' }
+            });
+            const latency = Date.now() - start;
+            if (!response.ok) {
+                connectionStatus.recordError(id, `HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
+            }
+            connectionStatus.recordActivity(id, { latencyMs: latency, incrementReq: 1 });
+            return { success: true, latencyMs: latency, status: 'connected' };
+        }
+
+        if (id === 'rest_report_sync') {
+            const response = await fetch('https://liquidation.report/api/trader', {
+                method: 'OPTIONS',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(async () => fetch('https://liquidation.report'));
+            const latency = Date.now() - start;
+            connectionStatus.recordActivity(id, { latencyMs: latency, incrementReq: 1 });
+            return { success: true, latencyMs: latency, status: 'connected' };
+        }
+
+        // Exchange REST Endpoints
+        if (id.startsWith('rest_ex_')) {
+            const ex = this.bot.tradeExchange?.exchange;
+            if (!ex) {
+                return { success: false, status: conn.status, message: 'Exchange not initialized or bot not started' };
+            }
+            try {
+                if (id === 'rest_ex_tickers') {
+                    await ex.fetchTicker('BTC/USDT');
+                } else if (id === 'rest_ex_markets') {
+                    await ex.loadMarkets(true);
+                } else if (id === 'rest_ex_balance') {
+                    if (cfg.ENABLE_PAPER_TRADING) {
+                        return { success: true, latencyMs: 1, status: 'connected', message: 'Paper trading account active' };
+                    }
+                    await ex.fetchBalance();
+                } else if (id === 'rest_ex_pnl') {
+                    await this.bot.tradeExchange.fetchClosedPnls();
+                } else if (id === 'rest_ex_orders') {
+                    if (ex.has['fetchTime']) {
+                        await ex.fetchTime();
+                    } else {
+                        await ex.fetchStatus();
+                    }
+                }
+                const latency = Date.now() - start;
+                connectionStatus.recordActivity(id, { latencyMs: latency, incrementReq: 1 });
+                return { success: true, latencyMs: latency, status: 'connected' };
+            } catch (err) {
+                connectionStatus.recordError(id, err.message);
+                throw err;
+            }
+        }
+
+        // WebSocket streams
+        if (id.startsWith('ws_')) {
+            return {
+                success: conn.status === 'connected',
+                status: conn.status,
+                message: conn.status === 'connected' ? 'WebSocket stream active and receiving data' : `WebSocket stream is currently in state: ${conn.status}`
+            };
+        }
+
+        return { success: true, status: conn.status };
     }
 
     start() {
