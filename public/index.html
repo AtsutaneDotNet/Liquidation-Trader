@@ -1823,12 +1823,15 @@
                         <p class="subtitle">Aggregated real-time wallet equity, margin utilization, and historical PnL performance.</p>
                     </div>
                     <div class="header-actions-group">
-                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                            <span>Last Update:</span>
-                            <span id="last-update-account" style="color: var(--text-main); font-weight: 600;">Never</span>
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-account" class="timestamp-val">Never</span>
                         </div>
                         <button class="btn btn-secondary" onclick="openAccountHistoryModal()"
-                            style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;">
+                            style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; height: 38px;">
                             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
@@ -2027,9 +2030,12 @@
                         <p class="subtitle">Real-time open positions monitoring with dynamic TP/SL levels, leverage metrics, and closing controls.</p>
                     </div>
                     <div class="header-actions-group">
-                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                            <span>Last Update:</span>
-                            <span id="last-update-positions" style="color: var(--text-main); font-weight: 600;">Never</span>
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-positions" class="timestamp-val">Never</span>
                         </div>
                     </div>
                 </header>
@@ -2147,8 +2153,8 @@
                         <p class="subtitle">Live stream of raw websocket liquidation prints across all configured exchanges.</p>
                     </div>
                     <div class="header-actions-group">
-                        <div class="search-container" style="min-width: 240px;">
-                            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <input type="text" id="liquidations-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
@@ -2204,12 +2210,15 @@
                         <p class="subtitle">Database audit history of closed positions and their realized Profit & Loss.</p>
                     </div>
                     <div class="header-actions-group">
-                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                            <span>Last Update:</span>
-                            <span id="last-update-closed-pnl" style="color: var(--text-main); font-weight: 600;">Never</span>
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-closed-pnl" class="timestamp-val">Never</span>
                         </div>
-                        <div class="search-container" style="min-width: 240px;">
-                            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <input type="text" id="closed-pnl-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
@@ -2265,8 +2274,8 @@
                         <p class="subtitle">Live tracking of engine trade evaluations, technical indicators, and signal confluence outcomes.</p>
                     </div>
                     <div class="header-actions-group">
-                        <div class="search-container" style="min-width: 240px;">
-                            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <input type="text" id="trade-decisions-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
@@ -2324,12 +2333,15 @@
                         <p class="subtitle">Live volatility-adjusted volume threshold mapping per active trading pair loaded from the API.</p>
                     </div>
                     <div class="header-actions-group">
-                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                            <span>Last Update:</span>
-                            <span id="last-update-dynamic-thresholds" style="color: var(--text-main); font-weight: 600;">Never</span>
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-dynamic-thresholds" class="timestamp-val">Never</span>
                         </div>
-                        <div class="search-container" style="min-width: 240px;">
-                            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             <input type="text" id="dynamic-thresholds-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
