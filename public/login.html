@@ -3,31 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Liquidation Trader</title>
+    <title>Sign In - Liquidation Trader</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="login-body">
     <div class="login-wrapper">
         <div class="card login-card form-container">
-            <h1 class="logo">🚀 Liquidation <span class="highlight">Trader</span></h1>
+            <div class="login-brand">
+                <div class="login-logo-badge">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h1 class="logo">Liquidation <span class="highlight">Trader</span></h1>
+                <p class="subtitle" style="margin-top: 4px; font-size: 13px;">High-Frequency Algorithmic Execution Platform</p>
+            </div>
             
             <form id="login-form" method="POST">
-                <div class="form-group row">
-                    <div class="col" style="flex: 1;">
-                        <input type="text" id="username" name="username" required autocomplete="username" placeholder="Username">
-                    </div>
+                <div class="form-group">
+                    <label for="username" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; display: block;">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username" placeholder="Enter username">
                 </div>
-                <div class="form-group row">
-                    <div class="col" style="flex: 1;">
-                        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Password">
-                    </div>
+                <div class="form-group">
+                    <label for="password" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; display: block;">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Enter password">
                 </div>
                 
-                <button type="submit" class="btn btn-primary btn-login">Login</button>
+                <button type="submit" class="btn btn-primary btn-login">
+                    <span>Sign In to Terminal</span>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </button>
                 <div id="login-error" class="login-error">Invalid credentials</div>
             </form>
+            <div class="login-footer-meta">
+                <span>AES-256 Encrypted Session &bull; Automated Liquidation Monitor</span>
+            </div>
         </div>
     </div>
 

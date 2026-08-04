@@ -420,6 +420,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnStop = document.getElementById('btn-stop');
     const botStatusDot = document.getElementById('bot-status-indicator').querySelector('.dot');
     const botStatusText = document.getElementById('bot-status-text');
+    const overviewStatusPill = document.getElementById('bot-overview-status-pill');
+    const overviewStatusDot = document.getElementById('bot-overview-status-dot');
+    const overviewStatusLabel = document.getElementById('bot-overview-status-label');
     const tradeStatusDot = document.getElementById('trade-status-indicator').querySelector('.dot');
     const tradeStatusText = document.getElementById('trade-status-text');
     const pairsCount = document.getElementById('pairs-count');
@@ -535,6 +538,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnStop.disabled = true;
                 }
 
+                // Dynamic Status Pill next to Bot Overview heading
+                if (overviewStatusPill && overviewStatusDot && overviewStatusLabel) {
+                    if (data.isRunning) {
+                        if (data.isTrading) {
+                            overviewStatusPill.className = 'live-indicator-pill status-pill-trading';
+                            overviewStatusDot.className = 'pulse-dot-indicator dot-trading';
+                            overviewStatusLabel.textContent = 'Executing Trade';
+                        } else if (data.isolationMode) {
+                            overviewStatusPill.className = 'live-indicator-pill status-pill-warning';
+                            overviewStatusDot.className = 'pulse-dot-indicator dot-warning';
+                            overviewStatusLabel.textContent = 'Isolation Mode';
+                        } else {
+                            overviewStatusPill.className = 'live-indicator-pill status-pill-running';
+                            overviewStatusDot.className = 'pulse-dot-indicator dot-running';
+                            overviewStatusLabel.textContent = 'Live • Running';
+                        }
+                    } else {
+                        overviewStatusPill.className = 'live-indicator-pill status-pill-stopped';
+                        overviewStatusDot.className = 'pulse-dot-indicator dot-stopped';
+                        overviewStatusLabel.textContent = 'Engine Stopped';
+                    }
+                }
+
                 if (data.isTrading) {
                     tradeStatusDot.className = 'dot error'; // Red when active execution locks standard
                     tradeStatusText.textContent = 'Executing Trade';
@@ -633,6 +659,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dynUpdateEl) dynUpdateEl.textContent = data.lastDynamicThresholdsUpdate ? new Date(data.lastDynamicThresholdsUpdate).toLocaleString() : 'Never';
 
                 // Stats auto-updating moved to fetchAccountData
+            })
+            .catch(err => {
+                if (overviewStatusPill && overviewStatusDot && overviewStatusLabel) {
+                    overviewStatusPill.className = 'live-indicator-pill status-pill-error';
+                    overviewStatusDot.className = 'pulse-dot-indicator dot-error';
+                    overviewStatusLabel.textContent = 'Disconnected';
+                }
             });
     }
 
@@ -1014,16 +1047,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.renderPositionStats = function (symbol) {
+    function renderPositionStats(symbol) {
         const position = currentPositionsList.find(p => p.symbol === symbol);
         if (!position) return;
 
         const sideStr = (position.side || '').toLowerCase();
         const isBuy = sideStr === 'buy' || sideStr === 'long';
-        const sideClz = isBuy ? 'buy' : 'sell';
+        const statusClz = isBuy ? 'status-connected' : 'status-error';
+        const badgeClz = isBuy ? 'badge-connected' : 'badge-error';
+        const dotClz = isBuy ? 'dot-connected' : 'dot-error';
+        const sideText = (position.side || 'UNKNOWN').toUpperCase();
 
-        let posValue = (parseFloat(position.size || 0) * parseFloat(position.entry_price || 0));
-        let posValueStr = posValue > 0 ? posValue.toFixed(4) : '0.0000';
+        const posValue = (parseFloat(position.size || 0) * parseFloat(position.entry_price || 0));
+        const posValueStr = posValue > 0 ? posValue.toFixed(2) : '0.00';
+
+        const leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
+        const margin = posValue / leverage;
+        const marginStr = margin > 0 ? margin.toFixed(2) : '0.00';
+
+        const pnlNum = parseFloat(position.unrealized_pnl || 0);
+        const pnlPercent = margin > 0 ? (pnlNum / margin) * 100 : 0;
+        const pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
 
         let trailingActivationPercent = parseFloat(document.getElementById('TRAILING_ACTIVATION_PERCENTAGE')?.value || 0);
         let trailingPriceStr = 'N/A';
@@ -1033,74 +1077,87 @@ document.addEventListener('DOMContentLoaded', () => {
             trailingPriceStr = tp.toFixed(4);
         }
 
-        let leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
-        let margin = posValue / leverage;
-        let marginStr = margin > 0 ? margin.toFixed(4) : '0.0000';
-        let pnlPercentStr = '0.00%';
-        if (margin > 0) {
-            let pnlPercent = (parseFloat(position.unrealized_pnl || 0) / margin) * 100;
-            pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
-        }
+        const lastUpdatedText = position.updated_at ? (typeof formatTimeAgo === 'function' ? formatTimeAgo(position.updated_at) : new Date(position.updated_at).toLocaleTimeString()) : 'Live';
 
         document.getElementById('position-detail-stats').innerHTML = `
-            <div class="position-detail-banner" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; margin-top: 10px; border-left: 4px solid ${isBuy ? 'var(--accent)' : 'var(--danger)'};">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px;">
-                    <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;">${position.symbol}</div>
-                    <div class="pos-side ${sideClz}" style="font-size: 14px; padding: 6px 14px;">${(position.side || 'UNKNOWN').toUpperCase()}</div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 24px;">
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Size</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${position.size}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Entry Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Mark Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Liq. Price</span>
-                        <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">TP Price</span>
-                        <span class="pos-detail-value" style="color: var(--accent); font-size: 18px;">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">SL Price</span>
-                        <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Trailing Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${trailingPriceStr}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Value</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${posValueStr}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Margin</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${marginStr}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Last Update</span>
-                        <span class="pos-detail-value" style="font-size: 16px;">${position.updated_at ? new Date(position.updated_at).toLocaleTimeString() : 'Unknown'}</span>
-                    </div>
-                    <div class="pos-detail-item" style="border-left: 1px solid var(--border-color); padding-left: 20px; min-width: max-content;">
-                        <span class="pos-detail-label">Unrealized PnL</span>
-                        <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
-                            ${formatPnl(position.unrealized_pnl)} 
-                            <span style="font-size: 14px; font-weight: 600; color: ${parseFloat(position.unrealized_pnl) >= 0 ? 'var(--accent)' : 'var(--danger)'}; margin-left: 4px;">(${pnlPercentStr})</span>
+            <div class="conn-item-card pos-item-card pos-detail-card ${statusClz}">
+                <div class="conn-item-top">
+                    <div class="conn-item-title-wrap">
+                        <div class="conn-item-title-row">
+                            <span class="proto-tag tag-perp">PERP CONTRACT</span>
+                            <span class="pos-detail-title">${escapeHtml(position.symbol)}</span>
                         </div>
+                        <span class="conn-item-desc">Linear Perpetual &bull; Leverage: <strong>${leverage}x</strong> &bull; Size: <strong>${escapeHtml(String(position.size))}</strong></span>
+                    </div>
+                    <div class="conn-status-badge ${badgeClz}">
+                        <span class="conn-dot ${dotClz}"></span>
+                        <span>${sideText}</span>
+                    </div>
+                </div>
+
+                <div class="pos-item-pnl-box pos-detail-pnl-box ${pnlNum >= 0 ? 'pnl-box-positive' : 'pnl-box-negative'}">
+                    <div class="pos-pnl-left">
+                        <span class="pos-pnl-sub-label">Unrealized PnL</span>
+                        <div class="pos-pnl-main-val">
+                            ${formatPnl(position.unrealized_pnl)}
+                            <span class="pos-pnl-roi ${pnlNum >= 0 ? 'val-accent' : 'val-danger'}">(${pnlPercentStr} ROI)</span>
+                        </div>
+                    </div>
+                    <div class="pos-pnl-mid" style="display: flex; flex-direction: column; gap: 2px;">
+                        <span class="pos-pnl-sub-label">Position Value</span>
+                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">$${posValueStr}</span>
+                    </div>
+                    <div class="pos-pnl-right">
+                        <span class="pos-pnl-sub-label">Margin Allocated</span>
+                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">$${marginStr}</span>
+                    </div>
+                </div>
+
+                <div class="conn-item-metrics pos-item-metrics pos-detail-metrics">
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Entry Price</span>
+                        <span class="conn-metric-num mono-num">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Mark Price</span>
+                        <span class="conn-metric-num mono-num">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Liq. Price</span>
+                        <span class="conn-metric-num mono-num val-danger">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Take Profit</span>
+                        <span class="conn-metric-num mono-num val-accent">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Stop Loss</span>
+                        <span class="conn-metric-num mono-num val-danger">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Trailing Target</span>
+                        <span class="conn-metric-num mono-num ${trailingPriceStr !== 'N/A' ? 'val-accent' : ''}">${trailingPriceStr}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Contract Units</span>
+                        <span class="conn-metric-num mono-num">${escapeHtml(String(position.size))}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Effective Margin</span>
+                        <span class="conn-metric-num mono-num">$${marginStr}</span>
+                    </div>
+                </div>
+
+                <div class="conn-item-footer">
+                    <span>Last Sync: <strong>${lastUpdatedText}</strong></span>
+                    <div class="pos-footer-actions">
+                        <span class="status-pill-badge badge-active" style="font-size: 11px; padding: 3px 8px;">Active Position</span>
                     </div>
                 </div>
             </div>
         `;
-    };
+    }
+    window.renderPositionStats = renderPositionStats;
 
     window.closePositionDetail = function () {
         document.getElementById('position-detail-page').classList.remove('active');
@@ -1155,6 +1212,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
     };
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatTimeAgo(timestamp) {
+        if (!timestamp) return 'Never';
+        const diffMs = Date.now() - timestamp;
+        const diffSec = Math.floor(diffMs / 1000);
+        if (diffSec < 5) return 'Just now';
+        if (diffSec < 60) return `${diffSec}s ago`;
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) return `${diffHr}h ago`;
+        return `${Math.floor(diffHr / 24)}d ago`;
+    }
 
     function formatUsd(val) {
         return formatSelectedCurrency(val);
@@ -1215,45 +1295,99 @@ document.addEventListener('DOMContentLoaded', () => {
                     positionsContainer.innerHTML = data.map(p => {
                         const sideStr = (p.side || '').toLowerCase();
                         const isBuy = sideStr === 'buy' || sideStr === 'long';
-                        const sideClz = isBuy ? 'buy' : 'sell';
-                        const cardClz = isBuy ? 'pos-card-buy' : 'pos-card-sell';
+                        const statusClz = isBuy ? 'status-connected' : 'status-error';
+                        const badgeClz = isBuy ? 'badge-connected' : 'badge-error';
+                        const dotClz = isBuy ? 'dot-connected' : 'dot-error';
                         const sideText = (p.side || 'UNKNOWN').toUpperCase();
 
+                        const posValue = (parseFloat(p.size || 0) * parseFloat(p.entry_price || 0));
+                        const posValueStr = posValue > 0 ? posValue.toFixed(2) : '0.00';
+
+                        const leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
+                        const margin = posValue / leverage;
+                        const marginStr = margin > 0 ? margin.toFixed(2) : '0.00';
+
+                        const pnlNum = parseFloat(p.unrealized_pnl || 0);
+                        const pnlPercent = margin > 0 ? (pnlNum / margin) * 100 : 0;
+                        const pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
+
+                        const lastUpdatedText = p.updated_at ? (typeof formatTimeAgo === 'function' ? formatTimeAgo(p.updated_at) : new Date(p.updated_at).toLocaleTimeString()) : 'Live';
+                        const safeSymbolJs = (p.symbol || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        const cardDomId = 'pos-card-' + (p.symbol || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+
                         return `
-                        <div class="position-card ${cardClz}">
-                            <div class="pos-header">
-                                <div class="pos-symbol" style="cursor: pointer; text-decoration: underline;" onclick="openPositionDetail('${p.symbol}')" title="View Details">${p.symbol}</div>
-                                <div class="pos-side ${sideClz}">${sideText}</div>
-                            </div>
-                            <div class="pos-details">
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Size</span>
-                                    <span class="pos-detail-value">${p.size}</span>
+                        <div class="conn-item-card pos-item-card ${statusClz}" id="${cardDomId}">
+                            <div class="conn-item-top">
+                                <div class="conn-item-title-wrap">
+                                    <div class="conn-item-title-row">
+                                        <span class="proto-tag tag-perp">PERP</span>
+                                        <span class="conn-item-name pos-item-name">${escapeHtml(p.symbol)}</span>
+                                    </div>
+                                    <span class="conn-item-desc">Linear Contract &bull; Size: <strong>${escapeHtml(String(p.size))}</strong></span>
                                 </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Entry Price</span>
-                                    <span class="pos-detail-value">${parseFloat(p.entry_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Mark Price</span>
-                                    <span class="pos-detail-value">${parseFloat(p.mark_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Liq. Price</span>
-                                    <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(p.liq_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">TP Price</span>
-                                    <span class="pos-detail-value" style="color: var(--accent)">${parseFloat(p.tp_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">SL Price</span>
-                                    <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(p.sl_price || 0).toFixed(4)}</span>
+                                <div class="conn-status-badge ${badgeClz}">
+                                    <span class="conn-dot ${dotClz}"></span>
+                                    <span>${sideText}</span>
                                 </div>
                             </div>
-                            <div class="pos-pnl">
-                                <span class="pos-pnl-label">Unrealized PnL</span>
-                                <span class="pos-pnl-value">${formatPnl(p.unrealized_pnl)}</span>
+
+                            <div class="pos-item-pnl-box ${pnlNum >= 0 ? 'pnl-box-positive' : 'pnl-box-negative'}">
+                                <div class="pos-pnl-left">
+                                    <span class="pos-pnl-sub-label">Unrealized PnL</span>
+                                    <div class="pos-pnl-main-val">
+                                        ${formatPnl(p.unrealized_pnl)}
+                                        <span class="pos-pnl-roi ${pnlNum >= 0 ? 'val-accent' : 'val-danger'}">(${pnlPercentStr})</span>
+                                    </div>
+                                </div>
+                                <div class="pos-pnl-right">
+                                    <span class="pos-pnl-sub-label">Position Value</span>
+                                    <span class="pos-pnl-val-mono mono-num">$${posValueStr}</span>
+                                </div>
+                            </div>
+
+                            <div class="conn-item-metrics pos-item-metrics">
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Entry Price</span>
+                                    <span class="conn-metric-num mono-num">${parseFloat(p.entry_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Mark Price</span>
+                                    <span class="conn-metric-num mono-num">${parseFloat(p.mark_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Liq. Price</span>
+                                    <span class="conn-metric-num mono-num val-danger">${parseFloat(p.liq_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">TP Target</span>
+                                    <span class="conn-metric-num mono-num val-accent">${parseFloat(p.tp_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">SL Guard</span>
+                                    <span class="conn-metric-num mono-num val-danger">${parseFloat(p.sl_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Est. Margin</span>
+                                    <span class="conn-metric-num mono-num">$${marginStr}</span>
+                                </div>
+                            </div>
+
+                            <div class="conn-item-footer">
+                                <span>Updated: <strong>${lastUpdatedText}</strong></span>
+                                <div class="pos-footer-actions">
+                                    <button class="btn-test-conn" onclick="openTvPopupModal('${safeSymbolJs}')" title="Open Interactive TradingView Chart">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                        </svg>
+                                        <span>Chart</span>
+                                    </button>
+                                    <button class="btn-test-conn btn-pos-detail" onclick="openPositionDetail('${safeSymbolJs}')" title="View Full Position Details & Execution Controls">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                        <span>Details</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>`;
                     }).join('');
@@ -2087,33 +2221,48 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: { top: 10, bottom: 5, left: 10, right: 10 }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
                     grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: { color: '#949bab' }
+                    ticks: {
+                        color: '#8a94a6',
+                        font: { family: "'JetBrains Mono', monospace", size: 10 },
+                        callback: function(value) {
+                            const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                            const symbol = currencySymbols[cur] || '$';
+                            return (value >= 0 ? '+' : '') + symbol + (Math.abs(value) >= 1000 ? (value / 1000).toFixed(1) + 'k' : value);
+                        }
+                    }
                 },
                 x: {
-                    grid: { display: false },
-                    ticks: { color: '#949bab' }
+                    grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                    ticks: {
+                        color: '#8a94a6',
+                        font: { family: "'JetBrains Mono', monospace", size: 10 }
+                    }
                 }
             },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#14171f',
-                    titleColor: '#f0f2f5',
-                    bodyColor: '#f0f2f5',
-                    borderColor: '#2b303d',
+                    backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                    titleColor: '#8a94a6',
+                    bodyColor: '#e0e4eb',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 1,
+                    padding: 10,
                     displayColors: false,
                     callbacks: {
                         label: function (context) {
-                            const val = context.raw;
+                            const val = Number(context.raw) || 0;
                             const cur = localStorage.getItem('selectedCurrency') || 'USD';
                             const symbol = currencySymbols[cur] || '$';
                             const formattedVal = cur === 'BTC' ? val.toFixed(6) : (cur === 'JPY' ? Math.round(val).toLocaleString() : val.toFixed(2));
-                            return (val >= 0 ? '+' : '') + symbol + formattedVal;
+                            return ` PnL: ${val >= 0 ? '+' : ''}${symbol}${formattedVal}`;
                         }
                     }
                 }
@@ -2133,8 +2282,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     label: `Daily PnL (${currencySymbols[localStorage.getItem('selectedCurrency') || 'USD'] || '$'})`,
                     data: [],
                     backgroundColor: [],
+                    borderColor: [],
+                    borderWidth: 1,
                     borderRadius: 4,
-                    borderWidth: 0
+                    maxBarThickness: 22,
+                    categoryPercentage: 0.7,
+                    barPercentage: 0.85
                 }]
             },
             options: getPnlChartOptions()
@@ -2153,8 +2306,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     label: `Weekly PnL (${currencySymbols[localStorage.getItem('selectedCurrency') || 'USD'] || '$'})`,
                     data: [],
                     backgroundColor: [],
+                    borderColor: [],
+                    borderWidth: 1,
                     borderRadius: 4,
-                    borderWidth: 0
+                    maxBarThickness: 26,
+                    categoryPercentage: 0.6,
+                    barPercentage: 0.85
                 }]
             },
             options: getPnlChartOptions()
@@ -2173,8 +2330,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     label: `Monthly PnL (${currencySymbols[localStorage.getItem('selectedCurrency') || 'USD'] || '$'})`,
                     data: [],
                     backgroundColor: [],
+                    borderColor: [],
+                    borderWidth: 1,
                     borderRadius: 4,
-                    borderWidth: 0
+                    maxBarThickness: 32,
+                    categoryPercentage: 0.5,
+                    barPercentage: 0.85
                 }]
             },
             options: getPnlChartOptions()
@@ -2193,12 +2354,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const symbol = currencySymbols[cur] || '$';
                 const labels = data.map(d => d.date.split('-').slice(1).join('/')); // MM/DD
                 const values = data.map(d => convertFromUsd(d.daily_pnl));
-                const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b'); // Accent or Danger
+                const colors = values.map(v => v >= 0 ? 'rgba(0, 230, 118, 0.85)' : 'rgba(255, 77, 109, 0.85)');
+                const borderColors = values.map(v => v >= 0 ? '#00e676' : '#ff4d6d');
 
                 pnlChart.data.labels = labels;
                 pnlChart.data.datasets[0].label = `Daily PnL (${symbol})`;
                 pnlChart.data.datasets[0].data = values;
                 pnlChart.data.datasets[0].backgroundColor = colors;
+                pnlChart.data.datasets[0].borderColor = borderColors;
                 pnlChart.update();
             })
             .catch(console.error);
@@ -2219,12 +2382,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return parts[1];
                 });
                 const values = data.map(d => convertFromUsd(d.weekly_pnl));
-                const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b');
+                const colors = values.map(v => v >= 0 ? 'rgba(0, 230, 118, 0.85)' : 'rgba(255, 77, 109, 0.85)');
+                const borderColors = values.map(v => v >= 0 ? '#00e676' : '#ff4d6d');
 
                 weeklyPnlChart.data.labels = labels;
                 weeklyPnlChart.data.datasets[0].label = `Weekly PnL (${symbol})`;
                 weeklyPnlChart.data.datasets[0].data = values;
                 weeklyPnlChart.data.datasets[0].backgroundColor = colors;
+                weeklyPnlChart.data.datasets[0].borderColor = borderColors;
                 weeklyPnlChart.update();
             })
             .catch(console.error);
@@ -2246,12 +2411,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return date.toLocaleString('default', { month: 'short' });
                 });
                 const values = data.map(d => convertFromUsd(d.monthly_pnl));
-                const colors = values.map(v => v >= 0 ? '#00e676' : '#ff3b3b');
+                const colors = values.map(v => v >= 0 ? 'rgba(0, 230, 118, 0.85)' : 'rgba(255, 77, 109, 0.85)');
+                const borderColors = values.map(v => v >= 0 ? '#00e676' : '#ff4d6d');
 
                 monthlyPnlChart.data.labels = labels;
                 monthlyPnlChart.data.datasets[0].label = `Monthly PnL (${symbol})`;
                 monthlyPnlChart.data.datasets[0].data = values;
                 monthlyPnlChart.data.datasets[0].backgroundColor = colors;
+                monthlyPnlChart.data.datasets[0].borderColor = borderColors;
                 monthlyPnlChart.update();
             })
             .catch(console.error);
@@ -2280,24 +2447,40 @@ document.addEventListener('DOMContentLoaded', () => {
     let pnlWinRateChart = null;
     let drawdownChart = null;
 
+    const DONUT_PALETTE = [
+        '#00e676', // Emerald Green
+        '#00e5ff', // Cyan
+        '#ff4d6d', // Neon Coral
+        '#a855f7', // Electric Violet
+        '#ffb300', // Amber
+        '#3b82f6', // Electric Blue
+        '#ec4899', // Pink
+        '#10b981', // Mint
+        '#8b5cf6', // Indigo
+        '#f97316'  // Orange
+    ];
+
     function initStatisticsCharts() {
         const tradesCtx = document.getElementById('tradesChart');
         if (tradesCtx) {
             tradesChartInst = new Chart(tradesCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['BUY', 'SELL'],
+                    labels: ['BUY (Long)', 'SELL (Short)'],
                     datasets: [{
                         data: [0, 0],
-                        backgroundColor: ['#00e676', '#ff3b3b'],
-                        borderWidth: 0,
-                        hoverOffset: 4
+                        backgroundColor: ['#00e676', '#ff4d6d'],
+                        borderWidth: 2,
+                        borderColor: 'rgba(20, 23, 31, 0.95)',
+                        spacing: 3,
+                        borderRadius: 4,
+                        hoverOffset: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '75%',
+                    cutout: '72%',
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -2305,7 +2488,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             titleColor: '#8a94a6',
                             bodyColor: '#e0e4eb',
                             borderColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            padding: 10
                         }
                     }
                 }
@@ -2320,35 +2504,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: [],
                     datasets: [
                         {
-                            label: 'BUY',
+                            label: 'BUY (Long)',
                             data: [],
-                            backgroundColor: '#00e676',
-                            borderRadius: 4
+                            backgroundColor: 'rgba(0, 230, 118, 0.85)',
+                            borderColor: '#00e676',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            maxBarThickness: 32,
+                            categoryPercentage: 0.5,
+                            barPercentage: 0.8
                         },
                         {
-                            label: 'SELL',
+                            label: 'SELL (Short)',
                             data: [],
-                            backgroundColor: '#ff3b3b',
-                            borderRadius: 4
+                            backgroundColor: 'rgba(255, 77, 109, 0.85)',
+                            borderColor: '#ff4d6d',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            maxBarThickness: 32,
+                            categoryPercentage: 0.5,
+                            barPercentage: 0.8
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: false, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        y: { stacked: false, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    layout: {
+                        padding: { top: 10, bottom: 5, left: 10, right: 10 }
                     },
                     plugins: {
-                        legend: { labels: { color: '#8a94a6' } },
+                        legend: {
+                            labels: { color: '#8a94a6', font: { family: "'JetBrains Mono', monospace", size: 11 }, boxWidth: 12, boxHeight: 12, borderRadius: 3 }
+                        },
                         tooltip: {
                             backgroundColor: 'rgba(20, 23, 31, 0.95)',
-                            titleColor: '#e0e4eb',
+                            titleColor: '#8a94a6',
                             bodyColor: '#e0e4eb',
                             borderColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            padding: 10
                         }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#8a94a6', font: { family: "'JetBrains Mono', monospace" } } },
+                        y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#8a94a6', stepSize: 1, font: { family: "'JetBrains Mono', monospace" } } }
                     }
                 }
             });
@@ -2358,36 +2558,76 @@ document.addEventListener('DOMContentLoaded', () => {
         if (marginCtx) {
             marginHistoryChart = new Chart(marginCtx, {
                 type: 'line',
-                data: { labels: [], datasets: [
-                    { label: 'Used Margin (%)', data: [], borderColor: '#00e676', backgroundColor: 'rgba(0, 230, 118, 0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
-                    { label: 'Position Count', data: [], borderColor: '#2196f3', backgroundColor: 'rgba(33, 150, 243, 0.1)', fill: false, tension: 0.4, yAxisID: 'y1', borderDash: [5, 5] },
-                    { label: 'Isolation Threshold', data: [], borderColor: '#ff3d00', backgroundColor: 'transparent', fill: false, tension: 0, yAxisID: 'y', pointRadius: 0, borderDash: [2, 2] }
-                ] },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { 
-                        legend: { display: true, labels: { color: 'rgba(255, 255, 255, 0.7)' } },
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Used Margin %',
+                            data: [],
+                            borderColor: '#00e676',
+                            backgroundColor: 'rgba(0, 230, 118, 0.08)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: '#00e676',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Open Positions',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Isolation Threshold',
+                            data: [],
+                            borderColor: '#ff3b3b',
+                            borderWidth: 1.5,
+                            borderDash: [6, 4],
+                            pointRadius: 0,
+                            fill: false,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#8a94a6', font: { size: 10 } } },
                         tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#8a94a6',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) label += ': ';
-                                    if (context.parsed.y !== null) label += context.parsed.y;
-                                    if (context.dataset.label === 'Position Count' && context.dataset.openSymbols) {
-                                        const symbols = context.dataset.openSymbols[context.dataIndex];
-                                        if (symbols) {
-                                            label += ` (${symbols})`;
-                                        }
+                                    if (context.datasetIndex === 0) return ` Used Margin: ${context.raw}%`;
+                                    if (context.datasetIndex === 1) {
+                                        const syms = context.dataset.openSymbols ? context.dataset.openSymbols[context.dataIndex] : '';
+                                        return ` Positions: ${context.raw}${syms ? ` (${syms})` : ''}`;
                                     }
-                                    return label;
+                                    if (context.datasetIndex === 2) return ` Threshold: ${context.raw}%`;
+                                    return '';
                                 }
                             }
                         }
                     }, 
                     scales: { 
-                        y: { beginAtZero: true, suggestedMax: 20, position: 'left' },
-                        y1: { beginAtZero: true, suggestedMax: 5, position: 'right', grid: { drawOnChartArea: false }, ticks: { stepSize: 1 } }
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#8a94a6', maxTicksLimit: 8 } },
+                        y: { beginAtZero: true, suggestedMax: 20, position: 'left', grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#8a94a6', callback: v => v + '%' } },
+                        y1: { beginAtZero: true, suggestedMax: 5, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8a94a6', stepSize: 1 } }
                     } 
                 }
             });
@@ -2397,8 +2637,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pnlSymCtx) {
             pnlSymbolChart = new Chart(pnlSymCtx, {
                 type: 'doughnut',
-                data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: 'rgba(20, 23, 31, 0.95)', spacing: 3, borderRadius: 4, hoverOffset: 6 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#8a94a6',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const sign = val >= 0 ? '+' : '';
+                                    return ` ${context.label}: ${sign}$${val.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
             });
         }
 
@@ -2406,8 +2668,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pnlSideCtx) {
             pnlSideChart = new Chart(pnlSideCtx, {
                 type: 'doughnut',
-                data: { labels: ['BUY Position', 'SELL Position'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                data: {
+                    labels: ['BUY (Long)', 'SELL (Short)'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#00e676', '#ff4d6d'],
+                        borderWidth: 2,
+                        borderColor: 'rgba(20, 23, 31, 0.95)',
+                        spacing: 3,
+                        borderRadius: 4,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#8a94a6',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10
+                        }
+                    }
+                }
             });
         }
 
@@ -2415,8 +2703,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pnlWinRateCtx) {
             pnlWinRateChart = new Chart(pnlWinRateCtx, {
                 type: 'doughnut',
-                data: { labels: ['Win % (BUY pos)', 'Win % (SELL pos)'], datasets: [{ data: [0, 0], backgroundColor: ['#00e676', '#ff3b3b'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                data: {
+                    labels: ['BUY Win %', 'SELL Win %'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#00e676', '#ff4d6d'],
+                        borderWidth: 2,
+                        borderColor: 'rgba(20, 23, 31, 0.95)',
+                        spacing: 3,
+                        borderRadius: 4,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#8a94a6',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${Number(context.raw || 0).toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
             });
         }
 
@@ -2424,17 +2743,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (drawdownCtx) {
             drawdownChart = new Chart(drawdownCtx, {
                 type: 'bar',
-                data: { labels: [], datasets: [{ label: 'Max Drawdown', data: [], backgroundColor: 'rgba(255, 59, 59, 0.8)', borderRadius: 4 }] },
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Max Drawdown',
+                        data: [],
+                        backgroundColor: 'rgba(255, 77, 109, 0.8)',
+                        borderColor: '#ff4d6d',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 18,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    }]
+                },
                 options: { 
                     indexAxis: 'y', 
                     responsive: true, 
-                    maintainAspectRatio: false, 
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 5, bottom: 5, left: 10, right: 15 }
+                    },
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
+                            backgroundColor: 'rgba(20, 23, 31, 0.95)',
+                            titleColor: '#8a94a6',
+                            bodyColor: '#e0e4eb',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 10,
                             callbacks: {
                                 label: function(context) {
-                                    return context.raw + '%';
+                                    return ` Max Drawdown: ${context.raw}%`;
                                 }
                             }
                         }
@@ -2444,12 +2785,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             beginAtZero: true, 
                             max: 0, 
                             reverse: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
                             ticks: {
+                                color: '#8a94a6',
+                                font: { family: "'JetBrains Mono', monospace", size: 10 },
                                 callback: function(value) {
                                     return value + '%';
                                 }
                             }
-                        } 
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#e0e4eb',
+                                font: { family: "'JetBrains Mono', monospace", size: 11, weight: '500' }
+                            }
+                        }
                     } 
                 }
             });
@@ -2479,6 +2830,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     tradesChartInst.update();
                     document.getElementById('stats-trades-buy').innerText = buy;
                     document.getElementById('stats-trades-sell').innerText = sell;
+
+                    const tradesTotalEl = document.getElementById('stats-donut-trades-total');
+                    if (tradesTotalEl) tradesTotalEl.innerText = buy + sell;
                 }
 
                 if (strategiesChartInst && data.strategies) {
@@ -2530,36 +2884,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.closedPnls) {
                     let symMap = {};
+                    let totalPnL = 0;
                     let buyPosCount = 0;
                     let sellPosCount = 0;
                     let buyPosWin = 0;
                     let sellPosWin = 0;
 
                     for (let pnl of data.closedPnls) {
-                        symMap[pnl.symbol] = (symMap[pnl.symbol] || 0) + pnl.pnl;
+                        const amount = Number(pnl.pnl) || 0;
+                        symMap[pnl.symbol] = (symMap[pnl.symbol] || 0) + amount;
+                        totalPnL += amount;
                         const side = pnl.side ? pnl.side.toUpperCase() : '';
                         if (side === 'SELL' || side === 'LONG' || side === 'BUY_POSITION') {
                             buyPosCount++;
-                            if (pnl.pnl > 0) buyPosWin++;
+                            if (amount > 0) buyPosWin++;
                         } else if (side === 'BUY' || side === 'SHORT' || side === 'SELL_POSITION') {
                             sellPosCount++;
-                            if (pnl.pnl > 0) sellPosWin++;
+                            if (amount > 0) sellPosWin++;
                         }
+                    }
+
+                    // Update PnL Center Stat
+                    const totalPnlEl = document.getElementById('stats-donut-total-pnl');
+                    if (totalPnlEl) {
+                        const sign = totalPnL >= 0 ? '+' : '-';
+                        totalPnlEl.innerText = `${sign}$${Math.abs(totalPnL).toFixed(2)}`;
+                        totalPnlEl.style.color = totalPnL >= 0 ? '#00e676' : '#ff4d6d';
                     }
 
                     if (pnlSymbolChart) {
                         const syms = Object.keys(symMap);
                         pnlSymbolChart.data.labels = syms;
                         pnlSymbolChart.data.datasets[0].data = syms.map(s => symMap[s]);
-                        const bgColors = syms.map((s, i) => `hsl(${(i * 360 / syms.length)}, 70%, 50%)`);
+                        const bgColors = syms.map((s, i) => DONUT_PALETTE[i % DONUT_PALETTE.length]);
                         pnlSymbolChart.data.datasets[0].backgroundColor = bgColors;
                         pnlSymbolChart.update();
 
                         const legendDiv = document.getElementById('pnl-symbol-legend');
                         if (legendDiv) {
-                            legendDiv.innerHTML = syms.map((s, i) => `
-                                <div class="legend-item"><span class="legend-color" style="background-color: ${bgColors[i]}"></span>${s}</div>
-                            `).join('');
+                            if (syms.length === 0) {
+                                legendDiv.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">No closed trades recorded</span>';
+                            } else {
+                                legendDiv.innerHTML = syms.map((s, i) => {
+                                    const pnlVal = symMap[s];
+                                    const pnlSign = pnlVal >= 0 ? '+' : '';
+                                    const pnlColor = pnlVal >= 0 ? '#00e676' : '#ff4d6d';
+                                    return `
+                                        <div class="legend-chip">
+                                            <span class="legend-dot" style="background-color: ${bgColors[i]}; box-shadow: 0 0 6px ${bgColors[i]}99;"></span>
+                                            <span class="legend-label">${s}:</span>
+                                            <span class="legend-val mono-num" style="color: ${pnlColor}">${pnlSign}$${pnlVal.toFixed(2)}</span>
+                                        </div>
+                                    `;
+                                }).join('');
+                            }
                         }
                     }
 
@@ -2569,21 +2947,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         document.getElementById('stats-pnl-buy-count').innerText = buyPosCount;
                         document.getElementById('stats-pnl-sell-count').innerText = sellPosCount;
+
+                        const sideTotalEl = document.getElementById('stats-pnl-total-count');
+                        if (sideTotalEl) sideTotalEl.innerText = buyPosCount + sellPosCount;
                     }
 
                     if (pnlWinRateChart) {
-                        const rawBuyWinRate = buyPosCount > 0 ? (buyPosWin / buyPosCount) * 100 : 0;
-                        const rawSellWinRate = sellPosCount > 0 ? (sellPosWin / sellPosCount) * 100 : 0;
-                        const totalRate = rawBuyWinRate + rawSellWinRate;
-                        
-                        const buyWinRate = totalRate > 0 ? (rawBuyWinRate / totalRate) * 100 : 0;
-                        const sellWinRate = totalRate > 0 ? (rawSellWinRate / totalRate) * 100 : 0;
+                        const totalPositions = buyPosCount + sellPosCount;
+                        const totalWins = buyPosWin + sellPosWin;
+                        const overallWinRate = totalPositions > 0 ? (totalWins / totalPositions) * 100 : 0;
+                        const buyWinShare = totalWins > 0 ? (buyPosWin / totalWins) * 100 : 0;
+                        const sellWinShare = totalWins > 0 ? (sellPosWin / totalWins) * 100 : 0;
 
-                        pnlWinRateChart.data.datasets[0].data = [buyWinRate, sellWinRate];
+                        pnlWinRateChart.data.datasets[0].data = [buyWinShare, sellWinShare];
                         pnlWinRateChart.update();
 
-                        document.getElementById('stats-pnl-buy-win').innerText = buyWinRate.toFixed(2) + '%';
-                        document.getElementById('stats-pnl-sell-win').innerText = sellWinRate.toFixed(2) + '%';
+                        const buyWinEl = document.getElementById('stats-pnl-buy-win');
+                        if (buyWinEl) buyWinEl.innerText = buyWinShare.toFixed(2) + '%';
+                        const sellWinEl = document.getElementById('stats-pnl-sell-win');
+                        if (sellWinEl) sellWinEl.innerText = sellWinShare.toFixed(2) + '%';
+
+                        const winRateAvgEl = document.getElementById('stats-donut-winrate-avg');
+                        if (winRateAvgEl) {
+                            winRateAvgEl.innerText = overallWinRate.toFixed(1) + '%';
+                            winRateAvgEl.style.color = overallWinRate >= 50 ? '#00e676' : overallWinRate > 0 ? '#ffb300' : 'var(--text-main)';
+                        }
                     }
                 }
 

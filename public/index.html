@@ -180,8 +180,35 @@
         <main class="content">
             <!-- Dashboard Page -->
             <section id="dashboard" class="page active">
-                <header>
-                    <h2>Bot Overview</h2>
+                <header class="page-header-unified">
+                    <div>
+                        <div class="page-title-row">
+                            <h2>Bot Overview</h2>
+                            <div class="live-indicator-pill status-pill-stopped" id="bot-overview-status-pill">
+                                <span class="pulse-dot-indicator dot-stopped" id="bot-overview-status-dot"></span>
+                                <span class="live-label" id="bot-overview-status-label">Engine Stopped</span>
+                            </div>
+                        </div>
+                        <p class="subtitle">Real-time trading engine metrics, liquidation scanning, and execution tracking.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="controls" style="display: flex; gap: 8px;">
+                            <button id="btn-start" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Start Engine</span>
+                            </button>
+                            <button id="btn-stop" class="btn btn-danger" disabled style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+                                </svg>
+                                <span>Stop Engine</span>
+                            </button>
+                        </div>
+                    </div>
                 </header>
 
                 <div class="page-section">
@@ -190,75 +217,122 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
-                        Engine Status
+                        Engine Status & Telemetry
                     </h3>
 
-                    <div class="status-grid">
-                        <div class="card control-panel">
-                            <div class="page-subsection" style="border: none; background: transparent; padding: 0;">
-                                <h4>Engine Controls</h4>
-                                <p class="subtitle">Start or stop the background liquidation tracking engine.</p>
-                                <div class="controls">
-                                    <button id="btn-start" class="btn btn-primary">Start Engine</button>
-                                    <button id="btn-stop" class="btn btn-danger" disabled>Stop Engine</button>
+                    <!-- Hero KPI Metrics Grid -->
+                    <div class="hero-kpi-grid">
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-green">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Bot Status</span>
+                                <div class="status-indicator" id="bot-status-indicator" style="margin-top: 4px;">
+                                    <span class="dot"></span>
+                                    <span class="text" id="bot-status-text">Stopped</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <div class="status-grid">
-                        <div class="card stat-card">
-                            <h3>Bot Status</h3>
-                            <div class="status-indicator" id="bot-status-indicator">
-                                <span class="dot"></span>
-                                <span class="text" id="bot-status-text">Stopped</span>
+                                <span class="hero-kpi-sub">Process listener</span>
                             </div>
                         </div>
 
-                        <div class="card stat-card">
-                            <h3>Trading Engine</h3>
-                            <div class="status-indicator" id="trade-status-indicator">
-                                <span class="dot"></span>
-                                <span class="text" id="trade-status-text">Idle</span>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-blue">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Trading Engine</span>
+                                <div class="status-indicator" id="trade-status-indicator" style="margin-top: 4px;">
+                                    <span class="dot"></span>
+                                    <span class="text" id="trade-status-text">Idle</span>
+                                </div>
+                                <span class="hero-kpi-sub">Evaluation cycle</span>
                             </div>
                         </div>
 
-                        <div class="card stat-card">
-                            <h3>Trading Status</h3>
-                            <div class="status-indicator" id="isolation-status-indicator">
-                                <span class="dot"></span>
-                                <span class="text" id="isolation-status-text">Normal</span>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-purple">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Trading Status</span>
+                                <div class="status-indicator" id="isolation-status-indicator" style="margin-top: 4px;">
+                                    <span class="dot"></span>
+                                    <span class="text" id="isolation-status-text">Normal</span>
+                                </div>
+                                <span class="hero-kpi-sub">Circuit breaker state</span>
                             </div>
                         </div>
 
-                        <div class="card stat-card">
-                            <h3>Loaded Pairs</h3>
-                            <div class="stat-value" id="pairs-count">0</div>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-pink">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Loaded Pairs</span>
+                                <div class="hero-kpi-val mono-num" id="pairs-count">0</div>
+                                <span class="hero-kpi-sub">Active scan targets</span>
+                            </div>
                         </div>
 
-                        <div class="card stat-card">
-                            <h3>Position</h3>
-                            <div class="stat-value"><span id="open-positions-count">0</span> / <span
-                                    id="max-positions-count">0</span></div>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-amber">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Position Slots</span>
+                                <div class="hero-kpi-val mono-num"><span id="open-positions-count">0</span> / <span id="max-positions-count">0</span></div>
+                                <span class="hero-kpi-sub">Open / Max capacity</span>
+                            </div>
                         </div>
 
-                        <div class="card stat-card">
-                            <h3>Used Margin</h3>
-                            <div class="stat-value" id="used-margin-percent">0%</div>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-cyan">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Used Margin</span>
+                                <div class="hero-kpi-val mono-num" id="used-margin-percent">0%</div>
+                                <span class="hero-kpi-sub">Equity allocation</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="status-grid">
-                        <div class="card stat-card">
-                            <h3>Market Sentiment</h3>
-                            <div class="stat-value" id="market-sentiment-value"
-                                style="font-size: 1.2rem; white-space: nowrap;">N/A</div>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-green">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Market Sentiment</span>
+                                <div class="hero-kpi-val" id="market-sentiment-value" style="font-size: 1.15rem; white-space: nowrap;">N/A</div>
+                                <span class="hero-kpi-sub">Aggregated order flow</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Fear & Greed Index</h3>
-                            <div class="stat-value" id="fear-greed-value"
-                                style="font-size: 1.2rem; white-space: nowrap;">N/A</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-amber">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Fear & Greed Index</span>
+                                <div class="hero-kpi-val" id="fear-greed-value" style="font-size: 1.15rem; white-space: nowrap;">N/A</div>
+                                <span class="hero-kpi-sub">Sentiment indicator</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -272,27 +346,38 @@
                         </svg>
                         Recent High Value Liquidations
                     </h3>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="dashboard-liquidations-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Exchange</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Price</th>
-                                    <th>Amount</th>
-                                    <th>Value ($)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dashboard-liquidations-tbody">
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting
-                                        for liquidations &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="table-card-wrapper card">
+                        <div class="table-card-header">
+                            <div class="table-card-title">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span>High-Value Liquidation Flow</span>
+                            </div>
+                            <span class="status-pill-badge badge-active">Realtime Feed</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="dashboard-liquidations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Exchange</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Price</th>
+                                        <th>Amount</th>
+                                        <th>Value ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-liquidations-tbody">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
+                                            Waiting
+                                            for liquidations &mdash;</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -305,45 +390,61 @@
                         </svg>
                         Recent Trade Decision History
                     </h3>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="dashboard-trade-decisions-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Symbol</th>
-                                    <th>Price</th>
-                                    <th>VWAP</th>
-                                    <th>RSI</th>
-                                    <th>DMI</th>
-                                    <th>MS</th>
-                                    <th>Confluence</th>
-                                    <th>Outcome</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dashboard-trade-decisions-tbody">
-                                <tr>
-                                    <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for trade evaluations &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="table-card-wrapper card">
+                        <div class="table-card-header">
+                            <div class="table-card-title">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <span>Recent Strategy Evaluations</span>
+                            </div>
+                            <span class="status-pill-badge badge-active">Live Confluence</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="dashboard-trade-decisions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Symbol</th>
+                                        <th>Price</th>
+                                        <th>VWAP</th>
+                                        <th>RSI</th>
+                                        <th>DMI</th>
+                                        <th>MS</th>
+                                        <th>Confluence</th>
+                                        <th>Outcome</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-trade-decisions-tbody">
+                                    <tr>
+                                        <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
+                                            Waiting for trade evaluations &mdash;</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- Statistics Page -->
             <section id="statistics-page" class="page">
-                <header style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>Statistics</h2>
-                    <button id="share-statistics-btn" class="btn btn-primary"
-                        style="display: flex; align-items: center; gap: 8px; width: max-content;">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
-                            </path>
-                        </svg>
-                        Share
-                    </button>
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Bot Performance & Statistics</h2>
+                        <p class="subtitle">Comprehensive 24-hour analytical breakdown of liquidation matching, execution metrics, and win rates.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <button id="share-statistics-btn" class="btn btn-primary"
+                            style="display: inline-flex; align-items: center; gap: 8px; width: max-content; padding: 8px 16px;">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                                </path>
+                            </svg>
+                            <span>Share Analytics</span>
+                        </button>
+                    </div>
                 </header>
 
                 <div class="page-section">
@@ -353,69 +454,121 @@
                                 d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
                             </path>
                         </svg>
-                        24H Activity
+                        24H Activity & Core Metrics
                     </h3>
 
-                    <div class="statistics-dashboard">
-                        <div class="card stat-card glow-effect">
-                            <h3>Liquidations Matched</h3>
-                            <div class="stat-value highlight-text" id="stats-liquidations-count">0 / 0</div>
-                            <div class="stat-value" id="stats-liquidations-percent"
-                                style="font-size: 1.2rem; color: var(--text-muted); margin-top: 5px;">0.00%</div>
-                            <p class="subtitle" style="margin-top: 8px;">Threshold efficiency past 24h</p>
-                            <div style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
-                                Dynamic High: <span id="stats-dynamic-high"
-                                    style="color: var(--text-main);">$0.00</span> | Low: <span id="stats-dynamic-low"
-                                    style="color: var(--text-main);">$0.00</span>
+                    <!-- KPI Grid for Stats -->
+                    <div class="hero-kpi-grid grid-3">
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-green">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Liquidations Matched</span>
+                                <div class="hero-kpi-val highlight-text" id="stats-liquidations-count">0 / 0</div>
+                                <div id="stats-liquidations-percent" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 2px;">0.00% efficiency</div>
+                                <span class="hero-kpi-sub" style="margin-top: 4px;">High: <span id="stats-dynamic-high" style="color: var(--text-main);">$0.00</span> | Low: <span id="stats-dynamic-low" style="color: var(--text-main);">$0.00</span></span>
                             </div>
                         </div>
 
-                        <div class="card stat-card chart-card">
-                            <h3>Trades Executed</h3>
-                            <div class="stat-chart-container">
-                                <canvas id="tradesChart"></canvas>
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-cyan">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
                             </div>
-                            <div class="chart-legend" id="trades-legend">
-                                <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span
-                                        id="stats-trades-buy">0</span></div>
-                                <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span
-                                        id="stats-trades-sell">0</span></div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Highest Margin (24H)</span>
+                                <div class="hero-kpi-val highlight-text" id="stats-highest-margin">0.00%</div>
+                                <span class="hero-kpi-sub">Peak margin utilization</span>
+                            </div>
+                        </div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-purple">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Isolation Mode (24H)</span>
+                                <div class="hero-kpi-val mono-num" id="stats-isolation-count">Isolation Activated: 0</div>
+                                <span class="hero-kpi-sub">Risk circuit trips</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="statistics-dashboard">
+                    <!-- Charts Grid -->
+                    <div class="statistics-dashboard" style="margin-top: 1.5rem;">
                         <div class="card stat-card chart-card">
-                            <h3>Margin History (24H)</h3>
-                            <div class="stat-chart-container strategy-chart-container">
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    Trades Executed (24H)
+                                </span>
+                                <span class="status-pill-badge badge-active">Realtime</span>
+                            </div>
+                            <div class="donut-chart-wrapper">
+                                <div class="stat-chart-container donut-canvas-container">
+                                    <canvas id="tradesChart"></canvas>
+                                    <div class="donut-center-stat">
+                                        <span class="donut-center-val" id="stats-donut-trades-total">0</span>
+                                        <span class="donut-center-lbl">Total Trades</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-legend" id="trades-legend">
+                                <div class="legend-chip legend-chip-buy">
+                                    <span class="legend-dot dot-buy"></span>
+                                    <span class="legend-label">BUY:</span>
+                                    <span class="legend-val mono-num" id="stats-trades-buy">0</span>
+                                </div>
+                                <div class="legend-chip legend-chip-sell">
+                                    <span class="legend-dot dot-sell"></span>
+                                    <span class="legend-label">SELL:</span>
+                                    <span class="legend-val mono-num" id="stats-trades-sell">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card chart-card">
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    Margin History (24H)
+                                </span>
+                                <span class="status-pill-badge badge-neutral">Utilization</span>
+                            </div>
+                            <div class="stat-chart-container strategy-chart-container" style="margin-top: 12px;">
                                 <canvas id="marginHistoryChart"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <div class="statistics-dashboard">
-                        <div class="card stat-card glow-effect">
-                            <h3>Highest Used Margin (24H)</h3>
-                            <div class="stat-value highlight-text" id="stats-highest-margin">0.00%</div>
-                        </div>
-                        <div class="card stat-card glow-effect">
-                            <h3>Isolation Mode (24H)</h3>
-                            <div class="stat-value" id="stats-isolation-count"
-                                style="font-size: 1.2rem; color: var(--text-muted); margin-top: 5px;">Isolation
-                                Activated: 0</div>
-                        </div>
-                    </div>
-
-                    <div class="statistics-dashboard">
+                    <div class="statistics-dashboard" style="margin-top: 1.5rem;">
                         <div class="card stat-card chart-card wide-card">
-                            <h3>Strategy Signals</h3>
-                            <div class="stat-chart-container strategy-chart-container">
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                    </svg>
+                                    Strategy Signals Overview
+                                </span>
+                                <span class="status-pill-badge badge-neutral">Multi-Strategy</span>
+                            </div>
+                            <div class="stat-chart-container strategy-chart-container" style="margin-top: 12px;">
                                 <canvas id="strategiesChart"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <h3 style="margin-top: 2rem;">
+                    <h3 style="margin-top: 2.5rem;">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
@@ -423,44 +576,98 @@
                         </svg>
                         24H Closed PnL Analytics
                     </h3>
-                    <div class="statistics-dashboard">
+                    <div class="statistics-dashboard grid-3">
                         <div class="card stat-card chart-card">
-                            <h3>Calculated PnL by Symbol</h3>
-                            <div class="stat-chart-container">
-                                <canvas id="pnlSymbolChart"></canvas>
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Win Rate by Side
+                                </span>
+                                <span class="status-pill-badge badge-neutral">Execution</span>
                             </div>
-                            <div class="chart-legend" id="pnl-symbol-legend"
-                                style="flex-wrap: wrap; justify-content: center; gap: 10px;">
-                                <!-- Dynamically populated -->
-                            </div>
-                        </div>
-                        <div class="card stat-card chart-card">
-                            <h3>Positions Opened (Side)</h3>
-                            <div class="stat-chart-container">
-                                <canvas id="pnlSideChart"></canvas>
-                            </div>
-                            <div class="chart-legend" id="pnl-side-legend">
-                                <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span
-                                        id="stats-pnl-buy-count">0</span></div>
-                                <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span
-                                        id="stats-pnl-sell-count">0</span></div>
-                            </div>
-                        </div>
-                        <div class="card stat-card chart-card">
-                            <h3>Win Rate by Side</h3>
-                            <div class="stat-chart-container">
-                                <canvas id="pnlWinRateChart"></canvas>
+                            <div class="donut-chart-wrapper">
+                                <div class="stat-chart-container donut-canvas-container">
+                                    <canvas id="pnlWinRateChart"></canvas>
+                                    <div class="donut-center-stat">
+                                        <span class="donut-center-val" id="stats-donut-winrate-avg">0.0%</span>
+                                        <span class="donut-center-lbl">Avg Win Rate</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="chart-legend" id="pnl-winrate-legend">
-                                <div class="legend-item"><span class="legend-color legend-buy"></span>BUY: <span
-                                        id="stats-pnl-buy-win">0.00%</span></div>
-                                <div class="legend-item"><span class="legend-color legend-sell"></span>SELL: <span
-                                        id="stats-pnl-sell-win">0.00%</span></div>
+                                <div class="legend-chip legend-chip-buy">
+                                    <span class="legend-dot dot-buy"></span>
+                                    <span class="legend-label">BUY Win:</span>
+                                    <span class="legend-val mono-num" id="stats-pnl-buy-win">0.00%</span>
+                                </div>
+                                <div class="legend-chip legend-chip-sell">
+                                    <span class="legend-dot dot-sell"></span>
+                                    <span class="legend-label">SELL Win:</span>
+                                    <span class="legend-val mono-num" id="stats-pnl-sell-win">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card stat-card chart-card">
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                    </svg>
+                                    Positions Opened (Side)
+                                </span>
+                                <span class="status-pill-badge badge-neutral">Side Ratio</span>
+                            </div>
+                            <div class="donut-chart-wrapper">
+                                <div class="stat-chart-container donut-canvas-container">
+                                    <canvas id="pnlSideChart"></canvas>
+                                    <div class="donut-center-stat">
+                                        <span class="donut-center-val" id="stats-pnl-total-count">0</span>
+                                        <span class="donut-center-lbl">Positions</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-legend" id="pnl-side-legend">
+                                <div class="legend-chip legend-chip-buy">
+                                    <span class="legend-dot dot-buy"></span>
+                                    <span class="legend-label">BUY (Long):</span>
+                                    <span class="legend-val mono-num" id="stats-pnl-buy-count">0</span>
+                                </div>
+                                <div class="legend-chip legend-chip-sell">
+                                    <span class="legend-dot dot-sell"></span>
+                                    <span class="legend-label">SELL (Short):</span>
+                                    <span class="legend-val mono-num" id="stats-pnl-sell-count">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card stat-card chart-card">
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                                    </svg>
+                                    Calculated PnL by Symbol
+                                </span>
+                                <span class="status-pill-badge badge-active" id="pnl-symbol-badge">24H Net</span>
+                            </div>
+                            <div class="donut-chart-wrapper">
+                                <div class="stat-chart-container donut-canvas-container">
+                                    <canvas id="pnlSymbolChart"></canvas>
+                                    <div class="donut-center-stat">
+                                        <span class="donut-center-val" id="stats-donut-total-pnl">$0.00</span>
+                                        <span class="donut-center-lbl">Total PnL</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-legend" id="pnl-symbol-legend">
+                                <!-- Dynamically populated with rich legend chips -->
                             </div>
                         </div>
                     </div>
 
-                    <h3 style="margin-top: 2rem;">
+                    <h3 style="margin-top: 2.5rem;">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6">
@@ -470,8 +677,16 @@
                     </h3>
                     <div class="statistics-dashboard">
                         <div class="card stat-card chart-card wide-card">
-                            <h3>Max Drawdown by Symbol</h3>
-                            <div class="stat-chart-container strategy-chart-container">
+                            <div class="table-card-header">
+                                <span class="table-card-title">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                                    </svg>
+                                    Max Drawdown by Symbol
+                                </span>
+                                <span class="status-pill-badge badge-danger">Peak Drawdown</span>
+                            </div>
+                            <div class="stat-chart-container drawdown-chart-container" style="margin-top: 12px;">
                                 <canvas id="drawdownChart"></canvas>
                             </div>
                         </div>
@@ -481,8 +696,17 @@
 
             <!-- System Logs Page -->
             <section id="logs-page" class="page">
-                <header>
-                    <h2>System Logs</h2>
+                <header class="page-header-unified">
+                    <div>
+                        <h2>System Logs & Telemetry</h2>
+                        <p class="subtitle">Live real-time server and trading engine event streams with keyword search and log level filtering.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="live-indicator-pill">
+                            <span class="pulse-dot-live"></span>
+                            <span class="live-label">Streaming Logs</span>
+                        </div>
+                    </div>
                 </header>
                 <div class="page-section">
                     <h3>
@@ -546,9 +770,19 @@
 
             <!-- Settings Page -->
             <section id="settings" class="page">
-                <header>
-                    <h2>Configuration</h2>
-                    <p class="subtitle">Credentials are encrypted with AES-256-GCM prior to storage.</p>
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Bot Configuration & Engine Settings</h2>
+                        <p class="subtitle">Customize API connections, technical indicators, confluence parameters, and risk management thresholds.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <span class="status-pill-badge badge-active" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <span>AES-256-GCM Encrypted</span>
+                        </span>
+                    </div>
                 </header>
 
                 <div class="card form-container" style="max-width: 100%;">
@@ -1583,13 +1817,29 @@
 
             <!-- Account Page -->
             <section id="account" class="page">
-                <header>
-                    <h2>Account Performance</h2>
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Account & Portfolio Performance</h2>
+                        <p class="subtitle">Aggregated real-time wallet equity, margin utilization, and historical PnL performance.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-account" class="timestamp-val">Never</span>
+                        </div>
+                        <button class="btn btn-secondary" onclick="openAccountHistoryModal()"
+                            style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; height: 38px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Account History</span>
+                        </button>
+                    </div>
                 </header>
-                <div
-                    style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
-                    Last Update: <span id="last-update-account">Never</span>
-                </div>
+
                 <div class="page-section">
                     <h3>
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1599,20 +1849,46 @@
                         </svg>
                         Wallet Overview
                     </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live wallet overview and aggregated trade metrics
-                        dynamically saved over SQLite.</p>
-                    <div class="status-grid">
-                        <div class="card stat-card glow-effect" style="cursor: pointer;" onclick="openAccountHistoryModal()">
-                            <h3 title="Click to view Account History">Total Wallet Value</h3>
-                            <div class="stat-value" id="acc-total-value">$...</div>
+                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live wallet balances and margin capacity synchronized from the exchange.</p>
+                    
+                    <div class="hero-kpi-grid grid-3">
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-green">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Total Wallet Value</span>
+                                <div class="hero-kpi-val mono-num highlight-text" id="acc-total-value">$...</div>
+                                <span class="hero-kpi-sub">Real-time total equity</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Margin Used</h3>
-                            <div class="stat-value" id="acc-margin-used">$...</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-amber">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Margin Used</span>
+                                <div class="hero-kpi-val mono-num" id="acc-margin-used">$...</div>
+                                <span class="hero-kpi-sub">Committed collateral</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Margin Available</h3>
-                            <div class="stat-value" id="acc-margin-avail">$...</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-cyan">
+                                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Margin Available</span>
+                                <div class="hero-kpi-val mono-num" id="acc-margin-avail">$...</div>
+                                <span class="hero-kpi-sub">Available free margin</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1626,93 +1902,159 @@
                         </svg>
                         Profit & Loss Metrics
                     </h3>
-                    <div class="status-grid">
-                        <div class="card stat-card">
-                            <h3>Daily PnL</h3>
-                            <div class="stat-value" id="acc-daily-pnl">...</div>
+                    <div class="pnl-kpi-grid">
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-blue">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Daily PnL</span>
+                                <div class="hero-kpi-val mono-num" id="acc-daily-pnl">...</div>
+                                <span class="hero-kpi-sub">24h performance</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Weekly PnL</h3>
-                            <div class="stat-value" id="acc-weekly-pnl">...</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-purple">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Weekly PnL</span>
+                                <div class="hero-kpi-val mono-num" id="acc-weekly-pnl">...</div>
+                                <span class="hero-kpi-sub">7-day performance</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Monthly PnL</h3>
-                            <div class="stat-value" id="acc-monthly-pnl">...</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-pink">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Monthly PnL</span>
+                                <div class="hero-kpi-val mono-num" id="acc-monthly-pnl">...</div>
+                                <span class="hero-kpi-sub">30-day performance</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Yearly PnL</h3>
-                            <div class="stat-value" id="acc-yearly-pnl">...</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-cyan">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Yearly PnL</span>
+                                <div class="hero-kpi-val mono-num" id="acc-yearly-pnl">...</div>
+                                <span class="hero-kpi-sub">365-day performance</span>
+                            </div>
                         </div>
-                        <div class="card stat-card">
-                            <h3>Total PnL</h3>
-                            <div class="stat-value" id="acc-total-pnl">...</div>
+
+                        <div class="hero-kpi-card card">
+                            <div class="hero-kpi-icon icon-green">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="hero-kpi-info">
+                                <span class="hero-kpi-label">Total Cumulative PnL</span>
+                                <div class="hero-kpi-val mono-num highlight-text" id="acc-total-pnl">...</div>
+                                <span class="hero-kpi-sub">All-time realized profit</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
-                            </path>
-                        </svg>
-                        Daily PnL History (Last 30 Days)
-                    </h3>
-                    <div class="card chart-container" style="min-height: 350px; position: relative;">
-                        <canvas id="pnl-chart"></canvas>
+                    <div class="card stat-card chart-card wide-card">
+                        <div class="table-card-header">
+                            <span class="table-card-title">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                </svg>
+                                Daily PnL History (Last 30 Days)
+                            </span>
+                            <span class="status-pill-badge badge-active">30D Rolling</span>
+                        </div>
+                        <div class="stat-chart-container" style="height: 220px; max-height: 240px; margin-top: 12px;">
+                            <canvas id="pnl-chart"></canvas>
+                        </div>
                     </div>
                 </div>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
-                            </path>
-                        </svg>
-                        Weekly PnL History (Last 26 Weeks)
-                    </h3>
-                    <div class="card chart-container" style="min-height: 350px; position: relative;">
-                        <canvas id="weekly-pnl-chart"></canvas>
+                    <div class="card stat-card chart-card wide-card">
+                        <div class="table-card-header">
+                            <span class="table-card-title">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                </svg>
+                                Weekly PnL History (Last 26 Weeks)
+                            </span>
+                            <span class="status-pill-badge badge-active">26W Rolling</span>
+                        </div>
+                        <div class="stat-chart-container" style="height: 220px; max-height: 240px; margin-top: 12px;">
+                            <canvas id="weekly-pnl-chart"></canvas>
+                        </div>
                     </div>
                 </div>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
-                            </path>
-                        </svg>
-                        Monthly PnL History (Last 12 Months)
-                    </h3>
-                    <div class="card chart-container" style="min-height: 350px; position: relative;">
-                        <canvas id="monthly-pnl-chart"></canvas>
+                    <div class="card stat-card chart-card wide-card">
+                        <div class="table-card-header">
+                            <span class="table-card-title">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                </svg>
+                                Monthly PnL History (Last 12 Months)
+                            </span>
+                            <span class="status-pill-badge badge-active">12M Rolling</span>
+                        </div>
+                        <div class="stat-chart-container" style="height: 220px; max-height: 240px; margin-top: 12px;">
+                            <canvas id="monthly-pnl-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- Positions Page -->
             <section id="positions" class="page">
-                <header>
-                    <h2>Open Positions</h2>
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Active Positions & Live Contracts</h2>
+                        <p class="subtitle">Real-time open positions monitoring with dynamic TP/SL levels, leverage metrics, and closing controls.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-positions" class="timestamp-val">Never</span>
+                        </div>
+                    </div>
                 </header>
-                <div
-                    style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
-                    Last Update: <span id="last-update-positions">Never</span>
-                </div>
                 <div class="card positions-summary-bar" id="positions-summary-bar"
-                    style="display: none; align-items: center; justify-content: space-between; padding: 16px 24px; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
-                    <h3
-                        style="margin: 0; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                        All Positions
-                    </h3>
+                    style="display: none; align-items: center; justify-content: space-between; padding: 16px 24px; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); backdrop-filter: blur(12px);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="status-pill-badge badge-active">Active Portfolio</span>
+                        <h3 style="margin: 0; color: var(--text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;">
+                            Open Contracts Summary
+                        </h3>
+                    </div>
                     <div style="display: flex; gap: 24px; align-items: center;">
                         <div style="font-size: 14px; color: var(--text-muted);">
                             Current Positions: <span id="summary-current-positions"
-                                style="font-size: 18px; font-weight: 600; color: var(--text-main); margin-left: 8px;">0</span>
+                                style="font-size: 18px; font-weight: 700; color: var(--text-main); margin-left: 8px;" class="mono-num">0</span>
                         </div>
                         <div style="font-size: 14px; color: var(--text-muted);">
                             Cumulative P&L: <span id="summary-cumulative-pnl"
-                                style="font-size: 18px; font-weight: 600; margin-left: 8px;">0.00 USD</span>
+                                style="font-size: 18px; font-weight: 700; margin-left: 8px;" class="mono-num">0.00 USD</span>
                         </div>
                     </div>
                 </div>
@@ -1735,36 +2077,43 @@
 
             <!-- Position Detail Page -->
             <section id="position-detail-page" class="page">
-                <header class="page-header" style="display: flex; align-items: center; gap: 15px;">
-                    <button class="btn btn-secondary" onclick="closePositionDetail()"
-                        style="width: auto; padding: 6px 12px; margin: 0; flex-shrink: 0; display: inline-flex; align-items: center; line-height: 1;">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            style="margin-right: 6px;">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
-                            </path>
-                        </svg>
-                        Back
-                    </button>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <h2 style="margin: 0; padding: 0;">Position Detail: <span id="detail-symbol-name"></span></h2>
-                        <button class="btn btn-secondary openTvSettingsBtn" style="padding: 4px 8px; margin: 0; background: transparent; border: none; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'" title="Chart Settings">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <header class="page-header-unified">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <button class="btn btn-secondary" onclick="closePositionDetail()"
+                            style="width: auto; padding: 7px 14px; margin: 0; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
+                            <span>Back</span>
                         </button>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <h2>Position Detail: <span id="detail-symbol-name">--</span></h2>
+                                <button class="btn btn-secondary openTvSettingsBtn" style="padding: 4px 8px; margin: 0; background: transparent; border: none; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'" title="Chart Settings">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="subtitle">Interactive candlestick technical analysis and real-time execution controls.</p>
+                        </div>
                     </div>
                 </header>
+
                 <div class="page-section">
                     <div class="card chart-container"
-                        style="min-height: 500px; padding: 0; overflow: hidden; position: relative;">
+                        style="min-height: 500px; padding: 0; overflow: hidden; position: relative; border-radius: var(--border-radius-lg); border: 1px solid var(--border-color);">
                         <div id="tv_chart_container" style="width: 100%; height: 500px;"></div>
                     </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 2rem; align-items: start;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 1.5rem; align-items: start;">
                         <!-- Left column: Position Stats -->
                         <div style="flex: 1 1 0%; min-width: 300px;">
-                            <h3 style="margin: 0;">
-                                Position Stats
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                <span>Position Diagnostics</span>
                             </h3>
                             <div id="position-detail-stats" style="margin-top: 1rem;">
                                 <!-- Detail card injected here -->
@@ -1772,16 +2121,29 @@
                         </div>
 
                         <!-- Right column: Trading Center -->
-                        <div class="trading-center-col" style="flex: 0 1 300px; min-width: 250px;">
-                            <h3 style="margin: 0;">Trading Center</h3>
-                            <div class="card"
-                                style="margin-top: 1rem; padding: 20px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius);">
-                                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Quickly
-                                    manage and exit your active position.</p>
+                        <div class="trading-center-col" style="flex: 0 1 340px; min-width: 280px;">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span>Trading Center</span>
+                            </h3>
+                            <div class="trading-center-card" style="margin-top: 1rem;">
+                                <div class="conn-item-top" style="margin-bottom: 0;">
+                                    <div class="conn-item-title-wrap">
+                                        <span class="conn-item-name" style="font-size: 15px;">Execution Controls</span>
+                                        <span class="conn-item-desc">Instant position management</span>
+                                    </div>
+                                    <span class="proto-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">EMERGENCY</span>
+                                </div>
+                                <p style="color: var(--text-muted); font-size: 13px; margin: 0; line-height: 1.5;">Quickly manage, re-evaluate, or immediately exit your active position at market price.</p>
                                 <button id="close-position-btn" class="btn btn-danger"
-                                    style="width: 100%; padding: 12px; font-weight: bold; font-size: 14px;"
+                                    style="width: 100%; padding: 12px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px;"
                                     onclick="closePositionMarket()">
-                                    Close Position (Market)
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>Close Position (Market)</span>
                                 </button>
                             </div>
                         </div>
@@ -1791,49 +2153,52 @@
 
             <!-- Liquidations Page -->
             <section id="liquidations-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Liquidation History</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="liquidations-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Liquidation History & Global Stream</h2>
+                        <p class="subtitle">Live stream of raw websocket liquidation prints across all configured exchanges.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="liquidations-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
+                        </div>
                     </div>
                 </header>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Global Stream
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live stream of raw websocket liquidations from
-                        configured exchanges.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="liquidations-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Exchange</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Price</th>
-                                    <th>Amount</th>
-                                    <th>Value ($)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="liquidations-tbody">
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting
-                                        for liquidations &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="table-card-wrapper card">
+                        <div class="table-card-header">
+                            <div class="table-card-title">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span>Global Liquidation Feeds</span>
+                            </div>
+                            <span class="status-pill-badge badge-active">Realtime Feed</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="liquidations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Exchange</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Price</th>
+                                        <th>Amount</th>
+                                        <th>Value ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liquidations-tbody">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for liquidations &mdash;</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="pagination-controls" id="liquidations-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                         <button id="btn-prev-liquidations" class="btn btn-secondary" disabled>Previous</button>
@@ -1845,53 +2210,59 @@
 
             <!-- Closed PnL Page -->
             <section id="closed-pnl-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Closed Positions & PnL</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="closed-pnl-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Closed Positions & Realized PnL</h2>
+                        <p class="subtitle">Database audit history of closed positions and their realized Profit & Loss.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-closed-pnl" class="timestamp-val">Never</span>
+                        </div>
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="closed-pnl-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
+                        </div>
                     </div>
                 </header>
-                <div
-                    style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
-                    Last Update: <span id="last-update-closed-pnl">Never</span>
-                </div>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                            </path>
-                        </svg>
-                        Historical PnL Records
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Database history of closed positions and their
-                        realized Profit & Loss.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="closed-pnl-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Size</th>
-                                    <th>Entry Price</th>
-                                    <th>Close Price</th>
-                                    <th>PnL</th>
-                                </tr>
-                            </thead>
-                            <tbody id="closed-pnl-tbody">
-                                <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for records &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="table-card-wrapper card">
+                        <div class="table-card-header">
+                            <div class="table-card-title">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Historical Realized PnL</span>
+                            </div>
+                            <span class="status-pill-badge badge-active">SQLite Database</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="closed-pnl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Size</th>
+                                        <th>Entry Price</th>
+                                        <th>Close Price</th>
+                                        <th>PnL</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="closed-pnl-tbody">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for records &mdash;</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="pagination-controls" id="closed-pnl-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                         <button id="btn-prev-closed-pnl" class="btn btn-secondary" disabled>Previous</button>
@@ -1903,51 +2274,54 @@
 
             <!-- Trade Decisions Page -->
             <section id="trade-decisions-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Trade Decisions History</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="trade-decisions-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Trade Decisions History</h2>
+                        <p class="subtitle">Live tracking of engine trade evaluations, technical indicators, and signal confluence outcomes.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="trade-decisions-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
+                        </div>
                     </div>
                 </header>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-                            </path>
-                        </svg>
-                        Trade Evaluations
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Live tracking of the bot's trade evaluations,
-                        including technical strategy readings. Purged on bot restart.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="trade-decisions-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Symbol</th>
-                                    <th>Price</th>
-                                    <th>VWAP</th>
-                                    <th>RSI</th>
-                                    <th>DMI</th>
-                                    <th>MS</th>
-                                    <th>Confluence</th>
-                                    <th>Outcome</th>
-                                </tr>
-                            </thead>
-                            <tbody id="trade-decisions-tbody">
-                                <tr>
-                                    <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for trade evaluations &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="table-card-wrapper card">
+                        <div class="table-card-header">
+                            <div class="table-card-title">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <span>Signal Evaluation Stream</span>
+                            </div>
+                            <span class="status-pill-badge badge-active">Live Confluence</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="trade-decisions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Symbol</th>
+                                        <th>Price</th>
+                                        <th>VWAP</th>
+                                        <th>RSI</th>
+                                        <th>DMI</th>
+                                        <th>MS</th>
+                                        <th>Confluence</th>
+                                        <th>Outcome</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trade-decisions-tbody">
+                                    <tr>
+                                        <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="pagination-controls" id="trade-decisions-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                         <button id="btn-prev-trade-decisions" class="btn btn-secondary" disabled>Previous</button>
@@ -1959,48 +2333,55 @@
 
             <!-- Dynamic Thresholds Page -->
             <section id="dynamic-thresholds-page" class="page">
-                <header class="page-header-with-search">
-                    <h2>Dynamic Thresholds</h2>
-                    <div class="search-container">
-                        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        <input type="text" id="dynamic-thresholds-search" placeholder="Search symbol... e.g. BTC"
-                            class="search-input" autocomplete="off">
+                <header class="page-header-unified">
+                    <div>
+                        <h2>Dynamic Liquidation Thresholds</h2>
+                        <p class="subtitle">Live volatility-adjusted volume threshold mapping per active trading pair loaded from the API.</p>
+                    </div>
+                    <div class="header-actions-group">
+                        <div class="header-last-update">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="last-update-lbl">Last Update:</span>
+                            <span id="last-update-dynamic-thresholds" class="timestamp-val">Never</span>
+                        </div>
+                        <div class="search-container">
+                            <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="dynamic-thresholds-search" placeholder="Search symbol... e.g. BTC" class="search-input" autocomplete="off">
+                        </div>
                     </div>
                 </header>
-                <div
-                    style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: -10px; padding-right: 20px;">
-                    Last Update: <span id="last-update-dynamic-thresholds">Never</span>
-                </div>
+
                 <div class="page-section">
-                    <h3>
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                        </svg>
-                        API Values Mapping
-                    </h3>
-                    <p class="subtitle" style="margin-bottom: 1.5rem;">Displays the active trading pairs and their
-                        dynamic liquidation thresholds loaded from the API.</p>
-                    <div class="card form-container table-responsive" style="max-width: 100%;">
-                        <table class="data-table" id="dynamic-thresholds-table">
-                            <thead>
-                                <tr>
-                                    <th>Symbol</th>
-                                    <th>Dynamic Threshold (USD)</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dynamic-thresholds-tbody">
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash;
-                                        Waiting for data &mdash;</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="table-card-wrapper card">
+                        <div class="table-card-header">
+                            <div class="table-card-title">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                <span>API Threshold Mappings</span>
+                            </div>
+                            <span class="status-pill-badge badge-active">Dynamic Scaling</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table" id="dynamic-thresholds-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Dynamic Threshold (USD)</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dynamic-thresholds-tbody">
+                                    <tr>
+                                        <td colspan="3" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for data &mdash;</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="pagination-controls" id="dynamic-thresholds-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                         <button id="btn-prev-dynamic-thresholds" class="btn btn-secondary" disabled>Previous</button>
@@ -2450,35 +2831,59 @@
 
     <!-- Account History Modal -->
     <div id="accountHistoryModal" class="modal-overlay" style="display: none; z-index: 2000;">
-        <div class="modal-content card" style="max-width: 900px; width: 95%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                <h2 style="margin: 0;">Account History</h2>
-                <span class="close" id="closeAccountHistoryBtn" style="font-size: 1.5rem; cursor: pointer;">&times;</span>
-            </div>
-            <div class="modal-body form-container" style="max-height: 75vh; overflow-y: auto;">
-                <div class="chart-container" style="position: relative; height:400px; width:100%; margin-bottom: 2rem;">
+        <div class="modal-content card" style="max-width: 920px; width: 95%;">
+            <header style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 230, 118, 0.1); border: 1px solid rgba(0, 230, 118, 0.25); display: flex; align-items: center; justify-content: center; color: var(--color-green);">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.25rem;">Account Historical Balance</h3>
+                        <p class="subtitle" style="margin: 0; font-size: 12px;">Timeline of wallet equity progression and internal take-profit transfers.</p>
+                    </div>
+                </div>
+                <button id="closeAccountHistoryBtn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal-body form-container" style="max-height: 75vh; overflow-y: auto; padding-right: 4px;">
+                <div class="chart-container" style="position: relative; height:360px; width:100%; margin-bottom: 2rem; background: rgba(0, 0, 0, 0.2); border-radius: var(--border-radius-md); padding: 12px; border: 1px solid var(--border-color);">
                     <canvas id="accountHistoryChart"></canvas>
                 </div>
                 
-                <h3>Internal Transfers (Take Profit)</h3>
-                <div class="table-container" style="overflow-x: auto; margin-top: 1rem;">
-                    <table class="data-table" id="transfersTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Amount (USDT)</th>
-                                <th>From</th>
-                                <th style="text-align: right;">To</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transfersTableBody">
-                            <!-- Rows populated by JS -->
-                        </tbody>
-                    </table>
+                <div class="table-card-wrapper card">
+                    <div class="table-card-header">
+                        <div class="table-card-title">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                            <span>Internal Transfers (Take Profit)</span>
+                        </div>
+                        <span class="status-pill-badge badge-active">Transfer Log</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="transfersTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount (USDT)</th>
+                                    <th>From</th>
+                                    <th style="text-align: right;">To</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transfersTableBody">
+                                <!-- Rows populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
                     <button id="prevTransfersBtn" class="btn btn-secondary" disabled>Previous</button>
-                    <span id="transfersPageInfo">Page 1</span>
+                    <span id="transfersPageInfo" style="color: var(--text-muted);">Page 1</span>
                     <button id="nextTransfersBtn" class="btn btn-secondary" disabled>Next</button>
                 </div>
             </div>
