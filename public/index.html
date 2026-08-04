@@ -581,24 +581,32 @@
                             <div class="table-card-header">
                                 <span class="table-card-title">
                                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    Calculated PnL by Symbol
+                                    Win Rate by Side
                                 </span>
-                                <span class="status-pill-badge badge-active" id="pnl-symbol-badge">24H Net</span>
+                                <span class="status-pill-badge badge-neutral">Execution</span>
                             </div>
                             <div class="donut-chart-wrapper">
                                 <div class="stat-chart-container donut-canvas-container">
-                                    <canvas id="pnlSymbolChart"></canvas>
+                                    <canvas id="pnlWinRateChart"></canvas>
                                     <div class="donut-center-stat">
-                                        <span class="donut-center-val" id="stats-donut-total-pnl">$0.00</span>
-                                        <span class="donut-center-lbl">Total PnL</span>
+                                        <span class="donut-center-val" id="stats-donut-winrate-avg">0.0%</span>
+                                        <span class="donut-center-lbl">Avg Win Rate</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="chart-legend" id="pnl-symbol-legend">
-                                <!-- Dynamically populated with rich legend chips -->
+                            <div class="chart-legend" id="pnl-winrate-legend">
+                                <div class="legend-chip legend-chip-buy">
+                                    <span class="legend-dot dot-buy"></span>
+                                    <span class="legend-label">BUY Win:</span>
+                                    <span class="legend-val mono-num" id="stats-pnl-buy-win">0.00%</span>
+                                </div>
+                                <div class="legend-chip legend-chip-sell">
+                                    <span class="legend-dot dot-sell"></span>
+                                    <span class="legend-label">SELL Win:</span>
+                                    <span class="legend-val mono-num" id="stats-pnl-sell-win">0.00%</span>
+                                </div>
                             </div>
                         </div>
                         <div class="card stat-card chart-card">
@@ -637,32 +645,24 @@
                             <div class="table-card-header">
                                 <span class="table-card-title">
                                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
                                     </svg>
-                                    Win Rate by Side
+                                    Calculated PnL by Symbol
                                 </span>
-                                <span class="status-pill-badge badge-neutral">Execution</span>
+                                <span class="status-pill-badge badge-active" id="pnl-symbol-badge">24H Net</span>
                             </div>
                             <div class="donut-chart-wrapper">
                                 <div class="stat-chart-container donut-canvas-container">
-                                    <canvas id="pnlWinRateChart"></canvas>
+                                    <canvas id="pnlSymbolChart"></canvas>
                                     <div class="donut-center-stat">
-                                        <span class="donut-center-val" id="stats-donut-winrate-avg">0.0%</span>
-                                        <span class="donut-center-lbl">Avg Win Rate</span>
+                                        <span class="donut-center-val" id="stats-donut-total-pnl">$0.00</span>
+                                        <span class="donut-center-lbl">Total PnL</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="chart-legend" id="pnl-winrate-legend">
-                                <div class="legend-chip legend-chip-buy">
-                                    <span class="legend-dot dot-buy"></span>
-                                    <span class="legend-label">BUY Win:</span>
-                                    <span class="legend-val mono-num" id="stats-pnl-buy-win">0.00%</span>
-                                </div>
-                                <div class="legend-chip legend-chip-sell">
-                                    <span class="legend-dot dot-sell"></span>
-                                    <span class="legend-label">SELL Win:</span>
-                                    <span class="legend-val mono-num" id="stats-pnl-sell-win">0.00%</span>
-                                </div>
+                            <div class="chart-legend" id="pnl-symbol-legend">
+                                <!-- Dynamically populated with rich legend chips -->
                             </div>
                         </div>
                     </div>
