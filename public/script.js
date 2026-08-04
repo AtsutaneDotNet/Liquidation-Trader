@@ -1047,16 +1047,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.renderPositionStats = function (symbol) {
+    function renderPositionStats(symbol) {
         const position = currentPositionsList.find(p => p.symbol === symbol);
         if (!position) return;
 
         const sideStr = (position.side || '').toLowerCase();
         const isBuy = sideStr === 'buy' || sideStr === 'long';
-        const sideClz = isBuy ? 'buy' : 'sell';
+        const statusClz = isBuy ? 'status-connected' : 'status-error';
+        const badgeClz = isBuy ? 'badge-connected' : 'badge-error';
+        const dotClz = isBuy ? 'dot-connected' : 'dot-error';
+        const sideText = (position.side || 'UNKNOWN').toUpperCase();
 
-        let posValue = (parseFloat(position.size || 0) * parseFloat(position.entry_price || 0));
-        let posValueStr = posValue > 0 ? posValue.toFixed(4) : '0.0000';
+        const posValue = (parseFloat(position.size || 0) * parseFloat(position.entry_price || 0));
+        const posValueStr = posValue > 0 ? posValue.toFixed(2) : '0.00';
+
+        const leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
+        const margin = posValue / leverage;
+        const marginStr = margin > 0 ? margin.toFixed(2) : '0.00';
+
+        const pnlNum = parseFloat(position.unrealized_pnl || 0);
+        const pnlPercent = margin > 0 ? (pnlNum / margin) * 100 : 0;
+        const pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
 
         let trailingActivationPercent = parseFloat(document.getElementById('TRAILING_ACTIVATION_PERCENTAGE')?.value || 0);
         let trailingPriceStr = 'N/A';
@@ -1066,74 +1077,87 @@ document.addEventListener('DOMContentLoaded', () => {
             trailingPriceStr = tp.toFixed(4);
         }
 
-        let leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
-        let margin = posValue / leverage;
-        let marginStr = margin > 0 ? margin.toFixed(4) : '0.0000';
-        let pnlPercentStr = '0.00%';
-        if (margin > 0) {
-            let pnlPercent = (parseFloat(position.unrealized_pnl || 0) / margin) * 100;
-            pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
-        }
+        const lastUpdatedText = position.updated_at ? (typeof formatTimeAgo === 'function' ? formatTimeAgo(position.updated_at) : new Date(position.updated_at).toLocaleTimeString()) : 'Live';
 
         document.getElementById('position-detail-stats').innerHTML = `
-            <div class="position-detail-banner" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; margin-top: 10px; border-left: 4px solid ${isBuy ? 'var(--accent)' : 'var(--danger)'};">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; margin-bottom: 20px;">
-                    <div style="font-size: 28px; font-weight: 800; letter-spacing: -1px;">${position.symbol}</div>
-                    <div class="pos-side ${sideClz}" style="font-size: 14px; padding: 6px 14px;">${(position.side || 'UNKNOWN').toUpperCase()}</div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 24px;">
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Size</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${position.size}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Entry Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Mark Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Liq. Price</span>
-                        <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">TP Price</span>
-                        <span class="pos-detail-value" style="color: var(--accent); font-size: 18px;">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">SL Price</span>
-                        <span class="pos-detail-value" style="color: var(--danger); font-size: 18px;">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Trailing Price</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${trailingPriceStr}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Value</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${posValueStr}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Margin</span>
-                        <span class="pos-detail-value" style="font-size: 18px;">${marginStr}</span>
-                    </div>
-                    <div class="pos-detail-item">
-                        <span class="pos-detail-label">Last Update</span>
-                        <span class="pos-detail-value" style="font-size: 16px;">${position.updated_at ? new Date(position.updated_at).toLocaleTimeString() : 'Unknown'}</span>
-                    </div>
-                    <div class="pos-detail-item" style="border-left: 1px solid var(--border-color); padding-left: 20px; min-width: max-content;">
-                        <span class="pos-detail-label">Unrealized PnL</span>
-                        <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">
-                            ${formatPnl(position.unrealized_pnl)} 
-                            <span style="font-size: 14px; font-weight: 600; color: ${parseFloat(position.unrealized_pnl) >= 0 ? 'var(--accent)' : 'var(--danger)'}; margin-left: 4px;">(${pnlPercentStr})</span>
+            <div class="conn-item-card pos-item-card pos-detail-card ${statusClz}">
+                <div class="conn-item-top">
+                    <div class="conn-item-title-wrap">
+                        <div class="conn-item-title-row">
+                            <span class="proto-tag tag-perp">PERP CONTRACT</span>
+                            <span class="pos-detail-title">${escapeHtml(position.symbol)}</span>
                         </div>
+                        <span class="conn-item-desc">Linear Perpetual &bull; Leverage: <strong>${leverage}x</strong> &bull; Size: <strong>${escapeHtml(String(position.size))}</strong></span>
+                    </div>
+                    <div class="conn-status-badge ${badgeClz}">
+                        <span class="conn-dot ${dotClz}"></span>
+                        <span>${sideText}</span>
+                    </div>
+                </div>
+
+                <div class="pos-item-pnl-box pos-detail-pnl-box ${pnlNum >= 0 ? 'pnl-box-positive' : 'pnl-box-negative'}">
+                    <div class="pos-pnl-left">
+                        <span class="pos-pnl-sub-label">Unrealized PnL</span>
+                        <div class="pos-pnl-main-val">
+                            ${formatPnl(position.unrealized_pnl)}
+                            <span class="pos-pnl-roi ${pnlNum >= 0 ? 'val-accent' : 'val-danger'}">(${pnlPercentStr} ROI)</span>
+                        </div>
+                    </div>
+                    <div class="pos-pnl-mid" style="display: flex; flex-direction: column; gap: 2px;">
+                        <span class="pos-pnl-sub-label">Position Value</span>
+                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">$${posValueStr}</span>
+                    </div>
+                    <div class="pos-pnl-right">
+                        <span class="pos-pnl-sub-label">Margin Allocated</span>
+                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">$${marginStr}</span>
+                    </div>
+                </div>
+
+                <div class="conn-item-metrics pos-item-metrics pos-detail-metrics">
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Entry Price</span>
+                        <span class="conn-metric-num mono-num">${parseFloat(position.entry_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Mark Price</span>
+                        <span class="conn-metric-num mono-num">${parseFloat(position.mark_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Liq. Price</span>
+                        <span class="conn-metric-num mono-num val-danger">${parseFloat(position.liq_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Take Profit</span>
+                        <span class="conn-metric-num mono-num val-accent">${parseFloat(position.tp_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Stop Loss</span>
+                        <span class="conn-metric-num mono-num val-danger">${parseFloat(position.sl_price || 0).toFixed(4)}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Trailing Target</span>
+                        <span class="conn-metric-num mono-num ${trailingPriceStr !== 'N/A' ? 'val-accent' : ''}">${trailingPriceStr}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Contract Units</span>
+                        <span class="conn-metric-num mono-num">${escapeHtml(String(position.size))}</span>
+                    </div>
+                    <div class="conn-metric-col">
+                        <span class="conn-metric-title">Effective Margin</span>
+                        <span class="conn-metric-num mono-num">$${marginStr}</span>
+                    </div>
+                </div>
+
+                <div class="conn-item-footer">
+                    <span>Last Sync: <strong>${lastUpdatedText}</strong></span>
+                    <div class="pos-footer-actions">
+                        <span class="status-pill-badge badge-active" style="font-size: 11px; padding: 3px 8px;">Active Position</span>
                     </div>
                 </div>
             </div>
         `;
-    };
+    }
+    window.renderPositionStats = renderPositionStats;
 
     window.closePositionDetail = function () {
         document.getElementById('position-detail-page').classList.remove('active');
@@ -1188,6 +1212,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
     };
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatTimeAgo(timestamp) {
+        if (!timestamp) return 'Never';
+        const diffMs = Date.now() - timestamp;
+        const diffSec = Math.floor(diffMs / 1000);
+        if (diffSec < 5) return 'Just now';
+        if (diffSec < 60) return `${diffSec}s ago`;
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHr = Math.floor(diffMin / 60);
+        if (diffHr < 24) return `${diffHr}h ago`;
+        return `${Math.floor(diffHr / 24)}d ago`;
+    }
 
     function formatUsd(val) {
         return formatSelectedCurrency(val);
@@ -1248,45 +1295,99 @@ document.addEventListener('DOMContentLoaded', () => {
                     positionsContainer.innerHTML = data.map(p => {
                         const sideStr = (p.side || '').toLowerCase();
                         const isBuy = sideStr === 'buy' || sideStr === 'long';
-                        const sideClz = isBuy ? 'buy' : 'sell';
-                        const cardClz = isBuy ? 'pos-card-buy' : 'pos-card-sell';
+                        const statusClz = isBuy ? 'status-connected' : 'status-error';
+                        const badgeClz = isBuy ? 'badge-connected' : 'badge-error';
+                        const dotClz = isBuy ? 'dot-connected' : 'dot-error';
                         const sideText = (p.side || 'UNKNOWN').toUpperCase();
 
+                        const posValue = (parseFloat(p.size || 0) * parseFloat(p.entry_price || 0));
+                        const posValueStr = posValue > 0 ? posValue.toFixed(2) : '0.00';
+
+                        const leverage = parseInt(document.getElementById('TRADE_LEVERAGE')?.value || 10);
+                        const margin = posValue / leverage;
+                        const marginStr = margin > 0 ? margin.toFixed(2) : '0.00';
+
+                        const pnlNum = parseFloat(p.unrealized_pnl || 0);
+                        const pnlPercent = margin > 0 ? (pnlNum / margin) * 100 : 0;
+                        const pnlPercentStr = (pnlPercent > 0 ? '+' : '') + pnlPercent.toFixed(2) + '%';
+
+                        const lastUpdatedText = p.updated_at ? (typeof formatTimeAgo === 'function' ? formatTimeAgo(p.updated_at) : new Date(p.updated_at).toLocaleTimeString()) : 'Live';
+                        const safeSymbolJs = (p.symbol || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        const cardDomId = 'pos-card-' + (p.symbol || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+
                         return `
-                        <div class="position-card ${cardClz}">
-                            <div class="pos-header">
-                                <div class="pos-symbol" style="cursor: pointer; text-decoration: underline;" onclick="openPositionDetail('${p.symbol}')" title="View Details">${p.symbol}</div>
-                                <div class="pos-side ${sideClz}">${sideText}</div>
-                            </div>
-                            <div class="pos-details">
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Size</span>
-                                    <span class="pos-detail-value">${p.size}</span>
+                        <div class="conn-item-card pos-item-card ${statusClz}" id="${cardDomId}">
+                            <div class="conn-item-top">
+                                <div class="conn-item-title-wrap">
+                                    <div class="conn-item-title-row">
+                                        <span class="proto-tag tag-perp">PERP</span>
+                                        <span class="conn-item-name pos-item-name">${escapeHtml(p.symbol)}</span>
+                                    </div>
+                                    <span class="conn-item-desc">Linear Contract &bull; Size: <strong>${escapeHtml(String(p.size))}</strong></span>
                                 </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Entry Price</span>
-                                    <span class="pos-detail-value">${parseFloat(p.entry_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Mark Price</span>
-                                    <span class="pos-detail-value">${parseFloat(p.mark_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">Liq. Price</span>
-                                    <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(p.liq_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">TP Price</span>
-                                    <span class="pos-detail-value" style="color: var(--accent)">${parseFloat(p.tp_price || 0).toFixed(4)}</span>
-                                </div>
-                                <div class="pos-detail-item">
-                                    <span class="pos-detail-label">SL Price</span>
-                                    <span class="pos-detail-value" style="color: var(--danger)">${parseFloat(p.sl_price || 0).toFixed(4)}</span>
+                                <div class="conn-status-badge ${badgeClz}">
+                                    <span class="conn-dot ${dotClz}"></span>
+                                    <span>${sideText}</span>
                                 </div>
                             </div>
-                            <div class="pos-pnl">
-                                <span class="pos-pnl-label">Unrealized PnL</span>
-                                <span class="pos-pnl-value">${formatPnl(p.unrealized_pnl)}</span>
+
+                            <div class="pos-item-pnl-box ${pnlNum >= 0 ? 'pnl-box-positive' : 'pnl-box-negative'}">
+                                <div class="pos-pnl-left">
+                                    <span class="pos-pnl-sub-label">Unrealized PnL</span>
+                                    <div class="pos-pnl-main-val">
+                                        ${formatPnl(p.unrealized_pnl)}
+                                        <span class="pos-pnl-roi ${pnlNum >= 0 ? 'val-accent' : 'val-danger'}">(${pnlPercentStr})</span>
+                                    </div>
+                                </div>
+                                <div class="pos-pnl-right">
+                                    <span class="pos-pnl-sub-label">Position Value</span>
+                                    <span class="pos-pnl-val-mono mono-num">$${posValueStr}</span>
+                                </div>
+                            </div>
+
+                            <div class="conn-item-metrics pos-item-metrics">
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Entry Price</span>
+                                    <span class="conn-metric-num mono-num">${parseFloat(p.entry_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Mark Price</span>
+                                    <span class="conn-metric-num mono-num">${parseFloat(p.mark_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Liq. Price</span>
+                                    <span class="conn-metric-num mono-num val-danger">${parseFloat(p.liq_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">TP Target</span>
+                                    <span class="conn-metric-num mono-num val-accent">${parseFloat(p.tp_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">SL Guard</span>
+                                    <span class="conn-metric-num mono-num val-danger">${parseFloat(p.sl_price || 0).toFixed(4)}</span>
+                                </div>
+                                <div class="conn-metric-col">
+                                    <span class="conn-metric-title">Est. Margin</span>
+                                    <span class="conn-metric-num mono-num">$${marginStr}</span>
+                                </div>
+                            </div>
+
+                            <div class="conn-item-footer">
+                                <span>Updated: <strong>${lastUpdatedText}</strong></span>
+                                <div class="pos-footer-actions">
+                                    <button class="btn-test-conn" onclick="openTvPopupModal('${safeSymbolJs}')" title="Open Interactive TradingView Chart">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                                        </svg>
+                                        <span>Chart</span>
+                                    </button>
+                                    <button class="btn-test-conn btn-pos-detail" onclick="openPositionDetail('${safeSymbolJs}')" title="View Full Position Details & Execution Controls">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                        <span>Details</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>`;
                     }).join('');

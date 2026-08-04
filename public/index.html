@@ -2121,18 +2121,24 @@
                         </div>
 
                         <!-- Right column: Trading Center -->
-                        <div class="trading-center-col" style="flex: 0 1 320px; min-width: 260px;">
+                        <div class="trading-center-col" style="flex: 0 1 340px; min-width: 280px;">
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
                                 <span>Trading Center</span>
                             </h3>
-                            <div class="card"
-                                style="margin-top: 1rem; padding: 20px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--border-radius-md);">
-                                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px; line-height: 1.5;">Quickly manage, re-evaluate, or immediately exit your active position at market price.</p>
+                            <div class="trading-center-card" style="margin-top: 1rem;">
+                                <div class="conn-item-top" style="margin-bottom: 0;">
+                                    <div class="conn-item-title-wrap">
+                                        <span class="conn-item-name" style="font-size: 15px;">Execution Controls</span>
+                                        <span class="conn-item-desc">Instant position management</span>
+                                    </div>
+                                    <span class="proto-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">EMERGENCY</span>
+                                </div>
+                                <p style="color: var(--text-muted); font-size: 13px; margin: 0; line-height: 1.5;">Quickly manage, re-evaluate, or immediately exit your active position at market price.</p>
                                 <button id="close-position-btn" class="btn btn-danger"
-                                    style="width: 100%; padding: 12px; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"
+                                    style="width: 100%; padding: 12px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px;"
                                     onclick="closePositionMarket()">
                                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>

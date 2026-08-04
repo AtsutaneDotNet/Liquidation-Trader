@@ -2444,6 +2444,317 @@ canvas#pnl-chart {
     }
 }
 
+/* ── Position Cards (Unified with Connection Monitor Design) ── */
+.positions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.pos-item-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pos-item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #64748b;
+    transition: background 0.3s ease;
+}
+
+.pos-item-card.status-connected::before,
+.pos-item-card.status-buy::before,
+.pos-item-card.status-long::before {
+    background: #00e676;
+}
+
+.pos-item-card.status-error::before,
+.pos-item-card.status-sell::before,
+.pos-item-card.status-short::before {
+    background: #ff3b3b;
+}
+
+.pos-item-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.pos-item-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.tag-perp {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.pos-item-pnl-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 10px 14px;
+    gap: 12px;
+}
+
+.pos-item-pnl-box.pnl-box-positive {
+    border-color: rgba(0, 230, 118, 0.2);
+    background: linear-gradient(90deg, rgba(0, 230, 118, 0.06) 0%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.pos-item-pnl-box.pnl-box-negative {
+    border-color: rgba(255, 59, 59, 0.2);
+    background: linear-gradient(90deg, rgba(255, 59, 59, 0.06) 0%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+.pos-pnl-left, .pos-pnl-right {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pos-pnl-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.pos-pnl-sub-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pos-pnl-main-val {
+    font-size: 17px;
+    font-weight: 800;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.pos-pnl-roi {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pos-pnl-val-mono {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.pos-item-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.val-accent {
+    color: #00e676 !important;
+}
+
+.val-danger {
+    color: #ff4d6d !important;
+}
+
+.pos-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-pos-detail:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+}
+
+/* ── Position Detail Page Modern Card Styles ── */
+.pos-detail-card {
+    padding: 22px 24px;
+    gap: 16px;
+}
+
+.pos-detail-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.pos-detail-pnl-box {
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.pos-detail-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px 14px;
+    padding: 14px 16px;
+}
+
+.trading-center-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Retain backward compatibility styles for position detail page & hooks */
+.position-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.pos-card-buy {
+    border-left: 4px solid var(--accent);
+}
+
+.pos-card-sell {
+    border-left: 4px solid var(--danger);
+}
+
+.pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pos-symbol {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    transition: color 0.2s ease;
+}
+
+.pos-symbol:hover {
+    color: var(--accent);
+}
+
+.pos-side {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pos-side.buy {
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--accent);
+}
+
+.pos-side.sell {
+    background: rgba(255, 59, 59, 0.1);
+    color: var(--danger);
+}
+
+.pos-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+}
+
+.pos-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pos-detail-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+}
+
+.pos-detail-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.pos-pnl {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.pos-pnl-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.pos-pnl-value {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.empty-msg {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 60px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px dashed var(--border-color);
+}
+
 .hero-kpi-card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
