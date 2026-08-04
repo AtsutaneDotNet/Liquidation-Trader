@@ -298,6 +298,10 @@ class TradingBot {
                     if (stillOpen) {
                         // Ensure live price stream is running for active positions
                         this.startLiveWatchOHLCV(dbPos.symbol);
+                        // If DB is missing TP or SL, ensure TP/SL is synced and set
+                        if (!dbPos.tp_price || !dbPos.sl_price) {
+                            await this.onPositionUpdate([apiMatch]);
+                        }
                     } else {
                         logger.info(`[Sync] Stale/closed position ${dbPos.symbol} detected. Removing from DB and stopping price stream.`);
                         db.removePosition(dbPos.symbol);
@@ -596,28 +600,57 @@ class TradingBot {
                 continue;
             }
 
-            let currentTp = parseFloat(p.takeProfitPrice || p.info?.takeProfit || p.info?.tpPrice || p.info?.takeProfitPrice || 0);
-            let currentSl = parseFloat(p.stopLossPrice || p.info?.stopLoss || p.info?.slPrice || p.info?.stopLossPrice || 0);
+            let currentTp = parseFloat(p.takeProfitPrice || p.tp_price || p.info?.takeProfit || p.info?.tpPrice || p.info?.takeProfitPrice || 0);
+            let currentSl = parseFloat(p.stopLossPrice || p.sl_price || p.info?.stopLoss || p.info?.slPrice || p.info?.stopLossPrice || 0);
 
-            if ((!currentTp || !currentSl) && this.tradeExchange && this.tradeExchange.exchange && typeof this.tradeExchange.exchange.fapiPrivateGetOpenAlgoOrders === 'function') {
+            // If TP or SL is missing, check existing DB record first
+            const existingPos = db.getPositions().find(pos => pos.symbol === p.symbol);
+            if (!currentTp && existingPos && existingPos.tp_price > 0) {
+                currentTp = existingPos.tp_price;
+            }
+            if (!currentSl && existingPos && existingPos.sl_price > 0) {
+                currentSl = existingPos.sl_price;
+            }
+
+            // If still missing, attempt to fetch open/algo orders from exchange
+            if ((!currentTp || !currentSl) && this.tradeExchange && this.tradeExchange.exchange) {
                 try {
-                    const marketId = this.tradeExchange.exchange.market(p.symbol).id;
-                    const openAlgoOrders = await this.tradeExchange.exchange.fapiPrivateGetOpenAlgoOrders({ symbol: marketId });
-                    if (Array.isArray(openAlgoOrders)) {
-                        for (const order of openAlgoOrders) {
-                            const type = (order.orderType || '').toUpperCase();
-                            const triggerPrice = parseFloat(order.triggerPrice || order.stopPrice || 0);
-                            if (triggerPrice > 0) {
-                                if (type === 'TAKE_PROFIT_MARKET' && !currentTp) {
-                                    currentTp = triggerPrice;
-                                } else if (type === 'STOP_MARKET' && !currentSl) {
-                                    currentSl = triggerPrice;
+                    if (this.tradeExchange.exchange.has['fetchOpenOrders']) {
+                        const openOrders = await this.tradeExchange.exchange.fetchOpenOrders(p.symbol);
+                        if (Array.isArray(openOrders)) {
+                            for (const order of openOrders) {
+                                const type = (order.type || order.info?.orderType || order.info?.type || '').toUpperCase();
+                                const triggerPrice = parseFloat(order.stopPrice || order.triggerPrice || order.price || order.info?.stopPrice || order.info?.triggerPrice || 0);
+                                if (triggerPrice > 0) {
+                                    if ((type.includes('TAKE_PROFIT') || type.includes('TAKEPROFIT') || type.includes('TP')) && !currentTp) {
+                                        currentTp = triggerPrice;
+                                    } else if ((type.includes('STOP') || type.includes('STOP_MARKET') || type.includes('STOP_LOSS') || type.includes('SL')) && !currentSl) {
+                                        currentSl = triggerPrice;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if ((!currentTp || !currentSl) && typeof this.tradeExchange.exchange.fapiPrivateGetOpenAlgoOrders === 'function') {
+                        const marketId = this.tradeExchange.exchange.market(p.symbol).id;
+                        const openAlgoOrders = await this.tradeExchange.exchange.fapiPrivateGetOpenAlgoOrders({ symbol: marketId });
+                        if (Array.isArray(openAlgoOrders)) {
+                            for (const order of openAlgoOrders) {
+                                const type = (order.orderType || '').toUpperCase();
+                                const triggerPrice = parseFloat(order.triggerPrice || order.stopPrice || 0);
+                                if (triggerPrice > 0) {
+                                    if (type === 'TAKE_PROFIT_MARKET' && !currentTp) {
+                                        currentTp = triggerPrice;
+                                    } else if (type === 'STOP_MARKET' && !currentSl) {
+                                        currentSl = triggerPrice;
+                                    }
                                 }
                             }
                         }
                     }
                 } catch (e) {
-                    logger.warn(`[onPositionUpdate] Failed to fetch open algo orders for ${p.symbol}: ${e.message}`);
+                    logger.warn(`[onPositionUpdate] Failed to fetch open/algo orders for ${p.symbol}: ${e.message}`);
                 }
             }
 
@@ -745,15 +778,15 @@ class TradingBot {
 
     async handleTpSl(p, contracts) {
         const symbol = p.symbol;
-        const side = (p.side || 'unknown').toLowerCase();
-        const entryPrice = parseFloat(p.entryPrice);
+        const rawSide = (p.side || p.info?.side || (parseFloat(p.info?.positionAmt || 0) < 0 ? 'short' : (parseFloat(p.info?.positionAmt || 0) > 0 ? 'long' : 'unknown'))).toLowerCase();
+        const entryPrice = parseFloat(p.entryPrice || p.entry_price || p.info?.entryPrice || 0);
 
         if (contracts <= 0 || !entryPrice) return;
 
-        let orderSide = side;
-        if (side === 'long') orderSide = 'buy';
-        if (side === 'short') orderSide = 'sell';
-        if (orderSide === 'unknown') return;
+        let orderSide = rawSide;
+        if (rawSide === 'long' || rawSide === 'buy') orderSide = 'buy';
+        if (rawSide === 'short' || rawSide === 'sell') orderSide = 'sell';
+        if (orderSide !== 'buy' && orderSide !== 'sell') return;
 
         const cfg = this.config.get();
         
@@ -800,8 +833,8 @@ class TradingBot {
         const formattedSl = parseFloat(this.tradeExchange.exchange.priceToPrecision(symbol, targetSlPrice));
 
         // Read current TP/SL
-        let currentTp = parseFloat(p.takeProfitPrice || p.info?.takeProfit || p.info?.tpPrice || p.info?.takeProfitPrice || 0);
-        let currentSl = parseFloat(p.stopLossPrice || p.info?.stopLoss || p.info?.slPrice || p.info?.stopLossPrice || 0);
+        let currentTp = parseFloat(p.takeProfitPrice || p.tp_price || p.info?.takeProfit || p.info?.tpPrice || p.info?.takeProfitPrice || 0);
+        let currentSl = parseFloat(p.stopLossPrice || p.sl_price || p.info?.stopLoss || p.info?.slPrice || p.info?.stopLossPrice || 0);
 
         const isTpMatch = !isNaN(currentTp) && currentTp > 0 && Math.abs(currentTp - formattedTp) / formattedTp < 0.0005;
         const isSlMatch = !isNaN(currentSl) && currentSl > 0 && Math.abs(currentSl - formattedSl) / formattedSl < 0.0005;
@@ -854,9 +887,16 @@ class TradingBot {
             logger.info(logMsg);
             try {
                 await this.tradeExchange.setTpSl(symbol, orderSide, contracts, formattedTp, formattedSl, entryPrice, trailingPercent, targetTrailingActivationPrice);
+                db.updatePositionTpSl(symbol, formattedTp, formattedSl);
+                logger.info(`[TP/SL] Successfully set and recorded TP: ${formattedTp}, SL: ${formattedSl} for ${symbol}`);
             } catch (error) {
                 logger.error(`Failed to set TP/SL/Trailing for ${symbol}: ${error.message}`);
                 await this.executeFallbackClose(symbol, orderSide, contracts, entryPrice, formattedTp, formattedSl, trailingPercent, targetTrailingActivationPrice, cfg, tpPercent, trailingActivationPercent);
+            }
+        } else {
+            // Ensure DB has non-zero TP/SL recorded if already established on exchange
+            if (currentTp > 0 || currentSl > 0) {
+                db.updatePositionTpSl(symbol, currentTp || formattedTp, currentSl || formattedSl);
             }
         }
     }

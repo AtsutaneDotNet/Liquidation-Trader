@@ -394,8 +394,20 @@ function updatePosition(pos) {
         VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
         ON CONFLICT(symbol) DO UPDATE SET 
             side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
-            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
+            liq_price=@liq_price, 
+            tp_price=CASE WHEN @tp_price > 0 THEN @tp_price ELSE positions.tp_price END, 
+            sl_price=CASE WHEN @sl_price > 0 THEN @sl_price ELSE positions.sl_price END, 
+            unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
     `).run(pos);
+}
+
+function updatePositionTpSl(symbol, tpPrice, slPrice) {
+    const updatedAt = Date.now();
+    return db.prepare(`
+        UPDATE positions 
+        SET tp_price = ?, sl_price = ?, updated_at = ?
+        WHERE symbol = ?
+    `).run(tpPrice, slPrice, updatedAt, symbol);
 }
 
 function updatePositionMarkPrice(symbol, markPrice, unrealizedPnl) {
@@ -743,7 +755,10 @@ function updatePaperPosition(pos) {
         VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
         ON CONFLICT(symbol) DO UPDATE SET 
             side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
-            liq_price=@liq_price, tp_price=@tp_price, sl_price=@sl_price, unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
+            liq_price=@liq_price, 
+            tp_price=CASE WHEN @tp_price > 0 THEN @tp_price ELSE paper_positions.tp_price END, 
+            sl_price=CASE WHEN @sl_price > 0 THEN @sl_price ELSE paper_positions.sl_price END, 
+            unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
     `).run(pos);
 }
 
@@ -861,6 +876,7 @@ module.exports = {
     updateAccountState,
     getAccountState,
     updatePosition,
+    updatePositionTpSl,
     updatePositionMarkPrice,
     getStalePositions,
     removePosition,
