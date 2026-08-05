@@ -99,7 +99,7 @@ nav::-webkit-scrollbar {
 
 .nav-btn {
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--text-muted);
     font-size: 16px;
     font-family: var(--font-fam);
@@ -108,22 +108,32 @@ nav::-webkit-scrollbar {
     padding: 12px 16px;
     border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     gap: 12px;
     white-space: nowrap;
 }
 
+.nav-btn svg {
+    flex-shrink: 0;
+}
+
 .sidebar.collapsed .nav-btn {
     padding: 12px;
     justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
 }
 
 @media (hover: hover) {
     .sidebar.collapsed:hover .nav-btn {
+        width: 100%;
+        height: auto;
         padding: 12px 16px;
         justify-content: flex-start;
+        margin: 0;
     }
 }
 
@@ -141,13 +151,20 @@ nav::-webkit-scrollbar {
 
 .nav-btn:hover {
     background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
     color: var(--text-main);
 }
 
 .nav-btn.active {
-    background-color: rgba(0, 230, 118, 0.1);
+    background-color: rgba(0, 230, 118, 0.09);
+    border-color: rgba(0, 230, 118, 0.4);
     color: var(--accent);
-    box-shadow: 0 0 15px var(--accent-glow);
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.08);
+}
+
+.nav-btn.active:hover {
+    background-color: rgba(0, 230, 118, 0.14);
+    border-color: rgba(0, 230, 118, 0.55);
 }
 
 /* Main Content */
