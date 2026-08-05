@@ -123,10 +123,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchLiquidations();
                 fetchTradeDecisions();
             } else if (targetId === 'positions') {
-                fetchAccountData();
+                fetchAccountData(true);
             } else if (targetId === 'account') {
-                fetchAccountData();
-                fetchPnLHistory();
+                fetchAccountData(true);
+                fetchPnLHistory(true);
+                fetchWeeklyPnLHistory(true);
+                fetchMonthlyPnLHistory(true);
+            } else if (targetId === 'statistics-page') {
+                fetch24HStatistics(true);
+                fetchPageStatisticsData(true);
             } else if (targetId === 'liquidations-page') {
                 fetchLiquidations();
             } else if (targetId === 'closed-pnl-page') {
@@ -435,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isolationStatusText = document.getElementById('isolation-status-text');
     const controlMsg = document.getElementById('control-msg');
     let currentBtcPrice = 0;
+    let currentEthPrice = 0;
     let lastIsolationMode = null;
 
     // ── Currency Switcher Setup ──────────────────────────────
@@ -442,59 +448,103 @@ document.addEventListener('DOMContentLoaded', () => {
         USD: '$',
         EUR: '€',
         GBP: '£',
+        AUD: 'A$',
+        CAD: 'C$',
+        CNY: '¥',
+        INR: '₹',
+        IDR: 'Rp',
         MYR: 'RM',
         JPY: '¥',
         SGD: 'S$',
-        BTC: '₿'
+        BTC: '₿',
+        ETH: 'Ξ'
     };
 
     let exchangeRates = {
         USD: 1.0,
         EUR: 0.92,
         GBP: 0.79,
+        AUD: 1.55,
+        CAD: 1.38,
+        CNY: 7.25,
+        INR: 86.0,
+        IDR: 16200.0,
         MYR: 4.70,
         JPY: 155.0,
         SGD: 1.35,
-        BTC: 0.000015 // Updated dynamically from live status
+        BTC: 0.000015, // Updated dynamically from live status
+        ETH: 0.0004    // Updated dynamically from live API
     };
 
+    function formatCurrencyValue(absVal, cur) {
+        if (cur === 'BTC' || cur === 'ETH') {
+            return parseFloat(absVal).toFixed(6);
+        } else if (cur === 'JPY' || cur === 'IDR') {
+            return Math.round(absVal).toLocaleString();
+        } else {
+            return parseFloat(absVal).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    }
+
     function fetchExchangeRates() {
+        // Fetch fiat exchange rates from open.er-api.com
         fetch('https://open.er-api.com/v6/latest/USD')
             .then(res => res.json())
             .then(data => {
                 if (data && data.rates) {
-                    for (const cur of ['EUR', 'GBP', 'MYR', 'JPY', 'SGD']) {
+                    for (const cur of ['EUR', 'GBP', 'AUD', 'CAD', 'CNY', 'INR', 'IDR', 'MYR', 'JPY', 'SGD']) {
                         if (data.rates[cur]) {
                             exchangeRates[cur] = data.rates[cur];
                         }
                     }
                     console.log('Exchange rates updated successfully:', exchangeRates);
-                    updateBtcRateAndReRender();
+                    updateCryptoRatesAndReRender();
                 }
             })
             .catch(err => {
                 console.warn('Could not fetch live exchange rates, using fallbacks:', err);
+            });
+
+        // Fetch live ETH price from Binance public ticker (with Coinbase fallback)
+        fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT')
+            .then(res => res.json())
+            .then(data => {
+                const p = parseFloat(data && data.price);
+                if (p > 0) {
+                    currentEthPrice = p;
+                    exchangeRates.ETH = 1 / currentEthPrice;
+                    updateCryptoRatesAndReRender();
+                }
+            })
+            .catch(() => {
+                fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot')
+                    .then(res => res.json())
+                    .then(cbData => {
+                        const p = parseFloat(cbData?.data?.amount);
+                        if (p > 0) {
+                            currentEthPrice = p;
+                            exchangeRates.ETH = 1 / currentEthPrice;
+                            updateCryptoRatesAndReRender();
+                        }
+                    })
+                    .catch(err => console.warn('Could not fetch live ETH price:', err));
             });
     }
 
     function convertFromUsd(val) {
         const cur = localStorage.getItem('selectedCurrency') || 'USD';
         const rate = exchangeRates[cur] || 1.0;
-        return val * rate;
+        return (parseFloat(val) || 0) * rate;
     }
 
     function formatSelectedCurrency(val) {
         const cur = localStorage.getItem('selectedCurrency') || 'USD';
-        const converted = convertFromUsd(val);
+        const num = parseFloat(val || 0);
+        const converted = convertFromUsd(num);
         const symbol = currencySymbols[cur] || '$';
-
-        if (cur === 'BTC') {
-            return symbol + parseFloat(converted).toFixed(6);
-        } else if (cur === 'JPY') {
-            return symbol + Math.round(converted).toLocaleString();
-        } else {
-            return symbol + parseFloat(converted).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
+        const sign = num < 0 ? '-' : '';
+        const absVal = Math.abs(converted);
+        return sign + symbol + formatCurrencyValue(absVal, cur);
     }
 
     function formatTokenPrice(priceUsd) {
@@ -502,25 +552,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const cur = localStorage.getItem('selectedCurrency') || 'USD';
         const symbol = currencySymbols[cur] || '$';
         const converted = convertFromUsd(priceUsd);
-        return symbol + parseFloat(converted).toFixed(cur === 'BTC' ? 6 : (cur === 'JPY' ? 0 : 4));
+        const sign = priceUsd < 0 ? '-' : '';
+        const absVal = Math.abs(converted);
+        const decimals = (cur === 'BTC' || cur === 'ETH') ? 6 : ((cur === 'JPY' || cur === 'IDR') ? 0 : 4);
+        return sign + symbol + parseFloat(absVal).toFixed(decimals);
     }
 
-    function updateBtcRateAndReRender() {
+    function updateCryptoRatesAndReRender() {
         if (currentBtcPrice > 0) {
             exchangeRates.BTC = 1 / currentBtcPrice;
         }
+        if (currentEthPrice > 0) {
+            exchangeRates.ETH = 1 / currentEthPrice;
+        }
 
-        // Re-trigger visual updates instantly on currency change or rate updates
-        fetchAccountData();
+        // Re-trigger visual updates instantly across all views on currency change or rate updates
+        fetchAccountData(true);
         fetchLiquidations();
         fetchClosedPnlsTable();
         fetchDynamicThresholdTable();
         fetchTradeDecisions();
-        fetchPnLHistory();
+        fetchPnLHistory(true);
+        fetchWeeklyPnLHistory(true);
+        fetchMonthlyPnLHistory(true);
+        fetch24HStatistics(true);
+        fetchPageStatisticsData(true);
     }
 
-    // Call exchange rate fetch on initialization
+    function updateBtcRateAndReRender() {
+        updateCryptoRatesAndReRender();
+    }
+
+    // Call exchange rate fetch on initialization and periodically every 5 minutes
     fetchExchangeRates();
+    setInterval(fetchExchangeRates, 5 * 60 * 1000);
 
     function fetchStatus() {
         fetch('/api/status')
@@ -1105,11 +1170,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="pos-pnl-mid" style="display: flex; flex-direction: column; gap: 2px;">
                         <span class="pos-pnl-sub-label">Position Value</span>
-                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">$${posValueStr}</span>
+                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">${formatSelectedCurrency(posValue)}</span>
                     </div>
                     <div class="pos-pnl-right">
                         <span class="pos-pnl-sub-label">Margin Allocated</span>
-                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">$${marginStr}</span>
+                        <span class="pos-pnl-val-mono mono-num" style="font-size: 15px;">${formatSelectedCurrency(margin)}</span>
                     </div>
                 </div>
 
@@ -1144,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="conn-metric-col">
                         <span class="conn-metric-title">Effective Margin</span>
-                        <span class="conn-metric-num mono-num">$${marginStr}</span>
+                        <span class="conn-metric-num mono-num">${formatSelectedCurrency(margin)}</span>
                     </div>
                 </div>
 
@@ -1245,25 +1310,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const numUsd = parseFloat(val || 0);
         const converted = convertFromUsd(numUsd);
 
-        const sign = converted > 0 ? '+' : '';
+        const sign = numUsd > 0 ? '+' : (numUsd < 0 ? '-' : '');
         const clz = numUsd >= 0 ? 'pnl-positive' : 'pnl-negative';
         const symbol = currencySymbols[cur] || '$';
-
-        let formattedVal = '';
-        if (cur === 'BTC') {
-            formattedVal = parseFloat(converted).toFixed(6);
-        } else if (cur === 'JPY') {
-            formattedVal = Math.round(converted).toLocaleString();
-        } else {
-            formattedVal = parseFloat(converted).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
+        const absVal = Math.abs(converted);
+        const formattedVal = formatCurrencyValue(absVal, cur);
 
         return `<span class="${clz}">${sign}${symbol}${formattedVal}</span>`;
     }
 
-    function fetchAccountData() {
-        // Optimize polling: only render if standard tabs correspond.
-        if (!document.getElementById('account').classList.contains('active') &&
+    function fetchAccountData(force = false) {
+        // Optimize polling: only render if standard tabs correspond or forced.
+        if (!force &&
+            !document.getElementById('account').classList.contains('active') &&
             !document.getElementById('positions').classList.contains('active') &&
             !document.getElementById('position-detail-page').classList.contains('active')) return;
 
@@ -1341,7 +1400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 <div class="pos-pnl-right">
                                     <span class="pos-pnl-sub-label">Position Value</span>
-                                    <span class="pos-pnl-val-mono mono-num">$${posValueStr}</span>
+                                    <span class="pos-pnl-val-mono mono-num">${formatSelectedCurrency(posValue)}</span>
                                 </div>
                             </div>
 
@@ -1368,7 +1427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 <div class="conn-metric-col">
                                     <span class="conn-metric-title">Est. Margin</span>
-                                    <span class="conn-metric-num mono-num">$${marginStr}</span>
+                                    <span class="conn-metric-num mono-num">${formatSelectedCurrency(margin)}</span>
                                 </div>
                             </div>
 
@@ -1402,7 +1461,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const summaryBar = document.getElementById('positions-summary-bar');
                 if (summaryBar) {
-                    summaryBar.style.display = currentPositionsCount > 1 ? 'flex' : 'none';
+                    summaryBar.style.display = currentPositionsCount > 0 ? 'flex' : 'none';
                 }
 
                 const elSummaryCount = document.getElementById('summary-current-positions');
@@ -1410,11 +1469,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (elSummaryCount) elSummaryCount.textContent = currentPositionsCount;
                 if (elSummaryPnl) {
-                    const cur = localStorage.getItem('selectedCurrency') || 'USD';
-                    const convertedPnl = convertFromUsd(cumulativePnl);
-                    const pnlText = (convertedPnl > 0 ? '+' : '') + convertedPnl.toFixed(2) + ' ' + cur;
-                    elSummaryPnl.textContent = pnlText;
-                    elSummaryPnl.style.color = convertedPnl >= 0 ? 'var(--accent)' : 'var(--danger)';
+                    elSummaryPnl.innerHTML = formatPnl(cumulativePnl);
                 }
 
                 // If detail page is active, auto-update the stats
@@ -2261,8 +2316,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             const val = Number(context.raw) || 0;
                             const cur = localStorage.getItem('selectedCurrency') || 'USD';
                             const symbol = currencySymbols[cur] || '$';
-                            const formattedVal = cur === 'BTC' ? val.toFixed(6) : (cur === 'JPY' ? Math.round(val).toLocaleString() : val.toFixed(2));
-                            return ` PnL: ${val >= 0 ? '+' : ''}${symbol}${formattedVal}`;
+                            const absVal = Math.abs(val);
+                            const formattedVal = formatCurrencyValue(absVal, cur);
+                            return ` PnL: ${val >= 0 ? '+' : '-'}${symbol}${formattedVal}`;
                         }
                     }
                 }
@@ -2342,10 +2398,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function fetchPnLHistory() {
+    function fetchPnLHistory(force = false) {
         if (!pnlChart) return;
         const pageActive = document.getElementById('account').classList.contains('active');
-        if (!pageActive) return;
+        if (!pageActive && !force) return;
 
         fetch('/api/pnl/daily-history?days=30')
             .then(res => res.json())
@@ -2367,10 +2423,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(console.error);
     }
 
-    function fetchWeeklyPnLHistory() {
+    function fetchWeeklyPnLHistory(force = false) {
         if (!weeklyPnlChart) return;
         const pageActive = document.getElementById('account').classList.contains('active');
-        if (!pageActive) return;
+        if (!pageActive && !force) return;
 
         fetch('/api/pnl/weekly-history?weeks=26')
             .then(res => res.json())
@@ -2395,10 +2451,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(console.error);
     }
 
-    function fetchMonthlyPnLHistory() {
+    function fetchMonthlyPnLHistory(force = false) {
         if (!monthlyPnlChart) return;
         const pageActive = document.getElementById('account').classList.contains('active');
-        if (!pageActive) return;
+        if (!pageActive && !force) return;
 
         fetch('/api/pnl/monthly-history?months=12')
             .then(res => res.json())
@@ -2653,9 +2709,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             padding: 10,
                             callbacks: {
                                 label: function(context) {
-                                    const val = context.raw || 0;
-                                    const sign = val >= 0 ? '+' : '';
-                                    return ` ${context.label}: ${sign}$${val.toFixed(2)}`;
+                                    const val = Number(context.raw) || 0;
+                                    const sign = val > 0 ? '+' : (val < 0 ? '-' : '');
+                                    const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                                    const symbol = currencySymbols[cur] || '$';
+                                    const absVal = Math.abs(val);
+                                    const formattedVal = formatCurrencyValue(absVal, cur);
+                                    return ` ${context.label}: ${sign}${symbol}${formattedVal}`;
                                 }
                             }
                         }
@@ -2807,9 +2867,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function fetch24HStatistics() {
+    function fetch24HStatistics(force = false) {
         const pageActive = document.getElementById('statistics-page').classList.contains('active');
-        if (!pageActive) return;
+        if (!pageActive && !force) return;
 
         fetch('/api/statistics/24h')
             .then(res => res.json())
@@ -2849,9 +2909,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(console.error);
     }
 
-    function fetchPageStatisticsData() {
+    function fetchPageStatisticsData(force = false) {
         const pageActive = document.getElementById('statistics-page').classList.contains('active');
-        if (!pageActive) return;
+        if (!pageActive && !force) return;
 
         fetch('/api/statistics/page-data')
             .then(res => res.json())
@@ -2878,8 +2938,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (data.dynamicThresholds) {
-                    document.getElementById('stats-dynamic-high').innerText = '$' + (data.dynamicThresholds.max || 0).toFixed(2);
-                    document.getElementById('stats-dynamic-low').innerText = '$' + (data.dynamicThresholds.min || 0).toFixed(2);
+                    document.getElementById('stats-dynamic-high').innerText = formatSelectedCurrency(data.dynamicThresholds.max || 0);
+                    document.getElementById('stats-dynamic-low').innerText = formatSelectedCurrency(data.dynamicThresholds.min || 0);
                 }
 
                 if (data.closedPnls) {
@@ -2907,15 +2967,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Update PnL Center Stat
                     const totalPnlEl = document.getElementById('stats-donut-total-pnl');
                     if (totalPnlEl) {
-                        const sign = totalPnL >= 0 ? '+' : '-';
-                        totalPnlEl.innerText = `${sign}$${Math.abs(totalPnL).toFixed(2)}`;
+                        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                        const symbol = currencySymbols[cur] || '$';
+                        const sign = totalPnL > 0 ? '+' : (totalPnL < 0 ? '-' : '');
+                        const convertedTotal = convertFromUsd(Math.abs(totalPnL));
+                        const formattedTotal = formatCurrencyValue(convertedTotal, cur);
+                        totalPnlEl.innerText = `${sign}${symbol}${formattedTotal}`;
                         totalPnlEl.style.color = totalPnL >= 0 ? '#00e676' : '#ff4d6d';
                     }
 
                     if (pnlSymbolChart) {
                         const syms = Object.keys(symMap);
+                        const cur = localStorage.getItem('selectedCurrency') || 'USD';
+                        const symbol = currencySymbols[cur] || '$';
+
                         pnlSymbolChart.data.labels = syms;
-                        pnlSymbolChart.data.datasets[0].data = syms.map(s => symMap[s]);
+                        pnlSymbolChart.data.datasets[0].data = syms.map(s => convertFromUsd(symMap[s]));
                         const bgColors = syms.map((s, i) => DONUT_PALETTE[i % DONUT_PALETTE.length]);
                         pnlSymbolChart.data.datasets[0].backgroundColor = bgColors;
                         pnlSymbolChart.update();
@@ -2926,14 +2993,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                 legendDiv.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">No closed trades recorded</span>';
                             } else {
                                 legendDiv.innerHTML = syms.map((s, i) => {
-                                    const pnlVal = symMap[s];
-                                    const pnlSign = pnlVal >= 0 ? '+' : '';
-                                    const pnlColor = pnlVal >= 0 ? '#00e676' : '#ff4d6d';
+                                    const rawVal = symMap[s];
+                                    const pnlSign = rawVal > 0 ? '+' : (rawVal < 0 ? '-' : '');
+                                    const pnlColor = rawVal >= 0 ? '#00e676' : '#ff4d6d';
+                                    const convertedPnl = convertFromUsd(Math.abs(rawVal));
+                                    const formattedPnl = formatCurrencyValue(convertedPnl, cur);
                                     return `
                                         <div class="legend-chip">
                                             <span class="legend-dot" style="background-color: ${bgColors[i]}; box-shadow: 0 0 6px ${bgColors[i]}99;"></span>
-                                            <span class="legend-label">${s}:</span>
-                                            <span class="legend-val mono-num" style="color: ${pnlColor}">${pnlSign}$${pnlVal.toFixed(2)}</span>
+                                            <span class="legend-label">${escapeHtml(s)}:</span>
+                                            <span class="legend-val mono-num" style="color: ${pnlColor}">${pnlSign}${symbol}${formattedPnl}</span>
                                         </div>
                                     `;
                                 }).join('');
@@ -3474,7 +3543,7 @@ function renderTransfersTable() {
         const date = new Date(tr.timestamp).toLocaleString();
         row.innerHTML = `
             <td>${date}</td>
-            <td style="color: var(--success-color)">+$${tr.amount.toFixed(2)}</td>
+            <td style="color: var(--success-color)">+${formatSelectedCurrency(tr.amount)}</td>
             <td>${tr.from_account}</td>
             <td style="text-align: right;">${tr.to_account}</td>
         `;
