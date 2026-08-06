@@ -59,6 +59,9 @@ class TradingBot {
         this.activeLiveWebsockets = {};
         this.lastPaperRunaway = {};
         this.lastLiveRunaway = {};
+
+        // In-memory cache for daily reference levels (symbol -> { dateStr, pdrHigh, pdrLow, pdsHigh, pdsLow, timestamp })
+        this.dailyLevelsCache = {};
     }
 
     async handleError(errMessage) {
@@ -95,8 +98,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, or Market Sentiment strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && !cfg.ENABLE_SNEAKY_PIVOT_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, Market Sentiment, or Sneaky Pivot strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -1546,6 +1549,130 @@ class TradingBot {
         return cumulativeTPV / cumulativeVolume;
     }
 
+    async calculatePreviousDayLevels(symbol, swingPeriod = 3) {
+        if (!this.tradeExchange?.exchange?.has['fetchOHLCV']) return null;
+
+        const now = new Date();
+        const yesterdayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1, 0, 0, 0, 0));
+        const dateStr = yesterdayUTC.toISOString().split('T')[0];
+
+        if (this.dailyLevelsCache && this.dailyLevelsCache[symbol] && this.dailyLevelsCache[symbol].dateStr === dateStr) {
+            return this.dailyLevelsCache[symbol];
+        }
+
+        try {
+            // 1. Fetch 1D candles to get Previous Day Range High & Low
+            const dailyKlines = await this.tradeExchange.exchange.fetchOHLCV(symbol, '1d', undefined, 5);
+            if (!dailyKlines || dailyKlines.length < 2) {
+                logger.warn(`Not enough daily klines fetched for ${symbol} to calculate previous day range.`);
+                return null;
+            }
+
+            // The second-to-last candle is yesterday (previous completed day)
+            const prevDayCandle = dailyKlines[dailyKlines.length - 2];
+            const pdrHigh = prevDayCandle[2];
+            const pdrLow = prevDayCandle[3];
+
+            // 2. Fetch Intraday (15m) klines for yesterday's UTC window to calculate Previous Day Swing High & Low
+            const since = yesterdayUTC.getTime();
+            const endOfYesterday = since + 86400000; // +24 hours in ms
+            let pdsHigh = pdrHigh;
+            let pdsLow = pdrLow;
+
+            try {
+                const intradayKlines = await this.tradeExchange.exchange.fetchOHLCV(symbol, '15m', since, 120);
+                if (intradayKlines && intradayKlines.length > 0) {
+                    const yesterdayKlines = intradayKlines.filter(k => k[0] >= since && k[0] < endOfYesterday);
+                    if (yesterdayKlines.length >= swingPeriod * 2 + 1) {
+                        let swingHighs = [];
+                        let swingLows = [];
+
+                        for (let i = swingPeriod; i < yesterdayKlines.length - swingPeriod; i++) {
+                            const currentH = yesterdayKlines[i][2];
+                            const currentL = yesterdayKlines[i][3];
+                            let isSwingHigh = true;
+                            let isSwingLow = true;
+
+                            for (let j = 1; j <= swingPeriod; j++) {
+                                if (yesterdayKlines[i - j][2] >= currentH || yesterdayKlines[i + j][2] >= currentH) {
+                                    isSwingHigh = false;
+                                }
+                                if (yesterdayKlines[i - j][3] <= currentL || yesterdayKlines[i + j][3] <= currentL) {
+                                    isSwingLow = false;
+                                }
+                            }
+
+                            if (isSwingHigh) swingHighs.push(currentH);
+                            if (isSwingLow) swingLows.push(currentL);
+                        }
+
+                        if (swingHighs.length > 0) pdsHigh = Math.max(...swingHighs);
+                        if (swingLows.length > 0) pdsLow = Math.min(...swingLows);
+                    }
+                }
+            } catch (e) {
+                logger.warn(`Could not fetch intraday klines for swing detection on ${symbol}: ${e.message}. Defaulting swing levels to range levels.`);
+            }
+
+            const result = {
+                dateStr,
+                pdrHigh,
+                pdrLow,
+                pdsHigh,
+                pdsLow,
+                timestamp: Date.now()
+            };
+
+            if (!this.dailyLevelsCache) this.dailyLevelsCache = {};
+            this.dailyLevelsCache[symbol] = result;
+            return result;
+        } catch (e) {
+            logger.error(`Error calculating previous day levels for ${symbol}: ${e.message}`);
+            return null;
+        }
+    }
+
+    calculateSneakyPivot(klines, currentPrice) {
+        if (!klines || klines.length < 3) return null;
+
+        const c1 = klines[klines.length - 3];
+        const c2 = klines[klines.length - 2];
+        const c3 = klines[klines.length - 1];
+
+        const c2High = c2[2];
+        const c2Low = c2[3];
+        const c3High = c3[2];
+        const c3Low = c3[3];
+        const c3Close = c3[4];
+
+        // Bullish: Candle 3 trades above Candle 2 High
+        const isBullish = (c3High > c2High) || (currentPrice !== undefined && currentPrice > c2High);
+        // Bearish: Candle 3 trades below Candle 2 Low
+        const isBearish = (c3Low < c2Low) || (currentPrice !== undefined && currentPrice < c2Low);
+
+        let pattern = 'none';
+        if (isBullish && !isBearish) {
+            pattern = 'buy';
+        } else if (isBearish && !isBullish) {
+            pattern = 'sell';
+        } else if (isBullish && isBearish) {
+            const evalPrice = currentPrice !== undefined ? currentPrice : c3Close;
+            pattern = evalPrice >= c2High ? 'buy' : (evalPrice <= c2Low ? 'sell' : 'none');
+        }
+
+        return {
+            pattern,
+            c1,
+            c2,
+            c3,
+            c2High,
+            c2Low,
+            c3High,
+            c3Low,
+            c3Close
+        };
+    }
+
     async evaluateTrade(symbol, currentPrice) {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
@@ -1557,6 +1684,8 @@ class TradingBot {
             vwap: null,
             rsi: null,
             dmi: null,
+            marketSentiment: null,
+            sneakyPivot: null,
             confluence: null,
             reason: 'Evaluated',
             side: null
@@ -1575,8 +1704,8 @@ class TradingBot {
             const symUpper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
             const isBlacklisted = blacklist.some(b => symUpper.startsWith(b));
             if (isBlacklisted) {
-                logger.info(`Symbol ${symbol} is blacklisted. Holding bot from opening new position.`);
-                pushDecision('Blacklisted');
+                logger.info(`Symbol ${symbol} is in coin blacklist. Skipping trade evaluation.`);
+                pushDecision('Blacklisted Symbol');
                 return;
             }
         }
@@ -1589,6 +1718,7 @@ class TradingBot {
             let rsiSide = null;
             let dmiSide = null;
             let msSide = null;
+            let sneakyPivotSide = null;
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
@@ -1596,13 +1726,15 @@ class TradingBot {
             const vwapEnabled = cfg.ENABLE_VWAP_STRATEGY;
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
             const dmiEnabled = cfg.ENABLE_DMI_STRATEGY;
+            const sneakyPivotEnabled = cfg.ENABLE_SNEAKY_PIVOT_STRATEGY;
             let activeTimeframes = [];
 
-            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled || sneakyPivotEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                 if (cbEnabled) activeTimeframes.push(cfg.CB_TIMEFRAME || '15m');
                 if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
                 if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
                 if (dmiEnabled) activeTimeframes.push(cfg.DMI_TIMEFRAME || '1m');
+                if (sneakyPivotEnabled) activeTimeframes.push(cfg.SNEAKY_PIVOT_TIMEFRAME || '15m');
 
                 // Check if all active strategies share the exact same timeframe
                 const allSameTimeframe = activeTimeframes.length > 0 && activeTimeframes.every(tf => tf === activeTimeframes[0]);
@@ -1612,7 +1744,8 @@ class TradingBot {
                     const vLimit = vwapEnabled ? (parseInt(cfg.VWAP_PERIOD) || 14) + 100 : 0;
                     const rLimit = rsiEnabled ? (parseInt(cfg.RSI_PERIOD) || 14) + 100 : 0;
                     const aLimit = dmiEnabled ? (parseInt(cfg.DMI_PERIOD) || 14) * 2 + 100 : 0;
-                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit);
+                    const spLimit = sneakyPivotEnabled ? 50 : 0;
+                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit, spLimit);
 
                     try {
                         logger.info(`Fetching shared OHLCV for Technical Strategies (${activeTimeframes[0]}, limit: ${maxLimit})...`);
@@ -2041,10 +2174,115 @@ class TradingBot {
                 }
             }
 
+            // --- 5.5 Sneaky Pivot Strategy ---
+            if (sneakyPivotEnabled) {
+                let spShouldBypass = false;
+                let spBypassReason = '';
+
+                if (cfg.SNEAKY_PIVOT_BYPASS_ON_POSITION === 'true' && openPosition) {
+                    spShouldBypass = true;
+                    spBypassReason = 'YES';
+                } else if (cfg.SNEAKY_PIVOT_BYPASS_ON_POSITION === 'conditional' && openPosition) {
+                    const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const size = parseFloat(openPosition.size) || 0;
+                    const entryPrice = parseFloat(openPosition.entry_price) || 0;
+                    const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
+                    const unrealizedPnl = parseFloat(openPosition.unrealized_pnl) || 0;
+                    if (size > 0 && entryPrice > 0) {
+                        const margin = (size * entryPrice) / leverage;
+                        if (margin > 0) {
+                            const pnlPercent = (unrealizedPnl / margin) * 100;
+                            if (pnlPercent <= runawayThreshold) {
+                                spShouldBypass = true;
+                                spBypassReason = `Conditional (PNL% ${pnlPercent.toFixed(2)}% <= ${runawayThreshold}%)`;
+                            }
+                        }
+                    }
+                }
+
+                if (spShouldBypass) {
+                    const posSide = (openPosition.side || '').toLowerCase();
+                    sneakyPivotSide = 'ignore';
+                    logger.info(`Bypassing Sneaky Pivot strategy because there is an open ${posSide.toUpperCase()} position on ${symbol}. [Reason: ${spBypassReason}]`);
+                    decisionRecord.sneakyPivot = { classification: `Bypassed (${spBypassReason})`, signal: sneakyPivotSide };
+                } else if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                    const spTf = cfg.SNEAKY_PIVOT_TIMEFRAME || '15m';
+                    const swingPeriod = parseInt(cfg.SNEAKY_PIVOT_SWING_PERIOD) || 3;
+
+                    let klines = (sharedKlines && spTf === activeTimeframes[0]) ? sharedKlines : null;
+                    if (!klines) {
+                        try {
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, spTf, undefined, 50);
+                        } catch (e) {
+                            logger.error(`Error fetching Sneaky Pivot OHLCV: ${e.message}`);
+                        }
+                    }
+
+                    if (klines && klines.length >= 3) {
+                        const patternResult = this.calculateSneakyPivot(klines, currentPrice);
+                        const dailyLevels = await this.calculatePreviousDayLevels(symbol, swingPeriod);
+
+                        if (dailyLevels) {
+                            const { pdrHigh, pdrLow, pdsHigh, pdsLow } = dailyLevels;
+                            const enablePdrHigh = cfg.SNEAKY_PIVOT_ENABLE_PDR_HIGH;
+                            const enablePdrLow = cfg.SNEAKY_PIVOT_ENABLE_PDR_LOW;
+                            const enablePdsHigh = cfg.SNEAKY_PIVOT_ENABLE_PDS_HIGH;
+                            const enablePdsLow = cfg.SNEAKY_PIVOT_ENABLE_PDS_LOW;
+
+                            // High Condition: price >= PDRH or price >= PDSH (if enabled)
+                            const highLevelsActive = enablePdrHigh || enablePdsHigh;
+                            let highConditionMet = !highLevelsActive;
+                            if (enablePdrHigh && currentPrice >= pdrHigh) highConditionMet = true;
+                            if (enablePdsHigh && currentPrice >= pdsHigh) highConditionMet = true;
+
+                            // Low Condition: price <= PDRL or price <= PDSL (if enabled)
+                            const lowLevelsActive = enablePdrLow || enablePdsLow;
+                            let lowConditionMet = !lowLevelsActive;
+                            if (enablePdrLow && currentPrice <= pdrLow) lowConditionMet = true;
+                            if (enablePdsLow && currentPrice <= pdsLow) lowConditionMet = true;
+
+                            if (patternResult.pattern === 'sell' && highConditionMet) {
+                                sneakyPivotSide = cfg.SNEAKY_PIVOT_SELL_SIGNAL === 'none' ? null : cfg.SNEAKY_PIVOT_SELL_SIGNAL;
+                                logger.info(`Sneaky Pivot Condition met: Pattern SELL (Candle 3 < Candle 2 Low) and Price ${currentPrice} >= High Levels (PDRH: ${pdrHigh.toFixed(4)}, PDSH: ${pdsHigh.toFixed(4)}). Signal: ${sneakyPivotSide ? sneakyPivotSide.toUpperCase() : 'NONE'}.`);
+                            } else if (patternResult.pattern === 'buy' && lowConditionMet) {
+                                sneakyPivotSide = cfg.SNEAKY_PIVOT_BUY_SIGNAL === 'none' ? null : cfg.SNEAKY_PIVOT_BUY_SIGNAL;
+                                logger.info(`Sneaky Pivot Condition met: Pattern BUY (Candle 3 > Candle 2 High) and Price ${currentPrice} <= Low Levels (PDRL: ${pdrLow.toFixed(4)}, PDSL: ${pdsLow.toFixed(4)}). Signal: ${sneakyPivotSide ? sneakyPivotSide.toUpperCase() : 'NONE'}.`);
+                            } else {
+                                logger.info(`Sneaky Pivot: Pattern=${patternResult.pattern.toUpperCase()}, HighCond=${highConditionMet}, LowCond=${lowConditionMet}. No signal.`);
+                            }
+
+                            decisionRecord.sneakyPivot = {
+                                pattern: patternResult.pattern,
+                                timeframe: spTf,
+                                c2High: patternResult.c2High,
+                                c2Low: patternResult.c2Low,
+                                c3High: patternResult.c3High,
+                                c3Low: patternResult.c3Low,
+                                c3Close: patternResult.c3Close,
+                                pdrHigh: pdrHigh,
+                                pdrLow: pdrLow,
+                                pdsHigh: pdsHigh,
+                                pdsLow: pdsLow,
+                                enablePdrHigh: enablePdrHigh,
+                                enablePdrLow: enablePdrLow,
+                                enablePdsHigh: enablePdsHigh,
+                                enablePdsLow: enablePdsLow,
+                                signal: sneakyPivotSide
+                            };
+                        } else {
+                            decisionRecord.sneakyPivot = { error: 'Failed to calculate daily reference levels' };
+                        }
+                    } else {
+                        decisionRecord.sneakyPivot = { error: 'Not enough klines for Sneaky Pivot pattern' };
+                    }
+                }
+            }
+
             if (cfg.ENABLE_VWAP_STRATEGY && vwapSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY && rsiSide && rsiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'RSI', side: rsiSide });
             if (cfg.ENABLE_DMI_STRATEGY && dmiSide && dmiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DMI', side: dmiSide });
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide && msSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'MarketSentiment', side: msSide });
+            if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide && sneakyPivotSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'SneakyPivot', side: sneakyPivotSide });
 
             // --- 6. Confluence Logic (AND) ---
             let finalSide = null;
@@ -2058,6 +2296,9 @@ class TradingBot {
             }
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide !== 'ignore') {
                 activeStrategies.push({ name: 'MarketSentiment', side: msSide });
+            }
+            if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide !== 'ignore') {
+                activeStrategies.push({ name: 'SneakyPivot', side: sneakyPivotSide });
             }
 
             if (activeStrategies.length > 0) {

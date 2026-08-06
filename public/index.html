@@ -417,13 +417,14 @@
                                         <th>RSI</th>
                                         <th>DMI</th>
                                         <th>MS</th>
+                                        <th>SP</th>
                                         <th>Confluence</th>
                                         <th>Outcome</th>
                                     </tr>
                                 </thead>
                                 <tbody id="dashboard-trade-decisions-tbody">
                                     <tr>
-                                        <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash;
+                                        <td colspan="10" style="text-align: center; color: var(--text-muted);">&mdash;
                                             Waiting for trade evaluations &mdash;</td>
                                     </tr>
                                 </tbody>
@@ -1402,6 +1403,69 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Sneaky Pivot Sub-section -->
+                            <div class="page-subsection">
+                                <h4>Sneaky Pivot Strategy</h4>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_SNEAKY_PIVOT_STRATEGY"
+                                                name="ENABLE_SNEAKY_PIVOT_STRATEGY" value="true"
+                                                style="width: auto; margin: 0;"> Enable Sneaky Pivot Strategy
+                                        </label>
+                                        <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                            3-Candle price action pattern combined with Previous Day Reference Levels (Range High/Low & Swing High/Low).
+                                            Buys when Candle 3 &gt; Candle 2 High and price is below Low Levels; sells when Candle 3 &lt; Candle 2 Low and price is above High Levels.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div id="sneakyPivotSettingsRow" style="display: none; margin-top: 10px;">
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label for="SNEAKY_PIVOT_TIMEFRAME">Pattern Timeframe</label>
+                                            <select id="SNEAKY_PIVOT_TIMEFRAME" name="SNEAKY_PIVOT_TIMEFRAME"
+                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                                <option value="1m">1m</option>
+                                                <option value="3m">3m</option>
+                                                <option value="5m">5m</option>
+                                                <option value="15m" selected>15m (Default)</option>
+                                                <option value="1h">1h</option>
+                                                <option value="4h">4h</option>
+                                                <option value="1d">1d</option>
+                                            </select>
+                                        </div>
+                                        <div class="col">
+                                            <label for="SNEAKY_PIVOT_SWING_PERIOD">Swing Lookback Period (Bars)</label>
+                                            <input type="number" id="SNEAKY_PIVOT_SWING_PERIOD" name="SNEAKY_PIVOT_SWING_PERIOD" step="1" min="1" max="20" placeholder="e.g. 3">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label style="margin-bottom: 8px;">Active Reference Levels</label>
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                                    <input type="checkbox" id="SNEAKY_PIVOT_ENABLE_PDR_HIGH" name="SNEAKY_PIVOT_ENABLE_PDR_HIGH" value="true" style="width: auto; margin: 0;">
+                                                    <span>Prev Day Range High (PDRH)</span>
+                                                </label>
+                                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                                    <input type="checkbox" id="SNEAKY_PIVOT_ENABLE_PDR_LOW" name="SNEAKY_PIVOT_ENABLE_PDR_LOW" value="true" style="width: auto; margin: 0;">
+                                                    <span>Prev Day Range Low (PDRL)</span>
+                                                </label>
+                                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                                    <input type="checkbox" id="SNEAKY_PIVOT_ENABLE_PDS_HIGH" name="SNEAKY_PIVOT_ENABLE_PDS_HIGH" value="true" style="width: auto; margin: 0;">
+                                                    <span>Prev Day Swing High (PDSH)</span>
+                                                </label>
+                                                <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer; margin-bottom: 0;">
+                                                    <input type="checkbox" id="SNEAKY_PIVOT_ENABLE_PDS_LOW" name="SNEAKY_PIVOT_ENABLE_PDS_LOW" value="true" style="width: auto; margin: 0;">
+                                                    <span>Prev Day Swing Low (PDSL)</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB 4: Risk Managements -->
@@ -2317,13 +2381,14 @@
                                         <th>RSI</th>
                                         <th>DMI</th>
                                         <th>MS</th>
+                                        <th>SP</th>
                                         <th>Confluence</th>
                                         <th>Outcome</th>
                                     </tr>
                                 </thead>
                                 <tbody id="trade-decisions-tbody">
                                     <tr>
-                                        <td colspan="9" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
+                                        <td colspan="10" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -2735,6 +2800,38 @@
                         <div class="col">
                             <label>Bypass if Open Position</label>
                             <select id="MS_BYPASS_ON_POSITION" class="styled-select">
+                                <option value="false">NO (Default)</option>
+                                <option value="true">YES</option>
+                                <option value="conditional">YES if % pnl &lt;= runaway helper threshold</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-subsection">
+                    <h4>Sneaky Pivot Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Pattern BUY Signal</label>
+                            <select id="SNEAKY_PIVOT_BUY_SIGNAL" class="styled-select">
+                                <option value="buy">BUY (Default)</option>
+                                <option value="sell">SELL</option>
+                                <option value="none">NONE</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label>Pattern SELL Signal</label>
+                            <select id="SNEAKY_PIVOT_SELL_SIGNAL" class="styled-select">
+                                <option value="sell">SELL (Default)</option>
+                                <option value="buy">BUY</option>
+                                <option value="none">NONE</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Bypass if Open Position</label>
+                            <select id="SNEAKY_PIVOT_BYPASS_ON_POSITION" class="styled-select">
                                 <option value="false">NO (Default)</option>
                                 <option value="true">YES</option>
                                 <option value="conditional">YES if % pnl &lt;= runaway helper threshold</option>
