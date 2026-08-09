@@ -51,11 +51,13 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot) to align in the same direction before executing a trade for maximum precision.
   - **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 - **Intelligent Filtering**:
+  - **24H Volume Filter**: Automatically exclude coins with a 24-hour trading volume below a specified USD threshold, avoiding low-liquidity assets.
   - **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
   - **Market Sentiment**: Integrate real-time market sentiment into decision-making and dashboard visibility.
   - **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
   - **Value Threshold**: Filter liquidations by USD or BTC value.
 - **Robust Risk Management**:
+  - **Max Position Size Limit**: Prevent the bot from adding to an existing position (e.g., via DCA) if the margin used for that specific position exceeds a configured percentage of your total wallet balance.
   - Dynamic **Take Profit** and **Stop Loss** placement utilizing precise `reduceOnly` market orders and exact size targeting.
   - **Native Trailing Stop**: Lock in gains during strong trends with exchange-native trailing stops and activation prices.
   - **Unified PnL Tracking**: Calculate and display daily, weekly, monthly, yearly, and total PnL statistics across all supported exchanges, including **Max Drawdown** tracking for both live and paper trading.
@@ -66,19 +68,21 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 - **Fund Management**:
   - **Automatic Internal Transfer**: Automatically takes profit by transferring a specified percentage of profit from the trading account to the funding account when the wallet value exceeds a predefined threshold.
 - **Premium Web UI**:
-  - **Modern 6-Tab Interface**: A fully responsive, premium 6-tab configuration system with detailed descriptions, desktop drag-to-scroll swipe gestures, and glassmorphism design.
+  - **Modern Multi-Tab Interface**: A fully responsive, premium configuration system with detailed descriptions, desktop drag-to-scroll swipe gestures, and a modernized glassmorphism telemetry dashboard.
+  - **System-Wide Currency Support**: Seamlessly switch dashboard display currencies across USD, EUR, GBP, AUD, CAD, CNY, INR, IDR, and ETH with precise formatting.
   - **Share Statistics**: Export and share visual performance statistics via a built-in screenshot tool.
   - **Import/Export Settings**: Seamlessly backup and restore your strategy configurations without exposing sensitive API keys.
   - **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
   - **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
-  - **Trade Decisions Page**: A dedicated log of every trade evaluation, showing detailed indicators and values via interactive tooltips (timeframe, formatted bands matching selected display currencies and precision, RSI, DMI, DI).
+  - **Trade Decisions Page**: A dedicated, dynamic log of every trade evaluation that intelligently hides disabled strategy columns, showing detailed indicators and values via interactive tooltips.
+  - **Live Health & Connection Monitor**: Dedicated connection status page and sidebar health widget for real-time system telemetry.
   - **Desktop & Browser Notifications**: Real-time system-level notifications for instant updates on executed orders and trade entries.
   - **Toast Notifications & Auto-Sync**: Toast alerts for order executions with automated database cleanups that instantly clear closed positions from the SQLite state, keeping the dashboard highly responsive.
   - **Live Logs**: View bot terminal output directly in the browser.
 - **Reliability & Security**:
   - **Auto-Stop Safeguard**: Automatically stops the engine if 15 consecutive errors occur within 60 seconds, protecting capital from API or network failures.
   - **SQLite-backed persistence**: Positions, historical PnL, and trade data are stored safely.
-  - **Stale Position Sync**: Automatically checks and recovers positions from the exchange if the WebSocket stream is interrupted.
+  - **Bidirectional Position Reconciliation**: True live position tracking with automated cleanup of closed positions and seamless stale position recovery if WebSockets disconnect.
   - **AES-256-GCM Encryption**: Sensitive API keys are encrypted at rest in the database.
 
 ---
@@ -158,7 +162,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `TRADE_LEVERAGE` | Leverage used for orders. | `10` |
 | `TRADE_AMOUNT_PERCENTAGE` | % of wallet balance used per trade. | `5%` |
 | `ENABLE_CIRCUIT_BREAKER` | Toggle Circuit Breaker to halt new trades during high volatility. | `false` |
-| `CB_TIMEFRAME` | Timeframe for Circuit Breaker calculation. | `1m` |
+| `CB_TIMEFRAME` | Timeframe for Circuit Breaker calculation (e.g., `1m`, `1h`, `4h`, `1d`). | `1m` |
 | `CB_ATR_PERIOD` | Number of candles for ATR calculation. | `14` |
 | `CB_ATR_MULTIPLIER` | ATR multiple threshold to detect volatility. | `3.0` |
 | `CB_PRICE_LOOKBACK` | Number of candles to look back for price movement. | `5` |
@@ -169,14 +173,14 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ENABLE_VWAP_STRATEGY` | Toggle VWAP-based entry signal. | `true` |
 | `VWAP_TYPE` | Type of VWAP strategy: `rolling` or `session`. | `rolling` |
 | `VWAP_SESSION_TYPE` | Time anchor for session VWAP: `daily`, `weekly`, `monthly`. | `daily` |
-| `VWAP_TIMEFRAME` | Timeframe for VWAP calculation (e.g., `1m`, `5m`). | `1m` |
+| `VWAP_TIMEFRAME` | Timeframe for VWAP calculation (e.g., `1m`, `5m`, `4h`, `1d`). | `1m` |
 | `VWAP_PERIOD` | Number of candles for VWAP calculation (for rolling type). | `14` |
 | `OFFSET_LONG_PERCENTAGE` | Price deviation from VWAP required for LONG entry. | `0.5%` |
 | `OFFSET_SHORT_PERCENTAGE` | Price deviation from VWAP required for SHORT entry. | `0.5%` |
 | `VWAP_UPPER_SIGNAL` | Signal direction for price above VWAP offset. | `sell` |
 | `VWAP_LOWER_SIGNAL` | Signal direction for price below VWAP offset. | `buy` |
 | `ENABLE_RSI_STRATEGY` | Toggle RSI-based entry signal. | `false` |
-| `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`). | `1m` |
+| `RSI_TIMEFRAME` | Timeframe for RSI calculation (e.g., `1m`, `5m`, `4h`, `1d`). | `1m` |
 | `RSI_PERIOD` | Number of candles for RSI calculation. | `14` |
 | `RSI_OVERBOUGHT` | RSI upper bound representing overbought levels. | `70` |
 | `RSI_OVERSOLD` | RSI lower bound representing oversold levels. | `30` |
@@ -185,9 +189,9 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `RSI_OVERSOLD_DIR` | Condition for RSI oversold (`above`/`under`). | `under` |
 | `RSI_OVERSOLD_SIGNAL` | Signal direction when oversold (`buy`, `sell`, `none`). | `buy` |
 | `ENABLE_DMI_STRATEGY` | Toggle DMI-based entry signal. | `false` |
-| `DMI_TIMEFRAME` | Timeframe for DMI calculation (e.g., `1m`, `5m`). | `1m` |
+| `DMI_TIMEFRAME` | Timeframe for DMI calculation (e.g., `1m`, `5m`, `4h`, `1d`). | `1m` |
 | `DMI_PERIOD` | Number of candles for DMI calculation. | `14` |
-| `DMI_THRESHOLD` | DMI strength threshold. | `25` |
+| `DMI_THRESHOLD` | DMI strength threshold (set to 0 to disable spread logic). | `25` |
 | `DMI_THRESHOLD_DIR` | Condition for DMI threshold (`above`/`under`/`range`/`none`). | `under` |
 | `DMI_THRESHOLD_UPPER` | Upper boundary for DMI range condition. | `30` |
 | `DMI_PDI_SIGNAL` | Signal direction when +DI crosses -DI (`sell`, `buy`, `none`). | `sell` |
@@ -219,6 +223,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) values. | `false` |
 | `REPLACE_BELOW_MIN_THRESHOLD` | Override dynamic thresholds if they are below the minimum static threshold. | `true` |
 | `RAPIDAPI_KEY` | Your [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) Key. | |
+| `ENABLE_24H_VOLUME_FILTER` | Toggle the 24H volume liquidity filter. | `false` |
+| `MIN_24H_VOLUME_USD` | The minimum 24H volume (in USD) required to trade a symbol. | `1000000` |
 | `CMC_FILTER_ENABLED` | Restrict trading to high-liquidity coins. | `false` |
 | `CMC_RANK_LIMIT` | Top N coins to include in the whitelist. | `100` |
 | `COIN_BLACKLIST` | Comma-separated list of symbols to ignore. | |
@@ -232,6 +238,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `TRAILING_PROFIT_PERCENTAGE` | Trailing distance for the stop loss. | `0.2%` |
 | `TRAILING_ACTIVATION_PERCENTAGE` | Price deviation to activate trailing stop. | `0.0%` |
 | `MAX_OPEN_POSITIONS` | Maximum number of simultaneous trades. | `3` |
+| `MAX_POSITION_SIZE_PERCENTAGE` | Maximum wallet balance % a single position can occupy before halting further entries (0 to disable). | `10` |
 | `ENABLE_ISOLATION_MODE` | Stop opening new positions if margin usage exceeds threshold. | `false` |
 | `ISOLATION_MARGIN_THRESHOLD` | The maximum used margin percentage before isolation mode activates. | `10` |
 | `REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION` | Halves TP, trailing distance, and trailing activation values during Isolation Mode. | `false` |
