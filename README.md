@@ -47,7 +47,8 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **RSI (Relative Strength Index)**: Identify overbought or oversold conditions. Configure advanced threshold directions (`above`/`under`) and custom signal actions, complete with guards requiring RSI values to align logically (e.g., oversold signals are restricted below 50, overbought above 50).
   - **DMI (Directional Movement Index)**: Detect trend strength and exhaustion. Generates entry signals based on customizable threshold direction (`above`/`under`) and DI crossover logic.
   - **Market Sentiment**: Trade alongside or against market sentiment using CoinMarketCap's index. Custom mapping for Bullish/Bearish and Extreme Fear/Greed signals.
-  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment) to align in the same direction before executing a trade for maximum precision.
+  - **Sneaky Pivot**: 3-Candle price action pattern recognition coupled with Previous Day Reference Levels (Range High/Low and Swing High/Low). Triggers BUY signals when Candle 3 breaks above Candle 2 High and price is below enabled Low Reference Levels, or SELL signals when Candle 3 breaks below Candle 2 Low and price is above enabled High Reference Levels.
+  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot) to align in the same direction before executing a trade for maximum precision.
   - **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 - **Intelligent Filtering**:
   - **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
@@ -196,6 +197,16 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `MS_BEARISH_SIGNAL` | Signal direction during Bearish + Fear/Greed. | `sell` |
 | `MS_EXTREME_FEAR_SIGNAL` | Signal direction during Extreme Fear. | `none` |
 | `MS_EXTREME_GREED_SIGNAL` | Signal direction during Extreme Greed. | `none` |
+| `ENABLE_SNEAKY_PIVOT_STRATEGY` | Toggle Sneaky Pivot 3-candle strategy. | `false` |
+| `SNEAKY_PIVOT_TIMEFRAME` | Timeframe for pattern detection (e.g., `15m`). | `15m` |
+| `SNEAKY_PIVOT_ENABLE_PDR_HIGH` | Filter using Previous Day Range High. | `true` |
+| `SNEAKY_PIVOT_ENABLE_PDR_LOW` | Filter using Previous Day Range Low. | `true` |
+| `SNEAKY_PIVOT_ENABLE_PDS_HIGH` | Filter using Previous Day Swing High. | `true` |
+| `SNEAKY_PIVOT_ENABLE_PDS_LOW` | Filter using Previous Day Swing Low. | `true` |
+| `SNEAKY_PIVOT_SWING_PERIOD` | Number of bars for swing pivot detection. | `3` |
+| `SNEAKY_PIVOT_BUY_SIGNAL` | Signal override on BUY pattern match (`buy`, `sell`, `none`). | `buy` |
+| `SNEAKY_PIVOT_SELL_SIGNAL` | Signal override on SELL pattern match (`sell`, `buy`, `none`). | `sell` |
+| `SNEAKY_PIVOT_BYPASS_ON_POSITION` | Bypass strategy if position open (`false`, `true`, `conditional`). | `false` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 | `DCA_MARTINGALE_THRESHOLD` | PnL threshold (%) below which the Martingale multiplier is applied. | `-5` |
 | `DCA_MARTINGALE_MAX_MULTIPLIER` | Maximum multiplier limit to prevent excessive order sizes. | `5` |
