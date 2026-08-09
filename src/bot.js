@@ -2073,7 +2073,7 @@ class TradingBot {
                             if (isDmiConditionMet) {
                                 let isSpreadConditionMet = true;
                                 const diSpread = Math.abs(dmiResult.plusDI - dmiResult.minusDI);
-                                if (cfg.DMI_SPREAD_THRESHOLD !== null && !isNaN(cfg.DMI_SPREAD_THRESHOLD)) {
+                                if (cfg.DMI_SPREAD_THRESHOLD !== null && !isNaN(cfg.DMI_SPREAD_THRESHOLD) && cfg.DMI_SPREAD_THRESHOLD > 0) {
                                     if (diSpread > cfg.DMI_SPREAD_THRESHOLD) {
                                         isSpreadConditionMet = false;
                                         logger.info(`DMI Condition: DI Spread (${diSpread.toFixed(2)}) is greater than threshold (${cfg.DMI_SPREAD_THRESHOLD}). No trade signal.`);
