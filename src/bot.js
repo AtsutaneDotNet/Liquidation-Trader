@@ -1632,8 +1632,8 @@ class TradingBot {
         }
     }
 
-    calculateSneakyPivot(klines, currentPrice) {
-        if (!klines || klines.length < 3) return null;
+    calculateSneakyPivot(klines, dailyLevels, cfg) {
+        if (!klines || klines.length < 3 || !dailyLevels) return null;
 
         const c1 = klines[klines.length - 3];
         const c2 = klines[klines.length - 2];
@@ -1645,19 +1645,38 @@ class TradingBot {
         const c3Low = c3[3];
         const c3Close = c3[4];
 
-        // Bullish: Candle 3 trades above Candle 2 High
-        const isBullish = (c3High > c2High) || (currentPrice !== undefined && currentPrice > c2High);
-        // Bearish: Candle 3 trades below Candle 2 Low
-        const isBearish = (c3Low < c2Low) || (currentPrice !== undefined && currentPrice < c2Low);
+        const { pdrHigh, pdrLow, pdsHigh, pdsLow } = dailyLevels;
+        const enablePdrHigh = cfg.SNEAKY_PIVOT_ENABLE_PDR_HIGH;
+        const enablePdrLow = cfg.SNEAKY_PIVOT_ENABLE_PDR_LOW;
+        const enablePdsHigh = cfg.SNEAKY_PIVOT_ENABLE_PDS_HIGH;
+        const enablePdsLow = cfg.SNEAKY_PIVOT_ENABLE_PDS_LOW;
+
+        // High condition: closed above EITHER enabled high level
+        let closedAboveHigh = false;
+        if (!enablePdrHigh && !enablePdsHigh) {
+            closedAboveHigh = true; // If no levels enabled, default to true to allow pattern
+        } else {
+            if (enablePdrHigh && c3Close > pdrHigh) closedAboveHigh = true;
+            if (enablePdsHigh && c3Close > pdsHigh) closedAboveHigh = true;
+        }
+
+        // Low condition: closed below EITHER enabled low level
+        let closedBelowLow = false;
+        if (!enablePdrLow && !enablePdsLow) {
+            closedBelowLow = true; // If no levels enabled, default to true to allow pattern
+        } else {
+            if (enablePdrLow && c3Close < pdrLow) closedBelowLow = true;
+            if (enablePdsLow && c3Close < pdsLow) closedBelowLow = true;
+        }
+
+        const isSell = closedAboveHigh && (c3Close < c2Low);
+        const isBuy = closedBelowLow && (c3Close > c2High);
 
         let pattern = 'none';
-        if (isBullish && !isBearish) {
+        if (isBuy && !isSell) {
             pattern = 'buy';
-        } else if (isBearish && !isBullish) {
+        } else if (isSell && !isBuy) {
             pattern = 'sell';
-        } else if (isBullish && isBearish) {
-            const evalPrice = currentPrice !== undefined ? currentPrice : c3Close;
-            pattern = evalPrice >= c2High ? 'buy' : (evalPrice <= c2Low ? 'sell' : 'none');
         }
 
         return {
@@ -1669,7 +1688,9 @@ class TradingBot {
             c2Low,
             c3High,
             c3Low,
-            c3Close
+            c3Close,
+            closedAboveHigh,
+            closedBelowLow
         };
     }
 
@@ -2219,36 +2240,25 @@ class TradingBot {
                     }
 
                     if (klines && klines.length >= 3) {
-                        const patternResult = this.calculateSneakyPivot(klines, currentPrice);
                         const dailyLevels = await this.calculatePreviousDayLevels(symbol, swingPeriod);
 
                         if (dailyLevels) {
+                            const patternResult = this.calculateSneakyPivot(klines, dailyLevels, cfg);
+                            
                             const { pdrHigh, pdrLow, pdsHigh, pdsLow } = dailyLevels;
                             const enablePdrHigh = cfg.SNEAKY_PIVOT_ENABLE_PDR_HIGH;
                             const enablePdrLow = cfg.SNEAKY_PIVOT_ENABLE_PDR_LOW;
                             const enablePdsHigh = cfg.SNEAKY_PIVOT_ENABLE_PDS_HIGH;
                             const enablePdsLow = cfg.SNEAKY_PIVOT_ENABLE_PDS_LOW;
 
-                            // High Condition: price >= PDRH or price >= PDSH (if enabled)
-                            const highLevelsActive = enablePdrHigh || enablePdsHigh;
-                            let highConditionMet = !highLevelsActive;
-                            if (enablePdrHigh && currentPrice >= pdrHigh) highConditionMet = true;
-                            if (enablePdsHigh && currentPrice >= pdsHigh) highConditionMet = true;
-
-                            // Low Condition: price <= PDRL or price <= PDSL (if enabled)
-                            const lowLevelsActive = enablePdrLow || enablePdsLow;
-                            let lowConditionMet = !lowLevelsActive;
-                            if (enablePdrLow && currentPrice <= pdrLow) lowConditionMet = true;
-                            if (enablePdsLow && currentPrice <= pdsLow) lowConditionMet = true;
-
-                            if (patternResult.pattern === 'sell' && highConditionMet) {
+                            if (patternResult.pattern === 'sell') {
                                 sneakyPivotSide = cfg.SNEAKY_PIVOT_SELL_SIGNAL === 'none' ? null : cfg.SNEAKY_PIVOT_SELL_SIGNAL;
-                                logger.info(`Sneaky Pivot Condition met: Pattern SELL (Candle 3 < Candle 2 Low) and Price ${currentPrice} >= High Levels (PDRH: ${pdrHigh.toFixed(4)}, PDSH: ${pdsHigh.toFixed(4)}). Signal: ${sneakyPivotSide ? sneakyPivotSide.toUpperCase() : 'NONE'}.`);
-                            } else if (patternResult.pattern === 'buy' && lowConditionMet) {
+                                logger.info(`Sneaky Pivot Condition met: Pattern SELL (C3 Close ${patternResult.c3Close} > High Levels & C3 Close < C2 Low ${patternResult.c2Low}). Signal: ${sneakyPivotSide ? sneakyPivotSide.toUpperCase() : 'NONE'}.`);
+                            } else if (patternResult.pattern === 'buy') {
                                 sneakyPivotSide = cfg.SNEAKY_PIVOT_BUY_SIGNAL === 'none' ? null : cfg.SNEAKY_PIVOT_BUY_SIGNAL;
-                                logger.info(`Sneaky Pivot Condition met: Pattern BUY (Candle 3 > Candle 2 High) and Price ${currentPrice} <= Low Levels (PDRL: ${pdrLow.toFixed(4)}, PDSL: ${pdsLow.toFixed(4)}). Signal: ${sneakyPivotSide ? sneakyPivotSide.toUpperCase() : 'NONE'}.`);
+                                logger.info(`Sneaky Pivot Condition met: Pattern BUY (C3 Close ${patternResult.c3Close} < Low Levels & C3 Close > C2 High ${patternResult.c2High}). Signal: ${sneakyPivotSide ? sneakyPivotSide.toUpperCase() : 'NONE'}.`);
                             } else {
-                                logger.info(`Sneaky Pivot: Pattern=${patternResult.pattern.toUpperCase()}, HighCond=${highConditionMet}, LowCond=${lowConditionMet}. No signal.`);
+                                logger.info(`Sneaky Pivot: Pattern=NONE (C3 Close=${patternResult.c3Close}, C2 High=${patternResult.c2High}, C2 Low=${patternResult.c2Low}, closedAboveHigh=${patternResult.closedAboveHigh}, closedBelowLow=${patternResult.closedBelowLow}). No signal.`);
                             }
 
                             decisionRecord.sneakyPivot = {
@@ -2259,6 +2269,8 @@ class TradingBot {
                                 c3High: patternResult.c3High,
                                 c3Low: patternResult.c3Low,
                                 c3Close: patternResult.c3Close,
+                                closedAboveHigh: patternResult.closedAboveHigh,
+                                closedBelowLow: patternResult.closedBelowLow,
                                 pdrHigh: pdrHigh,
                                 pdrLow: pdrLow,
                                 pdsHigh: pdsHigh,
