@@ -165,6 +165,40 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/config')
             .then(res => res.json())
             .then(data => {
+                window.globalAppConfig = data;
+
+                // Inject CSS to hide disabled columns
+                let styleEl = document.getElementById('dynamic-strategy-cols');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'dynamic-strategy-cols';
+                    document.head.appendChild(styleEl);
+                }
+                
+                let css = '';
+                let hiddenCols = 0;
+                
+                const toggleCol = (key, className) => {
+                    const isEnabled = data[key] === true || data[key] === 'true';
+                    if (!isEnabled) {
+                        css += `.${className} { display: none !important; }\n`;
+                        hiddenCols++;
+                    }
+                };
+                
+                toggleCol('ENABLE_VWAP_STRATEGY', 'col-strat-vwap');
+                toggleCol('ENABLE_RSI_STRATEGY', 'col-strat-rsi');
+                toggleCol('ENABLE_DMI_STRATEGY', 'col-strat-dmi');
+                toggleCol('ENABLE_MARKET_SENTIMENT_STRATEGY', 'col-strat-ms');
+                toggleCol('ENABLE_SNEAKY_PIVOT_STRATEGY', 'col-strat-sp');
+                
+                styleEl.textContent = css;
+
+                // Update colspans
+                document.querySelectorAll('.trade-decisions-empty-td').forEach(td => {
+                    td.setAttribute('colspan', 10 - hiddenCols);
+                });
+
                 for (const key in data) {
                     if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING'].includes(key)) {
                         const el = document.getElementById(key);
@@ -2027,11 +2061,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <td style="color: var(--text-muted);">${timeStr}</td>
             <td style="cursor: pointer;" onclick="openTvPopupModal('${record.symbol}')"><strong style="color: var(--accent); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--accent)'">${record.symbol}</strong></td>
             <td>${priceFormatted}</td>
-            <td>${formatStrategy(record.vwap, 'VWAP')}</td>
-            <td>${formatStrategy(record.rsi, 'RSI')}</td>
-            <td>${formatStrategy(record.dmi, 'DMI')}</td>
-            <td>${formatStrategy(record.marketSentiment, 'M.Sentiment')}</td>
-            <td>${formatStrategy(record.sneakyPivot, 'SneakyPivot')}</td>
+            <td class="col-strat-vwap">${formatStrategy(record.vwap, 'VWAP')}</td>
+            <td class="col-strat-rsi">${formatStrategy(record.rsi, 'RSI')}</td>
+            <td class="col-strat-dmi">${formatStrategy(record.dmi, 'DMI')}</td>
+            <td class="col-strat-ms">${formatStrategy(record.marketSentiment, 'M.Sentiment')}</td>
+            <td class="col-strat-sp">${formatStrategy(record.sneakyPivot, 'SneakyPivot')}</td>
             <td>${confluenceText}</td>
             <td><span class="${outcomeClz}">${record.reason}</span></td>
         </tr>`;
@@ -2067,7 +2101,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageInfo) pageInfo.textContent = `Page ${currentTradeDecisionsPage} of ${totalPages}`;
 
         if (pageData.length === 0) {
-            tbodyTradeDecisions.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
+            let hiddenCols = 0;
+            if (window.globalAppConfig) {
+                ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY'].forEach(key => {
+                    if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
+                });
+            }
+            tbodyTradeDecisions.innerHTML = `<tr><td colspan="${10 - hiddenCols}" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
         } else {
             tbodyTradeDecisions.innerHTML = pageData.map(renderTradeDecisionRow).join('');
         }
@@ -2113,7 +2153,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tbodyDashboardTradeDecisions && dashPageActive) {
                     const confluenceOnly = cachedTradeDecisions.filter(record => record.confluence && record.confluence.matched).slice(0, 10);
                     if (confluenceOnly.length === 0) {
-                        tbodyDashboardTradeDecisions.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>';
+                        let hiddenCols = 0;
+                        if (window.globalAppConfig) {
+                            ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY'].forEach(key => {
+                                if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
+                            });
+                        }
+                        tbodyDashboardTradeDecisions.innerHTML = `<tr><td colspan="${10 - hiddenCols}" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>`;
                     } else {
                         tbodyDashboardTradeDecisions.innerHTML = confluenceOnly.map(renderTradeDecisionRow).join('');
                     }
