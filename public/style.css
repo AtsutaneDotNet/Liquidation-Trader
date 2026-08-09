@@ -1771,6 +1771,22 @@ canvas#pnl-chart {
     transform: translateX(-50%) translateY(0);
 }
 
+/* Adjust tooltip for top rows to prevent vertical cutoff */
+.data-table tbody tr:nth-child(-n+3) .strategy-tooltip {
+    bottom: auto;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-4px);
+}
+.data-table tbody tr:nth-child(-n+3) .strategy-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent rgba(20, 23, 31, 0.95) transparent;
+}
+.data-table tbody tr:nth-child(-n+3) .strategy-badge-container:hover .strategy-tooltip,
+.data-table tbody tr:nth-child(-n+3) .strategy-badge-container.active .strategy-tooltip {
+    transform: translateX(-50%) translateY(0);
+}
+
 /* Inner elements styling */
 .tooltip-header {
     font-weight: 700;
