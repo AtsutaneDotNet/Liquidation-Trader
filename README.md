@@ -244,6 +244,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION` | Halves TP, trailing distance, and trailing activation values during Isolation Mode. | `false` |
 | `ENABLE_RUNAWAY_HELPER` | Rescue stale positions with deep negative PnL% via averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 | `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (negative) to trigger rescue. | `-10` |
+| `RUNAWAY_HELPER_TIMEOUT` | Timeout in seconds before Runaway Helper can trigger again for the same coin. | `70` |
 
 ### Fund Management
 | Variable | Description | Default |

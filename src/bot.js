@@ -450,6 +450,7 @@ class TradingBot {
                 // Runaway Helper Logic for Paper Trading
                 if (cfg.ENABLE_RUNAWAY_HELPER) {
                     const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const runawayTimeout = parseInt(cfg.RUNAWAY_HELPER_TIMEOUT !== undefined && cfg.RUNAWAY_HELPER_TIMEOUT !== '' ? cfg.RUNAWAY_HELPER_TIMEOUT : 70) * 1000;
                     const leverage = parseFloat(cfg.TRADE_LEVERAGE) || 10;
                     if (pos.size > 0 && pos.entry_price > 0) {
                         const margin = (pos.size * pos.entry_price) / leverage;
@@ -458,7 +459,7 @@ class TradingBot {
                             if (pnlPercent < runawayThreshold) {
                                 this.lastPaperRunaway = this.lastPaperRunaway || {};
                                 const now = Date.now();
-                                if (!this.lastPaperRunaway[symbol] || now - this.lastPaperRunaway[symbol] >= 70000) {
+                                if (!this.lastPaperRunaway[symbol] || now - this.lastPaperRunaway[symbol] >= runawayTimeout) {
                                     this.lastPaperRunaway[symbol] = now;
                                     logger.info(`[PAPER TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
                                     this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Runaway evaluateTrade error: ${e.message}`));
@@ -564,10 +565,11 @@ class TradingBot {
                 // Runaway Helper Logic for Live Trading
                 if (cfg.ENABLE_RUNAWAY_HELPER && pnlPercent !== undefined) {
                     const runawayThreshold = parseFloat(cfg.RUNAWAY_HELPER_THRESHOLD) || -10;
+                    const runawayTimeout = parseInt(cfg.RUNAWAY_HELPER_TIMEOUT !== undefined && cfg.RUNAWAY_HELPER_TIMEOUT !== '' ? cfg.RUNAWAY_HELPER_TIMEOUT : 70) * 1000;
                     if (pnlPercent < runawayThreshold) {
                         this.lastLiveRunaway = this.lastLiveRunaway || {};
                         const now = Date.now();
-                        if (!this.lastLiveRunaway[symbol] || now - this.lastLiveRunaway[symbol] >= 70000) {
+                        if (!this.lastLiveRunaway[symbol] || now - this.lastLiveRunaway[symbol] >= runawayTimeout) {
                             this.lastLiveRunaway[symbol] = now;
                             logger.info(`[LIVE TRADING] Runaway Helper triggered for ${symbol}. PNL% ${pnlPercent.toFixed(2)}% < ${runawayThreshold}%. Evaluating trade...`);
                             this.evaluateTrade(symbol, closePrice).catch(e => logger.error(`Live Runaway evaluateTrade error: ${e.message}`));
