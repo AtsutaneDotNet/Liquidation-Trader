@@ -161,7 +161,8 @@ try { db.exec('ALTER TABLE margin_history ADD COLUMN position_count INTEGER DEFA
 try { db.exec('ALTER TABLE paper_margin_history ADD COLUMN position_count INTEGER DEFAULT 0;'); } catch(e) {}
 try { db.exec('ALTER TABLE margin_history ADD COLUMN open_symbols TEXT DEFAULT \'\';'); } catch(e) {}
 try { db.exec('ALTER TABLE paper_margin_history ADD COLUMN open_symbols TEXT DEFAULT \'\';'); } catch(e) {}
-
+try { db.exec('ALTER TABLE positions ADD COLUMN atr_multiplier REAL DEFAULT 1.0;'); } catch(e) {}
+try { db.exec('ALTER TABLE paper_positions ADD COLUMN atr_multiplier REAL DEFAULT 1.0;'); } catch(e) {}
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
 
@@ -399,16 +400,28 @@ function getAccountState() {
 
 function updatePosition(pos) {
     pos.updated_at = Date.now();
+    pos.atr_multiplier = pos.atr_multiplier !== undefined ? pos.atr_multiplier : null;
     db.prepare(`
-        INSERT INTO positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, updated_at)
-        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
+        INSERT INTO positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, atr_multiplier, updated_at)
+        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, COALESCE(@atr_multiplier, 1.0), @updated_at)
         ON CONFLICT(symbol) DO UPDATE SET 
             side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
             liq_price=@liq_price, 
             tp_price=CASE WHEN @tp_price > 0 THEN @tp_price ELSE positions.tp_price END, 
             sl_price=CASE WHEN @sl_price > 0 THEN @sl_price ELSE positions.sl_price END, 
-            unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
+            unrealized_pnl=@unrealized_pnl,
+            atr_multiplier=COALESCE(@atr_multiplier, positions.atr_multiplier),
+            updated_at=@updated_at
     `).run(pos);
+}
+
+function updatePositionAtrMultiplier(symbol, multiplier) {
+    const updatedAt = Date.now();
+    return db.prepare(`
+        UPDATE positions 
+        SET atr_multiplier = ?, updated_at = ?
+        WHERE symbol = ?
+    `).run(multiplier, updatedAt, symbol);
 }
 
 function updatePositionTpSl(symbol, tpPrice, slPrice) {
@@ -760,16 +773,28 @@ function getPaperAccountState() {
 
 function updatePaperPosition(pos) {
     pos.updated_at = Date.now();
+    pos.atr_multiplier = pos.atr_multiplier !== undefined ? pos.atr_multiplier : null;
     db.prepare(`
-        INSERT INTO paper_positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, updated_at)
-        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, @updated_at)
+        INSERT INTO paper_positions (symbol, side, size, entry_price, mark_price, liq_price, tp_price, sl_price, unrealized_pnl, atr_multiplier, updated_at)
+        VALUES (@symbol, @side, @size, @entry_price, @mark_price, @liq_price, @tp_price, @sl_price, @unrealized_pnl, COALESCE(@atr_multiplier, 1.0), @updated_at)
         ON CONFLICT(symbol) DO UPDATE SET 
             side=@side, size=@size, entry_price=@entry_price, mark_price=@mark_price, 
             liq_price=@liq_price, 
             tp_price=CASE WHEN @tp_price > 0 THEN @tp_price ELSE paper_positions.tp_price END, 
             sl_price=CASE WHEN @sl_price > 0 THEN @sl_price ELSE paper_positions.sl_price END, 
-            unrealized_pnl=@unrealized_pnl, updated_at=@updated_at
+            unrealized_pnl=@unrealized_pnl,
+            atr_multiplier=COALESCE(@atr_multiplier, paper_positions.atr_multiplier),
+            updated_at=@updated_at
     `).run(pos);
+}
+
+function updatePaperPositionAtrMultiplier(symbol, multiplier) {
+    const updatedAt = Date.now();
+    return db.prepare(`
+        UPDATE paper_positions 
+        SET atr_multiplier = ?, updated_at = ?
+        WHERE symbol = ?
+    `).run(multiplier, updatedAt, symbol);
 }
 
 function updatePaperPositionMarkPrice(symbol, markPrice, slPrice, unrealizedPnl) {
@@ -887,6 +912,7 @@ module.exports = {
     getAccountState,
     updatePosition,
     updatePositionTpSl,
+    updatePositionAtrMultiplier,
     updatePositionMarkPrice,
     getStalePositions,
     removePosition,
@@ -908,6 +934,7 @@ module.exports = {
     updatePaperAccountState,
     getPaperAccountState,
     updatePaperPosition,
+    updatePaperPositionAtrMultiplier,
     updatePaperPositionMarkPrice,
     removePaperPosition,
     getPaperPositions,
