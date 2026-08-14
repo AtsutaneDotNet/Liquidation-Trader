@@ -626,6 +626,9 @@ class TradingBot {
             if (!currentSl && existingPos && existingPos.sl_price > 0) {
                 currentSl = existingPos.sl_price;
             }
+            if (existingPos && existingPos.atr_multiplier !== undefined) {
+                p.atr_multiplier = existingPos.atr_multiplier;
+            }
 
             // If still missing, attempt to fetch open/algo orders from exchange
             if ((!currentTp || !currentSl) && this.tradeExchange && this.tradeExchange.exchange) {
@@ -805,7 +808,31 @@ class TradingBot {
 
         const cfg = this.config.get();
         
-        let tpPercent = cfg.TAKE_PROFIT_PERCENTAGE;
+        let tpPercent = parseFloat(cfg.TAKE_PROFIT_PERCENTAGE) || 1.0;
+        let slPercent = parseFloat(cfg.STOP_LOSS_PERCENTAGE) || 0.5;
+        
+        let atrMultiplier = p.atr_multiplier;
+        if (atrMultiplier === undefined && (cfg.ATR_TP_ENABLED || cfg.ATR_SL_ENABLED)) {
+            this._pendingAtrMultipliers = this._pendingAtrMultipliers || {};
+            if (!this._pendingAtrMultipliers[symbol]) {
+                this._pendingAtrMultipliers[symbol] = this.getATRMultiplier(symbol).then(mult => {
+                    const db = require('./db');
+                    if (cfg.ENABLE_PAPER_TRADING) {
+                        db.updatePaperPositionAtrMultiplier(symbol, mult);
+                    } else {
+                        db.updatePositionAtrMultiplier(symbol, mult);
+                    }
+                    return mult;
+                });
+            }
+            atrMultiplier = await this._pendingAtrMultipliers[symbol];
+            p.atr_multiplier = atrMultiplier;
+        }
+        if (atrMultiplier === undefined) atrMultiplier = 1.0;
+        
+        if (cfg.ATR_TP_ENABLED) tpPercent *= atrMultiplier;
+        if (cfg.ATR_SL_ENABLED) slPercent *= atrMultiplier;
+
         let trailingPercentCfg = cfg.ENABLE_TRAILING_PROFIT ? cfg.TRAILING_PROFIT_PERCENTAGE : 0;
         let trailingActivationPercent = cfg.TRAILING_ACTIVATION_PERCENTAGE;
 
@@ -831,7 +858,7 @@ class TradingBot {
         }
 
         const tpMultiplier = tpPercent / 100;
-        const slMultiplier = cfg.STOP_LOSS_PERCENTAGE / 100;
+        const slMultiplier = slPercent / 100;
 
         let targetTpPrice, targetSlPrice;
         if (orderSide === 'buy') {
@@ -1404,6 +1431,106 @@ class TradingBot {
             } else {
                 this.isTrading = false;
             }
+        }
+    }
+
+    async getATRMultiplier(symbol) {
+        const cfg = this.config.get();
+        if (!cfg.ATR_TP_ENABLED && !cfg.ATR_SL_ENABLED) return 1.0;
+        
+        try {
+            if (!this.tradeExchange || !this.tradeExchange.exchange || !this.tradeExchange.exchange.has['fetchOHLCV']) return 1.0;
+
+            const tf = cfg.ATR_TIMEFRAME || '15m';
+            const period = parseInt(cfg.ATR_PERIOD) || 14;
+            const baseline = parseInt(cfg.ATR_BASELINE_PERIOD) || 20;
+            const requiredCandles = period + baseline + 5;
+            
+            const klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, tf, undefined, requiredCandles);
+            if (!klines || klines.length < period + baseline) return 1.0;
+
+            // Use closed candles (exclude the current incomplete one)
+            const closedKlines = klines.slice(0, -1);
+            if (closedKlines.length < period + baseline) return 1.0;
+
+            const highs = closedKlines.map(k => k[2]);
+            const lows = closedKlines.map(k => k[3]);
+            const closes = closedKlines.map(k => k[4]);
+
+            // Calculate TR
+            let tr = [];
+            for (let i = 1; i < highs.length; i++) {
+                const h = highs[i], l = lows[i], prevC = closes[i - 1];
+                tr.push(Math.max(h - l, Math.abs(h - prevC), Math.abs(l - prevC)));
+            }
+            
+            if (tr.length < period) return 1.0;
+
+            // Calculate ATR series
+            let atrSeries = [];
+            let sum = 0;
+            for (let i = 0; i < period; i++) sum += tr[i];
+            let currentAtr = sum / period;
+            atrSeries.push(currentAtr);
+            
+            for (let i = period; i < tr.length; i++) {
+                currentAtr = (currentAtr * (period - 1) + tr[i]) / period;
+                atrSeries.push(currentAtr);
+            }
+            
+            // Calculate ATR% series: ATR / Close * 100
+            // The first ATR in atrSeries corresponds to tr[period-1], which is candle at index `period`
+            let atrPercentSeries = [];
+            for (let i = 0; i < atrSeries.length; i++) {
+                const closePrice = closes[i + period];
+                if (closePrice > 0) {
+                    atrPercentSeries.push((atrSeries[i] / closePrice) * 100);
+                } else {
+                    atrPercentSeries.push(0);
+                }
+            }
+            
+            if (atrPercentSeries.length < baseline) return 1.0;
+            
+            const currentAtrPercent = atrPercentSeries[atrPercentSeries.length - 1];
+            
+            let smaSum = 0;
+            for (let i = atrPercentSeries.length - baseline; i < atrPercentSeries.length; i++) {
+                smaSum += atrPercentSeries[i];
+            }
+            const averageAtrPercent = smaSum / baseline;
+            
+            if (averageAtrPercent === 0 || isNaN(currentAtrPercent) || isNaN(averageAtrPercent)) return 1.0;
+            
+            let multiplier = currentAtrPercent / averageAtrPercent;
+            if (!isFinite(multiplier) || isNaN(multiplier)) return 1.0;
+            
+            const minMult = parseFloat(cfg.ATR_MIN_MULTIPLIER) || 0.70;
+            const maxMult = parseFloat(cfg.ATR_MAX_MULTIPLIER) || 1.80;
+            let appliedMultiplier = Math.max(minMult, Math.min(maxMult, multiplier));
+            
+            // Only log if it's the first time calculating for this particular entry, but to avoid spam,
+            // we will just log it here. We'll rely on the caller to only call this at entry.
+            const logger = require('./logger');
+            const baseTp = parseFloat(cfg.TAKE_PROFIT_PERCENTAGE) || 0;
+            const baseSl = parseFloat(cfg.STOP_LOSS_PERCENTAGE) || 0;
+            const effTp = cfg.ATR_TP_ENABLED ? baseTp * appliedMultiplier : baseTp;
+            const effSl = cfg.ATR_SL_ENABLED ? baseSl * appliedMultiplier : baseSl;
+            
+            let logMsg = `TP/SL Calculation:\nBase TP: ${baseTp.toFixed(2)}%\nBase SL: ${baseSl.toFixed(2)}%\n\n`;
+            logMsg += `ATR TP Enabled: ${cfg.ATR_TP_ENABLED}\nATR SL Enabled: ${cfg.ATR_SL_ENABLED}\n\n`;
+            logMsg += `ATR Timeframe: ${tf}\nATR Period: ${period}\nATR Baseline Period: ${baseline}\n\n`;
+            logMsg += `ATR: ${currentAtr.toFixed(2)}\nATR%: ${currentAtrPercent.toFixed(2)}%\nAverage ATR%: ${averageAtrPercent.toFixed(2)}%\n\n`;
+            logMsg += `Raw ATR Multiplier: ${multiplier.toFixed(2)}\nApplied ATR Multiplier: ${appliedMultiplier.toFixed(2)}\n\n`;
+            logMsg += `Effective TP: ${effTp.toFixed(2)}%\nEffective SL: ${effSl.toFixed(2)}%`;
+            
+            logger.info(logMsg);
+
+            return appliedMultiplier;
+        } catch (e) {
+            const logger = require('./logger');
+            logger.warn(`Failed to calculate ATR multiplier for ${symbol}: ${e.message}`);
+            return 1.0;
         }
     }
     calculateATR(highs, lows, closes, period = 14) {
@@ -2455,6 +2582,14 @@ class TradingBot {
                 let tpPercent = parseFloat(cfg.TAKE_PROFIT_PERCENTAGE) || 1;
                 let slPercent = parseFloat(cfg.STOP_LOSS_PERCENTAGE) || 1;
                 
+                let atrMultiplier = 1.0;
+                if (cfg.ATR_TP_ENABLED || cfg.ATR_SL_ENABLED) {
+                    atrMultiplier = await this.getATRMultiplier(symbol);
+                }
+
+                if (cfg.ATR_TP_ENABLED) tpPercent *= atrMultiplier;
+                if (cfg.ATR_SL_ENABLED) slPercent *= atrMultiplier;
+                
                 if (cfg.REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION) {
                     const accState = db.getPaperAccountState() || {};
                     const usedMarginPercent = accState.total_value > 0 ? (accState.margin_used / accState.total_value) * 100 : 0;
@@ -2475,6 +2610,9 @@ class TradingBot {
                     finalSize = existingPosition.size + amountInToken;
                     finalEntryPrice = ((existingPosition.size * existingPosition.entry_price) + (amountInToken * entryPrice)) / finalSize;
                     logger.info(`[PAPER TRADING] Accumulating existing position for ${symbol}. New Size: ${finalSize}, New Avg Entry: ${finalEntryPrice}`);
+                    // If accumulating, we could optionally inherit the old atr_multiplier or blend it, 
+                    // but for simplicity we retain the newly calculated one for the new entry, 
+                    // or keep the old one. We'll use the new one as it reflects current volatility.
                 }
 
                 let targetTpPrice = 0;
@@ -2496,7 +2634,8 @@ class TradingBot {
                     liq_price: 0,
                     tp_price: targetTpPrice,
                     sl_price: targetSlPrice,
-                    unrealized_pnl: 0
+                    unrealized_pnl: 0,
+                    atr_multiplier: atrMultiplier
                 });
                 
                 const state = db.getPaperAccountState();
