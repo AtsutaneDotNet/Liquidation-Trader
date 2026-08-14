@@ -2554,7 +2554,7 @@ class TradingBot {
             if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide !== 'ignore') {
                 activeStrategies.push({ name: 'SneakyPivot', side: sneakyPivotSide });
             }
-            if (cfg.ENABLE_DBB_STRATEGY && dbbSide) {
+            if (cfg.ENABLE_DBB_STRATEGY && dbbSide !== 'ignore') {
                 activeStrategies.push({ name: 'DBB', side: dbbSide });
             }
 
