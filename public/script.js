@@ -3558,7 +3558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     SNEAKY_PIVOT_BUY_SIGNAL: 'buy',
                     SNEAKY_PIVOT_SELL_SIGNAL: 'sell',
                     SNEAKY_PIVOT_BYPASS_ON_POSITION: 'false',
-                    BB_DOUBLE_BEHAVIOR: 'current'
+                    BB_DOUBLE_BEHAVIOR: 'original'
                 };
                 for (const [id, value] of Object.entries(defaults)) {
                     const el = document.getElementById(id);
