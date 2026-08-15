@@ -418,7 +418,7 @@
                                         <th class="col-strat-dmi">DMI</th>
                                         <th class="col-strat-ms">MS</th>
                                         <th class="col-strat-sp">SP</th>
-                                        <th class="col-strat-dbb">DBB</th>
+                                        <th class="col-strat-bb">BB</th>
                                         <th>Confluence</th>
                                         <th>Outcome</th>
                                     </tr>
@@ -1476,35 +1476,35 @@
                                 </div>
                             </div>
 
-                            <!-- Double Bollinger Bands (DBB) Sub-section -->
+                            <!-- Bollinger Bands (BB) Sub-section -->
                             <div class="page-subsection">
-                                <h4>Double Bollinger Bands (DBB) Strategy</h4>
+                                <h4>Bollinger Bands (BB) Strategy</h4>
                                 <div class="form-group row">
                                     <div class="col">
                                         <label
                                             style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
-                                            <input type="checkbox" id="ENABLE_DBB_STRATEGY"
-                                                name="ENABLE_DBB_STRATEGY" value="true"
-                                                style="width: auto; margin: 0;"> Enable DBB Strategy
+                                            <input type="checkbox" id="ENABLE_BB_STRATEGY"
+                                                name="ENABLE_BB_STRATEGY" value="true"
+                                                style="width: auto; margin: 0;"> Enable BB Strategy
                                         </label>
                                         <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
                                             Trade based on Bollinger Bands, using Single or Double confirmation modes.
                                         </p>
                                     </div>
                                 </div>
-                                <div id="dbbSettingsRow" style="display: none; margin-top: 10px;">
+                                <div id="bbSettingsRow" style="display: none; margin-top: 10px;">
                                     <div class="form-group row">
                                         <div class="col">
-                                            <label for="DBB_MODE">Strategy Mode</label>
-                                            <select id="DBB_MODE" name="DBB_MODE"
+                                            <label for="BB_MODE">Strategy Mode</label>
+                                            <select id="BB_MODE" name="BB_MODE"
                                                 style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
                                                 <option value="single">Single BB (Original)</option>
                                                 <option value="double" selected>Double BB</option>
                                             </select>
                                         </div>
                                         <div class="col">
-                                            <label for="DBB_TIMEFRAME">Timeframe</label>
-                                            <select id="DBB_TIMEFRAME" name="DBB_TIMEFRAME"
+                                            <label for="BB_TIMEFRAME">Timeframe</label>
+                                            <select id="BB_TIMEFRAME" name="BB_TIMEFRAME"
                                                 style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
                                                 <option value="1m" selected>1m (Default)</option>
                                                 <option value="3m">3m</option>
@@ -1516,22 +1516,22 @@
                                             </select>
                                         </div>
                                         <div class="col">
-                                            <label for="DBB_PERIOD">SMA Period</label>
-                                            <input type="number" id="DBB_PERIOD" name="DBB_PERIOD" step="1" min="1" max="100" placeholder="e.g. 20">
+                                            <label for="BB_PERIOD">SMA Period</label>
+                                            <input type="number" id="BB_PERIOD" name="BB_PERIOD" step="1" min="1" max="100" placeholder="e.g. 20">
                                         </div>
                                     </div>
                                     <div class="form-group row">
                                         <div class="col">
-                                            <label for="DBB_STD_DEV_OUTER">Outer Band StdDev</label>
-                                            <input type="number" id="DBB_STD_DEV_OUTER" name="DBB_STD_DEV_OUTER" step="0.1" min="0.1" max="5.0" placeholder="e.g. 2.0">
+                                            <label for="BB_STD_DEV_OUTER">Outer Band StdDev</label>
+                                            <input type="number" id="BB_STD_DEV_OUTER" name="BB_STD_DEV_OUTER" step="0.1" min="0.1" max="5.0" placeholder="e.g. 2.0">
                                         </div>
                                         <div class="col">
-                                            <label for="DBB_STD_DEV_INNER">Inner Band StdDev</label>
-                                            <input type="number" id="DBB_STD_DEV_INNER" name="DBB_STD_DEV_INNER" step="0.1" min="0.1" max="5.0" placeholder="e.g. 1.0">
+                                            <label for="BB_STD_DEV_INNER">Inner Band StdDev</label>
+                                            <input type="number" id="BB_STD_DEV_INNER" name="BB_STD_DEV_INNER" step="0.1" min="0.1" max="5.0" placeholder="e.g. 1.0">
                                         </div>
                                         <div class="col">
-                                            <label for="DBB_LOOKBACK_CANDLES">Lookback Candles (Double Mode)</label>
-                                            <input type="number" id="DBB_LOOKBACK_CANDLES" name="DBB_LOOKBACK_CANDLES" step="1" min="1" max="20" placeholder="e.g. 4">
+                                            <label for="BB_LOOKBACK_CANDLES">Lookback Candles (Double Mode)</label>
+                                            <input type="number" id="BB_LOOKBACK_CANDLES" name="BB_LOOKBACK_CANDLES" step="1" min="1" max="20" placeholder="e.g. 4">
                                         </div>
                                     </div>
                                 </div>
@@ -2513,7 +2513,7 @@
                                         <th class="col-strat-dmi">DMI</th>
                                         <th class="col-strat-ms">MS</th>
                                         <th class="col-strat-sp">SP</th>
-                                        <th class="col-strat-dbb">DBB</th>
+                                        <th class="col-strat-bb">BB</th>
                                         <th>Confluence</th>
                                         <th>Outcome</th>
                                     </tr>

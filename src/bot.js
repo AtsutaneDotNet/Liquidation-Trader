@@ -98,8 +98,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && !cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && !cfg.ENABLE_DBB_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot, or DBB strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && !cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && !cfg.ENABLE_BB_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot, or BB strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -1864,7 +1864,7 @@ class TradingBot {
             dmi: null,
             marketSentiment: null,
             sneakyPivot: null,
-            dbb: null,
+            bb: null,
             confluence: null,
             reason: 'Evaluated',
             side: null
@@ -1898,7 +1898,7 @@ class TradingBot {
             let dmiSide = null;
             let msSide = null;
             let sneakyPivotSide = null;
-            let dbbSide = null;
+            let bbSide = null;
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
@@ -1907,16 +1907,16 @@ class TradingBot {
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
             const dmiEnabled = cfg.ENABLE_DMI_STRATEGY;
             const sneakyPivotEnabled = cfg.ENABLE_SNEAKY_PIVOT_STRATEGY;
-            const dbbEnabled = cfg.ENABLE_DBB_STRATEGY;
+            const bbEnabled = cfg.ENABLE_BB_STRATEGY;
             let activeTimeframes = [];
 
-            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled || sneakyPivotEnabled || dbbEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled || sneakyPivotEnabled || bbEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                 if (cbEnabled) activeTimeframes.push(cfg.CB_TIMEFRAME || '15m');
                 if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
                 if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
                 if (dmiEnabled) activeTimeframes.push(cfg.DMI_TIMEFRAME || '1m');
                 if (sneakyPivotEnabled) activeTimeframes.push(cfg.SNEAKY_PIVOT_TIMEFRAME || '15m');
-                if (dbbEnabled) activeTimeframes.push(cfg.DBB_TIMEFRAME || '1m');
+                if (bbEnabled) activeTimeframes.push(cfg.BB_TIMEFRAME || '1m');
 
                 // Check if all active strategies share the exact same timeframe
                 const allSameTimeframe = activeTimeframes.length > 0 && activeTimeframes.every(tf => tf === activeTimeframes[0]);
@@ -1927,8 +1927,8 @@ class TradingBot {
                     const rLimit = rsiEnabled ? (parseInt(cfg.RSI_PERIOD) || 14) + 100 : 0;
                     const aLimit = dmiEnabled ? (parseInt(cfg.DMI_PERIOD) || 14) * 2 + 100 : 0;
                     const spLimit = sneakyPivotEnabled ? 50 : 0;
-                    const dbbLimit = dbbEnabled ? (parseInt(cfg.DBB_PERIOD) || 20) + (parseInt(cfg.DBB_LOOKBACK_CANDLES) || 4) + 50 : 0;
-                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit, spLimit, dbbLimit);
+                    const bbLimit = bbEnabled ? (parseInt(cfg.BB_PERIOD) || 20) + (parseInt(cfg.BB_LOOKBACK_CANDLES) || 4) + 50 : 0;
+                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit, spLimit, bbLimit);
 
                     try {
                         logger.info(`Fetching shared OHLCV for Technical Strategies (${activeTimeframes[0]}, limit: ${maxLimit})...`);
@@ -2452,22 +2452,22 @@ class TradingBot {
                 }
             }
 
-            // --- 5.6 Double Bollinger Bands (DBB) Strategy ---
-            if (dbbEnabled) {
+            // --- 5.6 Bollinger Bands (BB) Strategy ---
+            if (bbEnabled) {
                 if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
-                    const period = parseInt(cfg.DBB_PERIOD) || 20;
-                    const lookback = parseInt(cfg.DBB_LOOKBACK_CANDLES) || 4;
-                    const stdOuter = parseFloat(cfg.DBB_STD_DEV_OUTER) || 2.0;
-                    const stdInner = parseFloat(cfg.DBB_STD_DEV_INNER) || 1.0;
-                    const mode = cfg.DBB_MODE || 'double';
-                    const dbbTf = cfg.DBB_TIMEFRAME || '1m';
+                    const period = parseInt(cfg.BB_PERIOD) || 20;
+                    const lookback = parseInt(cfg.BB_LOOKBACK_CANDLES) || 4;
+                    const stdOuter = parseFloat(cfg.BB_STD_DEV_OUTER) || 2.0;
+                    const stdInner = parseFloat(cfg.BB_STD_DEV_INNER) || 1.0;
+                    const mode = cfg.BB_MODE || 'double';
+                    const bbTf = cfg.BB_TIMEFRAME || '1m';
                     
-                    let klines = (sharedKlines && dbbTf === activeTimeframes[0]) ? sharedKlines : null;
+                    let klines = (sharedKlines && bbTf === activeTimeframes[0]) ? sharedKlines : null;
                     if (!klines) {
                         try {
-                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, dbbTf, undefined, period + lookback + 50);
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, bbTf, undefined, period + lookback + 50);
                         } catch (e) {
-                            logger.error(`Error fetching DBB OHLCV: ${e.message}`);
+                            logger.error(`Error fetching BB OHLCV: ${e.message}`);
                         }
                     }
 
@@ -2481,13 +2481,13 @@ class TradingBot {
                             
                             if (mode === 'single') {
                                 if (currentClose > currentBB.upperOuter) {
-                                    dbbSide = 'sell';
-                                    logger.info(`DBB (Single) Condition met: Close ${currentClose} > Upper Band ${currentBB.upperOuter.toFixed(4)}. Signal: SELL`);
+                                    bbSide = 'sell';
+                                    logger.info(`BB (Single) Condition met: Close ${currentClose} > Upper Band ${currentBB.upperOuter.toFixed(4)}. Signal: SELL`);
                                 } else if (currentClose < currentBB.lowerOuter) {
-                                    dbbSide = 'buy';
-                                    logger.info(`DBB (Single) Condition met: Close ${currentClose} < Lower Band ${currentBB.lowerOuter.toFixed(4)}. Signal: BUY`);
+                                    bbSide = 'buy';
+                                    logger.info(`BB (Single) Condition met: Close ${currentClose} < Lower Band ${currentBB.lowerOuter.toFixed(4)}. Signal: BUY`);
                                 } else {
-                                    logger.info(`DBB (Single) Condition not met. Close ${currentClose} within bands.`);
+                                    logger.info(`BB (Single) Condition not met. Close ${currentClose} within bands.`);
                                 }
                             } else {
                                 // Double mode
@@ -2504,30 +2504,30 @@ class TradingBot {
                                 
                                 // Check current candle
                                 if (validSellPattern && currentClose < currentBB.upperOuter && currentClose > currentBB.upperInner) {
-                                    dbbSide = 'sell';
-                                    logger.info(`DBB (Double) Condition met: Previous ${lookback - 1} candles above Upper Outer, Current Close ${currentClose} between Upper Outer and Inner. Signal: SELL`);
+                                    bbSide = 'sell';
+                                    logger.info(`BB (Double) Condition met: Previous ${lookback - 1} candles above Upper Outer, Current Close ${currentClose} between Upper Outer and Inner. Signal: SELL`);
                                 } else if (validBuyPattern && currentClose > currentBB.lowerOuter && currentClose < currentBB.lowerInner) {
-                                    dbbSide = 'buy';
-                                    logger.info(`DBB (Double) Condition met: Previous ${lookback - 1} candles below Lower Outer, Current Close ${currentClose} between Lower Outer and Inner. Signal: BUY`);
+                                    bbSide = 'buy';
+                                    logger.info(`BB (Double) Condition met: Previous ${lookback - 1} candles below Lower Outer, Current Close ${currentClose} between Lower Outer and Inner. Signal: BUY`);
                                 } else {
-                                    logger.info(`DBB (Double) Condition not met.`);
+                                    logger.info(`BB (Double) Condition not met.`);
                                 }
                             }
                             
-                            decisionRecord.dbb = { 
-                                mode: mode, timeframe: dbbTf, period: period, lookback: lookback,
+                            decisionRecord.bb = { 
+                                mode: mode, timeframe: bbTf, period: period, lookback: lookback,
                                 currentClose: currentClose,
                                 upperOuter: currentBB.upperOuter, upperInner: currentBB.upperInner, middle: currentBB.middle, lowerInner: currentBB.lowerInner, lowerOuter: currentBB.lowerOuter,
-                                signal: dbbSide
+                                signal: bbSide
                             };
                         } else {
-                            decisionRecord.dbb = { error: 'Failed to calculate Bollinger Bands' };
+                            decisionRecord.bb = { error: 'Failed to calculate Bollinger Bands' };
                         }
                     } else {
-                        decisionRecord.dbb = { error: 'Not enough klines for DBB' };
+                        decisionRecord.bb = { error: 'Not enough klines for BB' };
                     }
                 } else {
-                    decisionRecord.dbb = { error: 'Not supported' };
+                    decisionRecord.bb = { error: 'Not supported' };
                 }
             }
 
@@ -2536,7 +2536,7 @@ class TradingBot {
             if (cfg.ENABLE_DMI_STRATEGY && dmiSide && dmiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DMI', side: dmiSide });
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide && msSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'MarketSentiment', side: msSide });
             if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide && sneakyPivotSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'SneakyPivot', side: sneakyPivotSide });
-            if (cfg.ENABLE_DBB_STRATEGY && dbbSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DBB', side: dbbSide });
+            if (cfg.ENABLE_BB_STRATEGY && bbSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'BB', side: bbSide });
 
             // --- 6. Confluence Logic (AND) ---
             let finalSide = null;
@@ -2554,8 +2554,8 @@ class TradingBot {
             if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide !== 'ignore') {
                 activeStrategies.push({ name: 'SneakyPivot', side: sneakyPivotSide });
             }
-            if (cfg.ENABLE_DBB_STRATEGY && dbbSide !== 'ignore') {
-                activeStrategies.push({ name: 'DBB', side: dbbSide });
+            if (cfg.ENABLE_BB_STRATEGY && bbSide !== 'ignore') {
+                activeStrategies.push({ name: 'BB', side: bbSide });
             }
 
             if (activeStrategies.length > 0) {

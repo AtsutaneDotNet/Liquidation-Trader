@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleCol('ENABLE_DMI_STRATEGY', 'col-strat-dmi');
                 toggleCol('ENABLE_MARKET_SENTIMENT_STRATEGY', 'col-strat-ms');
                 toggleCol('ENABLE_SNEAKY_PIVOT_STRATEGY', 'col-strat-sp');
-                toggleCol('ENABLE_DBB_STRATEGY', 'col-strat-dbb');
+                toggleCol('ENABLE_BB_STRATEGY', 'col-strat-bb');
                 
                 styleEl.textContent = css;
 
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_DBB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -276,10 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (row) row.style.display = sneakyPivotEnableEl.checked ? 'block' : 'none';
                 }
 
-                const dbbEnableEl = document.getElementById('ENABLE_DBB_STRATEGY');
-                if (dbbEnableEl) {
-                    const row = document.getElementById('dbbSettingsRow');
-                    if (row) row.style.display = dbbEnableEl.checked ? 'block' : 'none';
+                const bbEnableEl = document.getElementById('ENABLE_BB_STRATEGY');
+                if (bbEnableEl) {
+                    const row = document.getElementById('bbSettingsRow');
+                    if (row) row.style.display = bbEnableEl.checked ? 'block' : 'none';
                 }
 
                 // Update Trading Mode Badge
@@ -355,10 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const dbbEnableEl = document.getElementById('ENABLE_DBB_STRATEGY');
-    if (dbbEnableEl) {
-        dbbEnableEl.addEventListener('change', (e) => {
-            const row = document.getElementById('dbbSettingsRow');
+    const bbEnableEl = document.getElementById('ENABLE_BB_STRATEGY');
+    if (bbEnableEl) {
+        bbEnableEl.addEventListener('change', (e) => {
+            const row = document.getElementById('bbSettingsRow');
             if (row) row.style.display = e.target.checked ? 'block' : 'none';
         });
     }
@@ -441,8 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const spCb = document.getElementById('ENABLE_SNEAKY_PIVOT_STRATEGY');
         if (spCb) formData.set('ENABLE_SNEAKY_PIVOT_STRATEGY', spCb.checked ? 'true' : 'false');
         
-        const dbbCb = document.getElementById('ENABLE_DBB_STRATEGY');
-        if (dbbCb) formData.set('ENABLE_DBB_STRATEGY', dbbCb.checked ? 'true' : 'false');
+        const bbCb = document.getElementById('ENABLE_BB_STRATEGY');
+        if (bbCb) formData.set('ENABLE_BB_STRATEGY', bbCb.checked ? 'true' : 'false');
 
         const spPdrHighCb = document.getElementById('SNEAKY_PIVOT_ENABLE_PDR_HIGH');
         if (spPdrHighCb) formData.set('SNEAKY_PIVOT_ENABLE_PDR_HIGH', spPdrHighCb.checked ? 'true' : 'false');
@@ -464,9 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const isDmiChecked = dmiCb && dmiCb.checked;
         const isFgChecked = fgCb && fgCb.checked;
         const isSpChecked = spCb && spCb.checked;
-        const isDbbChecked = dbbCb && dbbCb.checked;
+        const isBbChecked = bbCb && bbCb.checked;
 
-        if (!isVwapChecked && !isRsiChecked && !isDmiChecked && !isFgChecked && !isSpChecked && !isDbbChecked) {
+        if (!isVwapChecked && !isRsiChecked && !isDmiChecked && !isFgChecked && !isSpChecked && !isBbChecked) {
             showToast({
                 title: 'Configuration Error',
                 message: 'At least one strategy must be enabled.',
@@ -2006,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
                 </div>
             `;
-        } else if (name === 'DBB') {
+        } else if (name === 'BB') {
             const mode = strat.mode || 'double';
             const tfStr = strat.timeframe || 'N/A';
             const closeStr = typeof strat.currentClose === 'number' ? strat.currentClose.toFixed(2) : 'N/A';
@@ -2016,7 +2016,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lOutStr = typeof strat.lowerOuter === 'number' ? strat.lowerOuter.toFixed(2) : 'N/A';
             
             tooltipHTML = `
-                <div class="tooltip-header">Double Bollinger Bands (DBB)</div>
+                <div class="tooltip-header">Bollinger Bands (BB)</div>
                 <div class="tooltip-grid">
                     <div class="tooltip-row"><span>Mode</span><span style="text-transform: capitalize;">${mode}</span></div>
                     <div class="tooltip-row"><span>Timeframe</span><span>${tfStr}</span></div>
@@ -2113,7 +2113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="col-strat-dmi">${formatStrategy(record.dmi, 'DMI')}</td>
             <td class="col-strat-ms">${formatStrategy(record.marketSentiment, 'M.Sentiment')}</td>
             <td class="col-strat-sp">${formatStrategy(record.sneakyPivot, 'SneakyPivot')}</td>
-            <td class="col-strat-dbb">${formatStrategy(record.dbb, 'DBB')}</td>
+            <td class="col-strat-bb">${formatStrategy(record.bb, 'BB')}</td>
             <td>${confluenceText}</td>
             <td><span class="${outcomeClz}">${record.reason}</span></td>
         </tr>`;
@@ -2151,7 +2151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageData.length === 0) {
             let hiddenCols = 0;
             if (window.globalAppConfig) {
-                ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_DBB_STRATEGY'].forEach(key => {
+                ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
                     if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
                 });
             }
@@ -2203,7 +2203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (confluenceOnly.length === 0) {
                         let hiddenCols = 0;
                         if (window.globalAppConfig) {
-                            ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_DBB_STRATEGY'].forEach(key => {
+                            ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
                                 if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
                             });
                         }
