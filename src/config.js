@@ -28,6 +28,7 @@ function getConfig() {
         DMI_SPREAD_THRESHOLD: dbConfig.DMI_SPREAD_THRESHOLD !== undefined && dbConfig.DMI_SPREAD_THRESHOLD !== '' ? parseFloat(dbConfig.DMI_SPREAD_THRESHOLD) : 10,
         ENABLE_BB_STRATEGY: dbConfig.ENABLE_BB_STRATEGY === 'true',
         BB_MODE: dbConfig.BB_MODE || 'double',
+        BB_DOUBLE_BEHAVIOR: dbConfig.BB_DOUBLE_BEHAVIOR || 'current',
         BB_TIMEFRAME: dbConfig.BB_TIMEFRAME || '1m',
         BB_PERIOD: parseInt(dbConfig.BB_PERIOD) || 20,
         BB_STD_DEV_OUTER: parseFloat(dbConfig.BB_STD_DEV_OUTER) || 2.0,

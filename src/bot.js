@@ -2460,6 +2460,7 @@ class TradingBot {
                     const stdOuter = parseFloat(cfg.BB_STD_DEV_OUTER) || 2.0;
                     const stdInner = parseFloat(cfg.BB_STD_DEV_INNER) || 1.0;
                     const mode = cfg.BB_MODE || 'double';
+                    const bbDoubleBehavior = cfg.BB_DOUBLE_BEHAVIOR || 'current';
                     const bbTf = cfg.BB_TIMEFRAME || '1m';
                     
                     let klines = (sharedKlines && bbTf === activeTimeframes[0]) ? sharedKlines : null;
@@ -2491,26 +2492,38 @@ class TradingBot {
                                 }
                             } else {
                                 // Double mode
-                                let validSellPattern = true;
-                                let validBuyPattern = true;
-                                
-                                // Check previous candles (e.g. 3 previous if lookback is 4)
-                                for (let i = 0; i < lookback - 1; i++) {
-                                    const prevClose = closes[closes.length - lookback + i];
-                                    const prevBB = bbSeries[i];
-                                    if (!(prevClose > prevBB.upperOuter)) validSellPattern = false;
-                                    if (!(prevClose < prevBB.lowerOuter)) validBuyPattern = false;
-                                }
-                                
-                                // Check current candle
-                                if (validSellPattern && currentClose < currentBB.upperOuter && currentClose > currentBB.upperInner) {
-                                    bbSide = 'sell';
-                                    logger.info(`BB (Double) Condition met: Previous ${lookback - 1} candles above Upper Outer, Current Close ${currentClose} between Upper Outer and Inner. Signal: SELL`);
-                                } else if (validBuyPattern && currentClose > currentBB.lowerOuter && currentClose < currentBB.lowerInner) {
-                                    bbSide = 'buy';
-                                    logger.info(`BB (Double) Condition met: Previous ${lookback - 1} candles below Lower Outer, Current Close ${currentClose} between Lower Outer and Inner. Signal: BUY`);
+                                if (bbDoubleBehavior === 'original') {
+                                    if (currentClose > currentBB.upperOuter) {
+                                        bbSide = 'sell';
+                                        logger.info(`BB (Double-Original) Condition met: Close ${currentClose} > Upper Band ${currentBB.upperOuter.toFixed(4)}. Signal: SELL`);
+                                    } else if (currentClose < currentBB.lowerOuter) {
+                                        bbSide = 'buy';
+                                        logger.info(`BB (Double-Original) Condition met: Close ${currentClose} < Lower Band ${currentBB.lowerOuter.toFixed(4)}. Signal: BUY`);
+                                    } else {
+                                        logger.info(`BB (Double-Original) Condition not met. Close ${currentClose} within bands.`);
+                                    }
                                 } else {
-                                    logger.info(`BB (Double) Condition not met.`);
+                                    let validSellPattern = true;
+                                    let validBuyPattern = true;
+                                    
+                                    // Check previous candles (e.g. 3 previous if lookback is 4)
+                                    for (let i = 0; i < lookback - 1; i++) {
+                                        const prevClose = closes[closes.length - lookback + i];
+                                        const prevBB = bbSeries[i];
+                                        if (!(prevClose > prevBB.upperOuter)) validSellPattern = false;
+                                        if (!(prevClose < prevBB.lowerOuter)) validBuyPattern = false;
+                                    }
+                                    
+                                    // Check current candle
+                                    if (validSellPattern && currentClose < currentBB.upperOuter && currentClose > currentBB.upperInner) {
+                                        bbSide = 'sell';
+                                        logger.info(`BB (Double-Current) Condition met: Previous ${lookback - 1} candles above Upper Outer, Current Close ${currentClose} between Upper Outer and Inner. Signal: SELL`);
+                                    } else if (validBuyPattern && currentClose > currentBB.lowerOuter && currentClose < currentBB.lowerInner) {
+                                        bbSide = 'buy';
+                                        logger.info(`BB (Double-Current) Condition met: Previous ${lookback - 1} candles below Lower Outer, Current Close ${currentClose} between Lower Outer and Inner. Signal: BUY`);
+                                    } else {
+                                        logger.info(`BB (Double-Current) Condition not met.`);
+                                    }
                                 }
                             }
                             

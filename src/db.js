@@ -210,6 +210,7 @@ const defaults = {
     DMI_SPREAD_THRESHOLD: '10',
     ENABLE_BB_STRATEGY: 'false',
     BB_MODE: 'double',
+    BB_DOUBLE_BEHAVIOR: 'current',
     BB_TIMEFRAME: '1m',
     BB_PERIOD: '20',
     BB_STD_DEV_OUTER: '2.0',
