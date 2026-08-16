@@ -634,6 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const absVal = Math.abs(converted);
         return sign + symbol + formatCurrencyValue(absVal, cur);
     }
+    window.formatSelectedCurrency = formatSelectedCurrency;
 
     function formatTokenPrice(priceUsd) {
         if (priceUsd === undefined || priceUsd === null || isNaN(priceUsd)) return 'N/A';
