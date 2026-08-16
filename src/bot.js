@@ -98,8 +98,8 @@ class TradingBot {
             const cfg = this.config.get();
 
             // Strategy Validation
-            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && !cfg.ENABLE_SNEAKY_PIVOT_STRATEGY) {
-                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, Market Sentiment, or Sneaky Pivot strategy in Settings.');
+            if (!cfg.ENABLE_VWAP_STRATEGY && !cfg.ENABLE_RSI_STRATEGY && !cfg.ENABLE_DMI_STRATEGY && !cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && !cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && !cfg.ENABLE_BB_STRATEGY) {
+                logger.error('CRITICAL: No technical strategy enabled. Please enable VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot, or BB strategy in Settings.');
                 throw new Error('No technical strategy enabled. Please enable at least one strategy.');
             }
 
@@ -1563,6 +1563,34 @@ class TradingBot {
         return sum / period;
     }
 
+    calculateBollingerBandsSeries(closes, period = 20, stdDevOuter = 2, stdDevInner = 1, count = 5) {
+        if (!closes || closes.length < period + count - 1) return null;
+        let result = [];
+        for (let j = count - 1; j >= 0; j--) {
+            let endIndex = closes.length - 1 - j;
+            let sum = 0;
+            for (let i = endIndex - period + 1; i <= endIndex; i++) {
+                sum += closes[i];
+            }
+            const sma = sum / period;
+
+            let varianceSum = 0;
+            for (let i = endIndex - period + 1; i <= endIndex; i++) {
+                varianceSum += Math.pow(closes[i] - sma, 2);
+            }
+            const stdDev = Math.sqrt(varianceSum / period);
+
+            result.push({
+                middle: sma,
+                upperOuter: sma + (stdDev * stdDevOuter),
+                upperInner: sma + (stdDev * stdDevInner),
+                lowerInner: sma - (stdDev * stdDevInner),
+                lowerOuter: sma - (stdDev * stdDevOuter)
+            });
+        }
+        return result; // oldest to newest (last element is current candle)
+    }
+
     calculateRSI(closes, period = 14) {
         if (!closes || closes.length < period + 1) return null;
         let gains = 0;
@@ -1836,6 +1864,7 @@ class TradingBot {
             dmi: null,
             marketSentiment: null,
             sneakyPivot: null,
+            bb: null,
             confluence: null,
             reason: 'Evaluated',
             side: null
@@ -1869,6 +1898,7 @@ class TradingBot {
             let dmiSide = null;
             let msSide = null;
             let sneakyPivotSide = null;
+            let bbSide = null;
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
@@ -1877,14 +1907,16 @@ class TradingBot {
             const rsiEnabled = cfg.ENABLE_RSI_STRATEGY;
             const dmiEnabled = cfg.ENABLE_DMI_STRATEGY;
             const sneakyPivotEnabled = cfg.ENABLE_SNEAKY_PIVOT_STRATEGY;
+            const bbEnabled = cfg.ENABLE_BB_STRATEGY;
             let activeTimeframes = [];
 
-            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled || sneakyPivotEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+            if ((cbEnabled || vwapEnabled || rsiEnabled || dmiEnabled || sneakyPivotEnabled || bbEnabled) && this.tradeExchange?.exchange?.has['fetchOHLCV']) {
                 if (cbEnabled) activeTimeframes.push(cfg.CB_TIMEFRAME || '15m');
                 if (vwapEnabled) activeTimeframes.push(cfg.VWAP_TIMEFRAME || '1m');
                 if (rsiEnabled) activeTimeframes.push(cfg.RSI_TIMEFRAME || '1m');
                 if (dmiEnabled) activeTimeframes.push(cfg.DMI_TIMEFRAME || '1m');
                 if (sneakyPivotEnabled) activeTimeframes.push(cfg.SNEAKY_PIVOT_TIMEFRAME || '15m');
+                if (bbEnabled) activeTimeframes.push(cfg.BB_TIMEFRAME || '1m');
 
                 // Check if all active strategies share the exact same timeframe
                 const allSameTimeframe = activeTimeframes.length > 0 && activeTimeframes.every(tf => tf === activeTimeframes[0]);
@@ -1895,7 +1927,8 @@ class TradingBot {
                     const rLimit = rsiEnabled ? (parseInt(cfg.RSI_PERIOD) || 14) + 100 : 0;
                     const aLimit = dmiEnabled ? (parseInt(cfg.DMI_PERIOD) || 14) * 2 + 100 : 0;
                     const spLimit = sneakyPivotEnabled ? 50 : 0;
-                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit, spLimit);
+                    const bbLimit = bbEnabled ? (parseInt(cfg.BB_PERIOD) || 20) + (parseInt(cfg.BB_LOOKBACK_CANDLES) || 4) + 50 : 0;
+                    const maxLimit = Math.max(cbLimit, vLimit, rLimit, aLimit, spLimit, bbLimit);
 
                     try {
                         logger.info(`Fetching shared OHLCV for Technical Strategies (${activeTimeframes[0]}, limit: ${maxLimit})...`);
@@ -2419,11 +2452,104 @@ class TradingBot {
                 }
             }
 
+            // --- 5.6 Bollinger Bands (BB) Strategy ---
+            if (bbEnabled) {
+                if (this.tradeExchange?.exchange?.has['fetchOHLCV']) {
+                    const period = parseInt(cfg.BB_PERIOD) || 20;
+                    const lookback = parseInt(cfg.BB_LOOKBACK_CANDLES) || 4;
+                    const stdOuter = parseFloat(cfg.BB_STD_DEV_OUTER) || 2.0;
+                    const stdInner = parseFloat(cfg.BB_STD_DEV_INNER) || 1.0;
+                    const mode = cfg.BB_MODE || 'double';
+                    const bbDoubleBehavior = cfg.BB_DOUBLE_BEHAVIOR || 'current';
+                    const bbTf = cfg.BB_TIMEFRAME || '1m';
+                    
+                    let klines = (sharedKlines && bbTf === activeTimeframes[0]) ? sharedKlines : null;
+                    if (!klines) {
+                        try {
+                            klines = await this.tradeExchange.exchange.fetchOHLCV(symbol, bbTf, undefined, period + lookback + 50);
+                        } catch (e) {
+                            logger.error(`Error fetching BB OHLCV: ${e.message}`);
+                        }
+                    }
+
+                    if (klines && klines.length >= period + lookback - 1) {
+                        const closes = klines.map(k => k[4]);
+                        const bbSeries = this.calculateBollingerBandsSeries(closes, period, stdOuter, stdInner, lookback);
+                        
+                        if (bbSeries && bbSeries.length === lookback) {
+                            const currentBB = bbSeries[lookback - 1];
+                            const currentClose = closes[closes.length - 1];
+                            
+                            if (mode === 'single') {
+                                if (currentClose > currentBB.upperOuter) {
+                                    bbSide = 'sell';
+                                    logger.info(`BB (Single) Condition met: Close ${currentClose} > Upper Band ${currentBB.upperOuter.toFixed(4)}. Signal: SELL`);
+                                } else if (currentClose < currentBB.lowerOuter) {
+                                    bbSide = 'buy';
+                                    logger.info(`BB (Single) Condition met: Close ${currentClose} < Lower Band ${currentBB.lowerOuter.toFixed(4)}. Signal: BUY`);
+                                } else {
+                                    logger.info(`BB (Single) Condition not met. Close ${currentClose} within bands.`);
+                                }
+                            } else {
+                                // Double mode
+                                if (bbDoubleBehavior === 'original') {
+                                    if (currentClose > currentBB.upperOuter) {
+                                        bbSide = 'sell';
+                                        logger.info(`BB (Double-Original) Condition met: Close ${currentClose} > Upper Band ${currentBB.upperOuter.toFixed(4)}. Signal: SELL`);
+                                    } else if (currentClose < currentBB.lowerOuter) {
+                                        bbSide = 'buy';
+                                        logger.info(`BB (Double-Original) Condition met: Close ${currentClose} < Lower Band ${currentBB.lowerOuter.toFixed(4)}. Signal: BUY`);
+                                    } else {
+                                        logger.info(`BB (Double-Original) Condition not met. Close ${currentClose} within bands.`);
+                                    }
+                                } else {
+                                    let validSellPattern = true;
+                                    let validBuyPattern = true;
+                                    
+                                    // Check previous candles (e.g. 3 previous if lookback is 4)
+                                    for (let i = 0; i < lookback - 1; i++) {
+                                        const prevClose = closes[closes.length - lookback + i];
+                                        const prevBB = bbSeries[i];
+                                        if (!(prevClose > prevBB.upperOuter)) validSellPattern = false;
+                                        if (!(prevClose < prevBB.lowerOuter)) validBuyPattern = false;
+                                    }
+                                    
+                                    // Check current candle
+                                    if (validSellPattern && currentClose < currentBB.upperOuter && currentClose > currentBB.upperInner) {
+                                        bbSide = 'sell';
+                                        logger.info(`BB (Double-Current) Condition met: Previous ${lookback - 1} candles above Upper Outer, Current Close ${currentClose} between Upper Outer and Inner. Signal: SELL`);
+                                    } else if (validBuyPattern && currentClose > currentBB.lowerOuter && currentClose < currentBB.lowerInner) {
+                                        bbSide = 'buy';
+                                        logger.info(`BB (Double-Current) Condition met: Previous ${lookback - 1} candles below Lower Outer, Current Close ${currentClose} between Lower Outer and Inner. Signal: BUY`);
+                                    } else {
+                                        logger.info(`BB (Double-Current) Condition not met.`);
+                                    }
+                                }
+                            }
+                            
+                            decisionRecord.bb = { 
+                                mode: mode, timeframe: bbTf, period: period, lookback: lookback,
+                                currentClose: currentClose,
+                                upperOuter: currentBB.upperOuter, upperInner: currentBB.upperInner, middle: currentBB.middle, lowerInner: currentBB.lowerInner, lowerOuter: currentBB.lowerOuter,
+                                signal: bbSide
+                            };
+                        } else {
+                            decisionRecord.bb = { error: 'Failed to calculate Bollinger Bands' };
+                        }
+                    } else {
+                        decisionRecord.bb = { error: 'Not enough klines for BB' };
+                    }
+                } else {
+                    decisionRecord.bb = { error: 'Not supported' };
+                }
+            }
+
             if (cfg.ENABLE_VWAP_STRATEGY && vwapSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY && rsiSide && rsiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'RSI', side: rsiSide });
             if (cfg.ENABLE_DMI_STRATEGY && dmiSide && dmiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DMI', side: dmiSide });
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide && msSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'MarketSentiment', side: msSide });
             if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide && sneakyPivotSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'SneakyPivot', side: sneakyPivotSide });
+            if (cfg.ENABLE_BB_STRATEGY && bbSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'BB', side: bbSide });
 
             // --- 6. Confluence Logic (AND) ---
             let finalSide = null;
@@ -2440,6 +2566,9 @@ class TradingBot {
             }
             if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide !== 'ignore') {
                 activeStrategies.push({ name: 'SneakyPivot', side: sneakyPivotSide });
+            }
+            if (cfg.ENABLE_BB_STRATEGY && bbSide !== 'ignore') {
+                activeStrategies.push({ name: 'BB', side: bbSide });
             }
 
             if (activeStrategies.length > 0) {

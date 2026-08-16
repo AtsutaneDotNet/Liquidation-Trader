@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleCol('ENABLE_DMI_STRATEGY', 'col-strat-dmi');
                 toggleCol('ENABLE_MARKET_SENTIMENT_STRATEGY', 'col-strat-ms');
                 toggleCol('ENABLE_SNEAKY_PIVOT_STRATEGY', 'col-strat-sp');
+                toggleCol('ENABLE_BB_STRATEGY', 'col-strat-bb');
                 
                 styleEl.textContent = css;
 
@@ -200,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -275,6 +276,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (row) row.style.display = sneakyPivotEnableEl.checked ? 'block' : 'none';
                 }
 
+                const bbEnableEl = document.getElementById('ENABLE_BB_STRATEGY');
+                if (bbEnableEl) {
+                    const row = document.getElementById('bbSettingsRow');
+                    if (row) row.style.display = bbEnableEl.checked ? 'block' : 'none';
+                }
+
                 // Update Trading Mode Badge
                 const modeBadge = document.getElementById('trading-mode-badge');
                 const btnResetPaper = document.getElementById('btn-reset-paper');
@@ -344,6 +351,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sneakyPivotEnableEl) {
         sneakyPivotEnableEl.addEventListener('change', (e) => {
             const row = document.getElementById('sneakyPivotSettingsRow');
+            if (row) row.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const bbEnableEl = document.getElementById('ENABLE_BB_STRATEGY');
+    if (bbEnableEl) {
+        bbEnableEl.addEventListener('change', (e) => {
+            const row = document.getElementById('bbSettingsRow');
             if (row) row.style.display = e.target.checked ? 'block' : 'none';
         });
     }
@@ -425,6 +440,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const spCb = document.getElementById('ENABLE_SNEAKY_PIVOT_STRATEGY');
         if (spCb) formData.set('ENABLE_SNEAKY_PIVOT_STRATEGY', spCb.checked ? 'true' : 'false');
+        
+        const bbCb = document.getElementById('ENABLE_BB_STRATEGY');
+        if (bbCb) formData.set('ENABLE_BB_STRATEGY', bbCb.checked ? 'true' : 'false');
 
         const spPdrHighCb = document.getElementById('SNEAKY_PIVOT_ENABLE_PDR_HIGH');
         if (spPdrHighCb) formData.set('SNEAKY_PIVOT_ENABLE_PDR_HIGH', spPdrHighCb.checked ? 'true' : 'false');
@@ -446,8 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const isDmiChecked = dmiCb && dmiCb.checked;
         const isFgChecked = fgCb && fgCb.checked;
         const isSpChecked = spCb && spCb.checked;
+        const isBbChecked = bbCb && bbCb.checked;
 
-        if (!isVwapChecked && !isRsiChecked && !isDmiChecked && !isFgChecked && !isSpChecked) {
+        if (!isVwapChecked && !isRsiChecked && !isDmiChecked && !isFgChecked && !isSpChecked && !isBbChecked) {
             showToast({
                 title: 'Configuration Error',
                 message: 'At least one strategy must be enabled.',
@@ -463,7 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'RSI_OVERBOUGHT_SIGNAL', 'RSI_OVERSOLD_SIGNAL', 'RSI_BYPASS_ON_POSITION',
             'DMI_THRESHOLD_DIR', 'DMI_THRESHOLD_UPPER', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
             'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL', 'MS_BYPASS_ON_POSITION',
-            'SNEAKY_PIVOT_BUY_SIGNAL', 'SNEAKY_PIVOT_SELL_SIGNAL', 'SNEAKY_PIVOT_BYPASS_ON_POSITION'
+            'SNEAKY_PIVOT_BUY_SIGNAL', 'SNEAKY_PIVOT_SELL_SIGNAL', 'SNEAKY_PIVOT_BYPASS_ON_POSITION',
+            'BB_DOUBLE_BEHAVIOR'
         ];
         advInputs.forEach(id => {
             const el = document.getElementById(id);
@@ -1987,6 +2007,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
                 </div>
             `;
+        } else if (name === 'BB') {
+            const mode = strat.mode || 'double';
+            const tfStr = strat.timeframe || 'N/A';
+            const closeStr = typeof strat.currentClose === 'number' ? strat.currentClose.toFixed(2) : 'N/A';
+            const uOutStr = typeof strat.upperOuter === 'number' ? strat.upperOuter.toFixed(2) : 'N/A';
+            const uInnStr = typeof strat.upperInner === 'number' ? strat.upperInner.toFixed(2) : 'N/A';
+            const lInnStr = typeof strat.lowerInner === 'number' ? strat.lowerInner.toFixed(2) : 'N/A';
+            const lOutStr = typeof strat.lowerOuter === 'number' ? strat.lowerOuter.toFixed(2) : 'N/A';
+            
+            tooltipHTML = `
+                <div class="tooltip-header">Bollinger Bands (BB)</div>
+                <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Mode</span><span style="text-transform: capitalize;">${mode}</span></div>
+                    <div class="tooltip-row"><span>Timeframe</span><span>${tfStr}</span></div>
+                    <div class="tooltip-row"><span>Close Price</span><span>${closeStr}</span></div>
+                    <div class="tooltip-row"><span>Upper Outer</span><span>${uOutStr}</span></div>
+                    <div class="tooltip-row"><span>Upper Inner</span><span>${uInnStr}</span></div>
+                    <div class="tooltip-row"><span>Lower Inner</span><span>${lInnStr}</span></div>
+                    <div class="tooltip-row"><span>Lower Outer</span><span>${lOutStr}</span></div>
+                    <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
+                </div>
+            `;
         } else if (name === 'DMI') {
             const valStr = typeof strat.value === 'number' ? strat.value.toFixed(2) : 'N/A';
             const pDiStr = typeof strat.plusDI === 'number' ? strat.plusDI.toFixed(2) : 'N/A';
@@ -2072,6 +2114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="col-strat-dmi">${formatStrategy(record.dmi, 'DMI')}</td>
             <td class="col-strat-ms">${formatStrategy(record.marketSentiment, 'M.Sentiment')}</td>
             <td class="col-strat-sp">${formatStrategy(record.sneakyPivot, 'SneakyPivot')}</td>
+            <td class="col-strat-bb">${formatStrategy(record.bb, 'BB')}</td>
             <td>${confluenceText}</td>
             <td><span class="${outcomeClz}">${record.reason}</span></td>
         </tr>`;
@@ -2109,11 +2152,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageData.length === 0) {
             let hiddenCols = 0;
             if (window.globalAppConfig) {
-                ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY'].forEach(key => {
+                ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
                     if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
                 });
             }
-            tbodyTradeDecisions.innerHTML = `<tr><td colspan="${10 - hiddenCols}" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
+            tbodyTradeDecisions.innerHTML = `<tr><td colspan="${11 - hiddenCols}" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
         } else {
             tbodyTradeDecisions.innerHTML = pageData.map(renderTradeDecisionRow).join('');
         }
@@ -2161,11 +2204,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (confluenceOnly.length === 0) {
                         let hiddenCols = 0;
                         if (window.globalAppConfig) {
-                            ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY'].forEach(key => {
+                            ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
                                 if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
                             });
                         }
-                        tbodyDashboardTradeDecisions.innerHTML = `<tr><td colspan="${10 - hiddenCols}" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>`;
+                        tbodyDashboardTradeDecisions.innerHTML = `<tr><td colspan="${11 - hiddenCols}" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>`;
                     } else {
                         tbodyDashboardTradeDecisions.innerHTML = confluenceOnly.map(renderTradeDecisionRow).join('');
                     }
@@ -3514,7 +3557,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     MS_BYPASS_ON_POSITION: 'false',
                     SNEAKY_PIVOT_BUY_SIGNAL: 'buy',
                     SNEAKY_PIVOT_SELL_SIGNAL: 'sell',
-                    SNEAKY_PIVOT_BYPASS_ON_POSITION: 'false'
+                    SNEAKY_PIVOT_BYPASS_ON_POSITION: 'false',
+                    BB_DOUBLE_BEHAVIOR: 'original'
                 };
                 for (const [id, value] of Object.entries(defaults)) {
                     const el = document.getElementById(id);

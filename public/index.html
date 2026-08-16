@@ -418,13 +418,14 @@
                                         <th class="col-strat-dmi">DMI</th>
                                         <th class="col-strat-ms">MS</th>
                                         <th class="col-strat-sp">SP</th>
+                                        <th class="col-strat-bb">BB</th>
                                         <th>Confluence</th>
                                         <th>Outcome</th>
                                     </tr>
                                 </thead>
                                 <tbody id="dashboard-trade-decisions-tbody">
                                     <tr>
-                                        <td colspan="10" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash;
+                                        <td colspan="11" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash;
                                             Waiting for trade evaluations &mdash;</td>
                                     </tr>
                                 </tbody>
@@ -1474,6 +1475,67 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Bollinger Bands (BB) Sub-section -->
+                            <div class="page-subsection">
+                                <h4>Bollinger Bands (BB) Strategy</h4>
+                                <div class="form-group row">
+                                    <div class="col">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_BB_STRATEGY"
+                                                name="ENABLE_BB_STRATEGY" value="true"
+                                                style="width: auto; margin: 0;"> Enable BB Strategy
+                                        </label>
+                                        <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                            Trade based on Bollinger Bands, using Single or Double confirmation modes.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div id="bbSettingsRow" style="display: none; margin-top: 10px;">
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label for="BB_MODE">Strategy Mode</label>
+                                            <select id="BB_MODE" name="BB_MODE"
+                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                                <option value="single" selected>Single BB (Original)</option>
+                                                <option value="double">Double BB</option>
+                                            </select>
+                                        </div>
+                                        <div class="col">
+                                            <label for="BB_TIMEFRAME">Timeframe</label>
+                                            <select id="BB_TIMEFRAME" name="BB_TIMEFRAME"
+                                                style="width: 100%; padding: 0.75rem; background: #12141a; color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none;">
+                                                <option value="1m" selected>1m (Default)</option>
+                                                <option value="3m">3m</option>
+                                                <option value="5m">5m</option>
+                                                <option value="15m">15m</option>
+                                                <option value="1h">1h</option>
+                                                <option value="4h">4h</option>
+                                                <option value="1d">1d</option>
+                                            </select>
+                                        </div>
+                                        <div class="col">
+                                            <label for="BB_PERIOD">SMA Period</label>
+                                            <input type="number" id="BB_PERIOD" name="BB_PERIOD" step="1" min="1" max="100" placeholder="e.g. 20">
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label for="BB_STD_DEV_OUTER">Outer Band StdDev</label>
+                                            <input type="number" id="BB_STD_DEV_OUTER" name="BB_STD_DEV_OUTER" step="0.1" min="0.1" max="5.0" placeholder="e.g. 2.0">
+                                        </div>
+                                        <div class="col">
+                                            <label for="BB_STD_DEV_INNER">Inner Band StdDev</label>
+                                            <input type="number" id="BB_STD_DEV_INNER" name="BB_STD_DEV_INNER" step="0.1" min="0.1" max="5.0" placeholder="e.g. 1.0">
+                                        </div>
+                                        <div class="col">
+                                            <label for="BB_LOOKBACK_CANDLES">Lookback Candles (Double Mode)</label>
+                                            <input type="number" id="BB_LOOKBACK_CANDLES" name="BB_LOOKBACK_CANDLES" step="1" min="1" max="20" placeholder="e.g. 4">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB 4: Risk Managements -->
@@ -2451,13 +2513,14 @@
                                         <th class="col-strat-dmi">DMI</th>
                                         <th class="col-strat-ms">MS</th>
                                         <th class="col-strat-sp">SP</th>
+                                        <th class="col-strat-bb">BB</th>
                                         <th>Confluence</th>
                                         <th>Outcome</th>
                                     </tr>
                                 </thead>
                                 <tbody id="trade-decisions-tbody">
                                     <tr>
-                                        <td colspan="10" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
+                                        <td colspan="11" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -2703,6 +2766,19 @@
                                 <option value="false">NO (Default)</option>
                                 <option value="true">YES</option>
                                 <option value="conditional">YES if % pnl &lt;= runaway helper threshold</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-subsection">
+                    <h4>Bollinger Bands Strategy</h4>
+                    <div class="form-group row">
+                        <div class="col">
+                            <label>Double BB Behavior</label>
+                            <select id="BB_DOUBLE_BEHAVIOR" class="styled-select">
+                                <option value="original" selected>Breakout / Extremes (Default)</option>
+                                <option value="current">Reversal / Bounce</option>
                             </select>
                         </div>
                     </div>

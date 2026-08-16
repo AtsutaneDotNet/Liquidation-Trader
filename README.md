@@ -48,7 +48,10 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **DMI (Directional Movement Index)**: Detect trend strength and exhaustion. Generates entry signals based on customizable threshold direction (`above`/`under`) and DI crossover logic.
   - **Market Sentiment**: Trade alongside or against market sentiment using CoinMarketCap's index. Custom mapping for Bullish/Bearish and Extreme Fear/Greed signals.
   - **Sneaky Pivot**: 3-Candle price action pattern recognition coupled with Previous Day Reference Levels (Range High/Low and Swing High/Low). Triggers BUY signals when Candle 3 breaks above Candle 2 High and price is below enabled Low Reference Levels, or SELL signals when Candle 3 breaks below Candle 2 Low and price is above enabled High Reference Levels.
-  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot) to align in the same direction before executing a trade for maximum precision.
+  - **Bollinger Bands (BB)**: Trade based on Bollinger Bands using Single or Double confirmation modes.
+    - **Single Mode**: Classical mean-reversion logic. BUYS when price drops below the Lower Band, SELLS when price rises above the Upper Band.
+    - **Double Mode**: Configurable behavior. Evaluate trend reversals using inner and outer bands with multi-candle lookback confirmations, or act as a standard extreme breakout indicator.
+  - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot, BB) to align in the same direction before executing a trade for maximum precision.
   - **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 - **Intelligent Filtering**:
   - **24H Volume Filter**: Automatically exclude coins with a 24-hour trading volume below a specified USD threshold, avoiding low-liquidity assets.
@@ -211,6 +214,14 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `SNEAKY_PIVOT_BUY_SIGNAL` | Signal override on BUY pattern match (`buy`, `sell`, `none`). | `buy` |
 | `SNEAKY_PIVOT_SELL_SIGNAL` | Signal override on SELL pattern match (`sell`, `buy`, `none`). | `sell` |
 | `SNEAKY_PIVOT_BYPASS_ON_POSITION` | Bypass strategy if position open (`false`, `true`, `conditional`). | `false` |
+| `ENABLE_BB_STRATEGY` | Toggle Bollinger Bands strategy. | `false` |
+| `BB_MODE` | Mode for BB strategy (`single` or `double`). | `single` |
+| `BB_DOUBLE_BEHAVIOR` | Double BB behavior (`original` for extremes, `current` for reversals). | `original` |
+| `BB_TIMEFRAME` | Timeframe for BB calculation (e.g. `1m`, `5m`, `15m`). | `1m` |
+| `BB_PERIOD` | SMA period for BB calculation. | `20` |
+| `BB_STD_DEV_OUTER` | Standard deviation for outer bands. | `2.0` |
+| `BB_STD_DEV_INNER` | Standard deviation for inner bands (Double mode). | `1.0` |
+| `BB_LOOKBACK_CANDLES` | Number of previous candles for Double BB reversal confirmation. | `4` |
 | `ENABLE_DCA_MARTINGALE` | Scale order size based on position PnL. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 | `DCA_MARTINGALE_THRESHOLD` | PnL threshold (%) below which the Martingale multiplier is applied. | `-5` |
 | `DCA_MARTINGALE_MAX_MULTIPLIER` | Maximum multiplier limit to prevent excessive order sizes. | `5` |
