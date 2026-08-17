@@ -2502,6 +2502,16 @@ class TradingBot {
                                     } else {
                                         logger.info(`BB (Double-Original) Condition not met. Close ${currentClose} within bands.`);
                                     }
+                                } else if (bbDoubleBehavior === 'zone') {
+                                    if (currentClose < currentBB.upperOuter && currentClose > currentBB.upperInner) {
+                                        bbSide = 'sell';
+                                        logger.info(`BB (Double-Zone) Condition met: Close ${currentClose} between Upper Outer and Inner. Signal: SELL`);
+                                    } else if (currentClose > currentBB.lowerOuter && currentClose < currentBB.lowerInner) {
+                                        bbSide = 'buy';
+                                        logger.info(`BB (Double-Zone) Condition met: Close ${currentClose} between Lower Outer and Inner. Signal: BUY`);
+                                    } else {
+                                        logger.info(`BB (Double-Zone) Condition not met.`);
+                                    }
                                 } else {
                                     let validSellPattern = true;
                                     let validBuyPattern = true;

@@ -50,7 +50,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **Sneaky Pivot**: 3-Candle price action pattern recognition coupled with Previous Day Reference Levels (Range High/Low and Swing High/Low). Triggers BUY signals when Candle 3 breaks above Candle 2 High and price is below enabled Low Reference Levels, or SELL signals when Candle 3 breaks below Candle 2 Low and price is above enabled High Reference Levels.
   - **Bollinger Bands (BB)**: Trade based on Bollinger Bands using Single or Double confirmation modes.
     - **Single Mode**: Classical mean-reversion logic. BUYS when price drops below the Lower Band, SELLS when price rises above the Upper Band.
-    - **Double Mode**: Configurable behavior. Evaluate trend reversals using inner and outer bands with multi-candle lookback confirmations, or act as a standard extreme breakout indicator.
+    - **Double Mode**: Configurable behavior. Evaluate trend reversals using inner and outer bands with multi-candle lookback confirmations, act as a standard extreme breakout indicator, or trigger entries within the inner and outer band zones.
   - **Confluence Mode**: Require all enabled strategies (VWAP, RSI, DMI, Market Sentiment, Sneaky Pivot, BB) to align in the same direction before executing a trade for maximum precision.
   - **DCA Martingale**: **<font color="red">(EXPERIMENTAL)</font>** Position-based order sizing that scales based on unrealized PnL percentages. Multiplier = `ceil(abs(PnL% / Leverage))`.
 - **Intelligent Filtering**:
@@ -216,7 +216,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `SNEAKY_PIVOT_BYPASS_ON_POSITION` | Bypass strategy if position open (`false`, `true`, `conditional`). | `false` |
 | `ENABLE_BB_STRATEGY` | Toggle Bollinger Bands strategy. | `false` |
 | `BB_MODE` | Mode for BB strategy (`single` or `double`). | `single` |
-| `BB_DOUBLE_BEHAVIOR` | Double BB behavior (`original` for extremes, `current` for reversals). | `original` |
+| `BB_DOUBLE_BEHAVIOR` | Double BB behavior (`original` for extremes, `current` for reversals, `zone` for band zone entries). | `original` |
 | `BB_TIMEFRAME` | Timeframe for BB calculation (e.g. `1m`, `5m`, `15m`). | `1m` |
 | `BB_PERIOD` | SMA period for BB calculation. | `20` |
 | `BB_STD_DEV_OUTER` | Standard deviation for outer bands. | `2.0` |
