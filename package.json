@@ -12,7 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "better-sqlite3": "^13.0.3",
-    "ccxt": "^4.5.71",
+    "ccxt": "^4.5.73",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
