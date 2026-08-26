@@ -413,6 +413,7 @@
                                         <th>Time</th>
                                         <th>Symbol</th>
                                         <th>Price</th>
+                                        <th class="col-strat-revliq">Rev.Liq</th>
                                         <th class="col-strat-vwap">VWAP</th>
                                         <th class="col-strat-rsi">RSI</th>
                                         <th class="col-strat-dmi">DMI</th>
@@ -425,7 +426,7 @@
                                 </thead>
                                 <tbody id="dashboard-trade-decisions-tbody">
                                     <tr>
-                                        <td colspan="11" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash;
+                                        <td colspan="12" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash;
                                             Waiting for trade evaluations &mdash;</td>
                                     </tr>
                                 </tbody>
@@ -1203,6 +1204,26 @@
                                                 <p class="subtitle" style="margin-top: 6px; font-size: 11px;">Skip trade
                                                     if price moved more than this % over lookback period (set to 0 to disable).</p>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Reverse Liquidation Sub-section -->
+                                <div class="page-subsection">
+                                    <h4>Reverse Liquidation Strategy</h4>
+                                    <div class="form-group row">
+                                        <div class="col">
+                                            <label
+                                                style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                                <input type="checkbox" id="ENABLE_REVERSE_LIQUIDATION_STRATEGY"
+                                                    name="ENABLE_REVERSE_LIQUIDATION_STRATEGY" value="true"
+                                                    style="width: auto; margin: 0;"> Enable Reverse Liquidation Strategy
+                                            </label>
+                                            <p class="subtitle" style="margin-top: 6px; font-size: 11px;">
+                                                Uses the detected liquidation's side to make trade decisions.
+                                                Triggers <strong style="color: #00ff00;">LONG</strong> when liquidation side is SELL,
+                                                and <strong style="color: var(--danger);">SHORT</strong> when liquidation side is BUY.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -2508,6 +2529,7 @@
                                         <th>Time</th>
                                         <th>Symbol</th>
                                         <th>Price</th>
+                                        <th class="col-strat-revliq">Rev.Liq</th>
                                         <th class="col-strat-vwap">VWAP</th>
                                         <th class="col-strat-rsi">RSI</th>
                                         <th class="col-strat-dmi">DMI</th>
@@ -2520,7 +2542,7 @@
                                 </thead>
                                 <tbody id="trade-decisions-tbody">
                                     <tr>
-                                        <td colspan="11" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
+                                        <td colspan="12" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">&mdash; Waiting for trade evaluations &mdash;</td>
                                     </tr>
                                 </tbody>
                             </table>
