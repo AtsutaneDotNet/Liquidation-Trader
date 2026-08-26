@@ -2598,9 +2598,10 @@ class TradingBot {
             }
 
             if (activeStrategies.length > 0) {
-                const allSame = activeStrategies.every(s => s.side && s.side === activeStrategies[0].side);
+                const firstSide = activeStrategies[0].side ? activeStrategies[0].side.toLowerCase() : null;
+                const allSame = activeStrategies.every(s => s.side && s.side.toLowerCase() === firstSide);
                 if (allSame) {
-                    finalSide = activeStrategies[0].side;
+                    finalSide = firstSide;
                     logger.info(`Confluence matched! Signals: ${activeStrategies.map(s => s.name).join(', ')} -> ${finalSide.toUpperCase()}`);
                     decisionRecord.confluence = { matched: true, side: finalSide };
                 } else {
