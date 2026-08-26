@@ -1971,8 +1971,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
-        const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : 'side-none');
-        const activeSignalClz = strat.signal === 'buy' ? 'signal-buy' : (strat.signal === 'sell' ? 'signal-sell' : '');
+        const lowerSignal = strat.signal ? strat.signal.toLowerCase() : '';
+        const signalClz = lowerSignal === 'buy' ? 'side-buy' : (lowerSignal === 'sell' ? 'side-sell' : 'side-none');
+        const activeSignalClz = lowerSignal === 'buy' ? 'signal-buy' : (lowerSignal === 'sell' ? 'signal-sell' : '');
 
         let tooltipHTML = '';
         if (name === 'Rev.Liq') {

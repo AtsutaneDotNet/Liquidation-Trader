@@ -2558,9 +2558,9 @@ class TradingBot {
 
             if (cfg.ENABLE_REVERSE_LIQUIDATION_STRATEGY) {
                 if (liquidationSide === 'SELL') {
-                    revLiqSide = 'BUY';
+                    revLiqSide = 'buy';
                 } else if (liquidationSide === 'BUY') {
-                    revLiqSide = 'SELL';
+                    revLiqSide = 'sell';
                 }
                 decisionRecord.revLiq = { signal: revLiqSide, originalSide: liquidationSide };
                 logger.info(`Reverse Liquidation strategy signal for ${symbol}: ${revLiqSide || 'none'}`);
