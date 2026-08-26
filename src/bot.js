@@ -1418,6 +1418,12 @@ class TradingBot {
                     logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)}`);
                 }
 
+                // Reset Runaway Helper timeout for this symbol since a liquidation occurred
+                this.lastPaperRunaway = this.lastPaperRunaway || {};
+                this.lastLiveRunaway = this.lastLiveRunaway || {};
+                this.lastPaperRunaway[symbol] = Date.now();
+                this.lastLiveRunaway[symbol] = Date.now();
+
                 this.isTrading = true;
                 await this.evaluateTrade(symbol, price, unifiedSide);
             }
