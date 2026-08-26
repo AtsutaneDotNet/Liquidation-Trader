@@ -2568,9 +2568,13 @@ class TradingBot {
                 } else if (liquidationSide === 'BUY') {
                     revLiqSide = 'sell';
                 } else if (!liquidationSide) {
-                    revLiqSide = 'ignore'; // Bypass during Runaway Helper
+                    if (openPosition && openPosition.side) {
+                        revLiqSide = openPosition.side.toLowerCase();
+                    } else {
+                        revLiqSide = 'ignore';
+                    }
                 }
-                decisionRecord.revLiq = { signal: revLiqSide, originalSide: liquidationSide };
+                decisionRecord.revLiq = { signal: revLiqSide, originalSide: liquidationSide || (openPosition ? 'Runaway Helper' : null) };
                 logger.info(`Reverse Liquidation strategy signal for ${symbol}: ${revLiqSide || 'none'}`);
             }
 
