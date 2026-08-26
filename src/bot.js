@@ -2569,7 +2569,10 @@ class TradingBot {
                     revLiqSide = 'sell';
                 } else if (!liquidationSide) {
                     if (openPosition && openPosition.side) {
-                        revLiqSide = openPosition.side.toLowerCase();
+                        const posSide = openPosition.side.toLowerCase();
+                        if (posSide === 'long' || posSide === 'buy') revLiqSide = 'buy';
+                        else if (posSide === 'short' || posSide === 'sell') revLiqSide = 'sell';
+                        else revLiqSide = 'ignore';
                     } else {
                         revLiqSide = 'ignore';
                     }
