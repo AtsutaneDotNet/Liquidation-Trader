@@ -2561,6 +2561,8 @@ class TradingBot {
                     revLiqSide = 'buy';
                 } else if (liquidationSide === 'BUY') {
                     revLiqSide = 'sell';
+                } else if (!liquidationSide) {
+                    revLiqSide = 'ignore'; // Bypass during Runaway Helper
                 }
                 decisionRecord.revLiq = { signal: revLiqSide, originalSide: liquidationSide };
                 logger.info(`Reverse Liquidation strategy signal for ${symbol}: ${revLiqSide || 'none'}`);
