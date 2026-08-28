@@ -186,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 };
                 
+                toggleCol('ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'col-strat-revliq');
                 toggleCol('ENABLE_VWAP_STRATEGY', 'col-strat-vwap');
                 toggleCol('ENABLE_RSI_STRATEGY', 'col-strat-rsi');
                 toggleCol('ENABLE_DMI_STRATEGY', 'col-strat-dmi');
@@ -197,11 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Update colspans
                 document.querySelectorAll('.trade-decisions-empty-td').forEach(td => {
-                    td.setAttribute('colspan', 10 - hiddenCols);
+                    td.setAttribute('colspan', 12 - hiddenCols);
                 });
 
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -1970,11 +1971,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const signal = strat.signal ? strat.signal.toUpperCase() : 'NONE';
-        const signalClz = strat.signal === 'buy' ? 'side-buy' : (strat.signal === 'sell' ? 'side-sell' : 'side-none');
-        const activeSignalClz = strat.signal === 'buy' ? 'signal-buy' : (strat.signal === 'sell' ? 'signal-sell' : '');
+        const lowerSignal = strat.signal ? strat.signal.toLowerCase() : '';
+        const signalClz = lowerSignal === 'buy' ? 'side-buy' : (lowerSignal === 'sell' ? 'side-sell' : 'side-none');
+        const activeSignalClz = lowerSignal === 'buy' ? 'signal-buy' : (lowerSignal === 'sell' ? 'signal-sell' : '');
 
         let tooltipHTML = '';
-        if (name === 'VWAP') {
+        if (name === 'Rev.Liq') {
+            const originalSideStr = strat.originalSide ? strat.originalSide.toUpperCase() : 'N/A';
+            tooltipHTML = `
+                <div class="tooltip-header">Reverse Liquidation Strategy</div>
+                <div class="tooltip-grid">
+                    <div class="tooltip-row"><span>Original Liq. Side</span><span>${originalSideStr}</span></div>
+                    <div class="tooltip-row"><span>Signal</span><span class="${activeSignalClz}">${signal}</span></div>
+                </div>
+            `;
+        } else if (name === 'VWAP') {
             const valStr = formatTokenPrice(strat.value);
             const upperStr = formatTokenPrice(strat.upper);
             const lowerStr = formatTokenPrice(strat.lower);
@@ -2110,6 +2121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td style="color: var(--text-muted);">${timeStr}</td>
             <td style="cursor: pointer;" onclick="openTvPopupModal('${record.symbol}')"><strong style="color: var(--accent); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--accent)'">${record.symbol}</strong></td>
             <td>${priceFormatted}</td>
+            <td class="col-strat-revliq">${formatStrategy(record.revLiq, 'Rev.Liq')}</td>
             <td class="col-strat-vwap">${formatStrategy(record.vwap, 'VWAP')}</td>
             <td class="col-strat-rsi">${formatStrategy(record.rsi, 'RSI')}</td>
             <td class="col-strat-dmi">${formatStrategy(record.dmi, 'DMI')}</td>
@@ -2153,11 +2165,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageData.length === 0) {
             let hiddenCols = 0;
             if (window.globalAppConfig) {
-                ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
+                ['ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
                     if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
                 });
             }
-            tbodyTradeDecisions.innerHTML = `<tr><td colspan="${11 - hiddenCols}" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
+            tbodyTradeDecisions.innerHTML = `<tr><td colspan="${12 - hiddenCols}" class="trade-decisions-empty-td" style="text-align: center; color: var(--text-muted);">${searchVal ? `&mdash; No matching trade evaluations found for "${searchVal}" &mdash;` : '&mdash; No trade evaluations tracked yet &mdash;'}</td></tr>`;
         } else {
             tbodyTradeDecisions.innerHTML = pageData.map(renderTradeDecisionRow).join('');
         }
@@ -2205,11 +2217,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (confluenceOnly.length === 0) {
                         let hiddenCols = 0;
                         if (window.globalAppConfig) {
-                            ['ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
+                            ['ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY'].forEach(key => {
                                 if (!(window.globalAppConfig[key] === true || window.globalAppConfig[key] === 'true')) hiddenCols++;
                             });
                         }
-                        tbodyDashboardTradeDecisions.innerHTML = `<tr><td colspan="${11 - hiddenCols}" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>`;
+                        tbodyDashboardTradeDecisions.innerHTML = `<tr><td colspan="${12 - hiddenCols}" style="text-align: center; color: var(--text-muted);">&mdash; No recent confluence matched &mdash;</td></tr>`;
                     } else {
                         tbodyDashboardTradeDecisions.innerHTML = confluenceOnly.map(renderTradeDecisionRow).join('');
                     }

@@ -1418,8 +1418,14 @@ class TradingBot {
                     logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)}`);
                 }
 
+                // Reset Runaway Helper timeout for this symbol since a liquidation occurred
+                this.lastPaperRunaway = this.lastPaperRunaway || {};
+                this.lastLiveRunaway = this.lastLiveRunaway || {};
+                this.lastPaperRunaway[symbol] = Date.now();
+                this.lastLiveRunaway[symbol] = Date.now();
+
                 this.isTrading = true;
-                await this.evaluateTrade(symbol, price);
+                await this.evaluateTrade(symbol, price, unifiedSide);
             }
         } catch (error) {
             this.handleError(`Error handling liquidation: ${error.message}`);
@@ -1851,7 +1857,7 @@ class TradingBot {
         };
     }
 
-    async evaluateTrade(symbol, currentPrice) {
+    async evaluateTrade(symbol, currentPrice, liquidationSide = null) {
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
 
@@ -1865,6 +1871,7 @@ class TradingBot {
             marketSentiment: null,
             sneakyPivot: null,
             bb: null,
+            revLiq: null,
             confluence: null,
             reason: 'Evaluated',
             side: null
@@ -1899,6 +1906,7 @@ class TradingBot {
             let msSide = null;
             let sneakyPivotSide = null;
             let bbSide = null;
+            let revLiqSide = null;
 
             // --- 1. Shared OHLCV Fetching ---
             let sharedKlines = null;
@@ -2554,12 +2562,32 @@ class TradingBot {
                 }
             }
 
+            if (cfg.ENABLE_REVERSE_LIQUIDATION_STRATEGY) {
+                if (liquidationSide === 'SELL') {
+                    revLiqSide = 'buy';
+                } else if (liquidationSide === 'BUY') {
+                    revLiqSide = 'sell';
+                } else if (!liquidationSide) {
+                    if (openPosition && openPosition.side) {
+                        const posSide = openPosition.side.toLowerCase();
+                        if (posSide === 'long' || posSide === 'buy') revLiqSide = 'buy';
+                        else if (posSide === 'short' || posSide === 'sell') revLiqSide = 'sell';
+                        else revLiqSide = 'ignore';
+                    } else {
+                        revLiqSide = 'ignore';
+                    }
+                }
+                decisionRecord.revLiq = { signal: revLiqSide, originalSide: liquidationSide || (openPosition ? 'Runaway Helper' : null) };
+                logger.info(`Reverse Liquidation strategy signal for ${symbol}: ${revLiqSide || 'none'}`);
+            }
+
             if (cfg.ENABLE_VWAP_STRATEGY && vwapSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'VWAP', side: vwapSide });
             if (cfg.ENABLE_RSI_STRATEGY && rsiSide && rsiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'RSI', side: rsiSide });
             if (cfg.ENABLE_DMI_STRATEGY && dmiSide && dmiSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'DMI', side: dmiSide });
             if (cfg.ENABLE_MARKET_SENTIMENT_STRATEGY && msSide && msSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'MarketSentiment', side: msSide });
             if (cfg.ENABLE_SNEAKY_PIVOT_STRATEGY && sneakyPivotSide && sneakyPivotSide !== 'ignore') db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'SneakyPivot', side: sneakyPivotSide });
             if (cfg.ENABLE_BB_STRATEGY && bbSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'BB', side: bbSide });
+            if (cfg.ENABLE_REVERSE_LIQUIDATION_STRATEGY && revLiqSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'ReverseLiquidation', side: revLiqSide });
 
             // --- 6. Confluence Logic (AND) ---
             let finalSide = null;
@@ -2580,11 +2608,15 @@ class TradingBot {
             if (cfg.ENABLE_BB_STRATEGY && bbSide !== 'ignore') {
                 activeStrategies.push({ name: 'BB', side: bbSide });
             }
+            if (cfg.ENABLE_REVERSE_LIQUIDATION_STRATEGY && revLiqSide !== 'ignore') {
+                activeStrategies.push({ name: 'ReverseLiquidation', side: revLiqSide });
+            }
 
             if (activeStrategies.length > 0) {
-                const allSame = activeStrategies.every(s => s.side && s.side === activeStrategies[0].side);
+                const firstSide = activeStrategies[0].side ? activeStrategies[0].side.toLowerCase() : null;
+                const allSame = activeStrategies.every(s => s.side && s.side.toLowerCase() === firstSide);
                 if (allSame) {
-                    finalSide = activeStrategies[0].side;
+                    finalSide = firstSide;
                     logger.info(`Confluence matched! Signals: ${activeStrategies.map(s => s.name).join(', ')} -> ${finalSide.toUpperCase()}`);
                     decisionRecord.confluence = { matched: true, side: finalSide };
                 } else {
