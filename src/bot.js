@@ -1425,7 +1425,7 @@ class TradingBot {
                 this.lastLiveRunaway[symbol] = Date.now();
 
                 this.isTrading = true;
-                await this.evaluateTrade(symbol, price, unifiedSide);
+                await this.evaluateTrade(symbol, price, unifiedSide, exName);
             }
         } catch (error) {
             this.handleError(`Error handling liquidation: ${error.message}`);
@@ -1857,7 +1857,10 @@ class TradingBot {
         };
     }
 
-    async evaluateTrade(symbol, currentPrice, liquidationSide = null) {
+    async evaluateTrade(symbol, price, liquidationSide = null, exName = 'unknown') {
+        if (this.isShuttingDown) return;
+
+        const currentPrice = price;
         logger.info(`Evaluating trade for ${symbol} around price ${currentPrice}...`);
         const cfg = this.config.get();
 
@@ -2563,11 +2566,8 @@ class TradingBot {
             }
 
             if (cfg.ENABLE_REVERSE_LIQUIDATION_STRATEGY) {
-                if (liquidationSide === 'SELL') {
-                    revLiqSide = 'buy';
-                } else if (liquidationSide === 'BUY') {
-                    revLiqSide = 'sell';
-                } else if (!liquidationSide) {
+                let mode = 'flip';
+                if (!liquidationSide) {
                     if (openPosition && openPosition.side) {
                         const posSide = openPosition.side.toLowerCase();
                         if (posSide === 'long' || posSide === 'buy') revLiqSide = 'buy';
@@ -2576,9 +2576,21 @@ class TradingBot {
                     } else {
                         revLiqSide = 'ignore';
                     }
+                } else {
+                    const exConfigKey = `REVLIQ_${(exName || '').toUpperCase()}_MODE`;
+                    if (cfg[exConfigKey]) {
+                        mode = cfg[exConfigKey];
+                    }
+                    
+                    if (mode === 'follow') {
+                        revLiqSide = liquidationSide.toLowerCase();
+                    } else {
+                        if (liquidationSide === 'SELL') revLiqSide = 'buy';
+                        else if (liquidationSide === 'BUY') revLiqSide = 'sell';
+                    }
                 }
                 decisionRecord.revLiq = { signal: revLiqSide, originalSide: liquidationSide || (openPosition ? 'Runaway Helper' : null) };
-                logger.info(`Reverse Liquidation strategy signal for ${symbol}: ${revLiqSide || 'none'}`);
+                logger.info(`Reverse Liquidation strategy signal for ${symbol}: ${revLiqSide || 'none'} (Mode: ${mode}, Exchange: ${exName})`);
             }
 
             if (cfg.ENABLE_VWAP_STRATEGY && vwapSide) db.logBotEvent({ event_type: 'STRATEGY_MATCH', symbol: symbol, strategy: 'VWAP', side: vwapSide });

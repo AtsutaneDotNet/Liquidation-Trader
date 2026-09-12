@@ -484,7 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'DMI_THRESHOLD_DIR', 'DMI_THRESHOLD_UPPER', 'DMI_PDI_SIGNAL', 'DMI_MDI_SIGNAL', 'DMI_BYPASS_ON_POSITION',
             'MS_BULLISH_SIGNAL', 'MS_BEARISH_SIGNAL', 'MS_EXTREME_FEAR_SIGNAL', 'MS_EXTREME_GREED_SIGNAL', 'MS_BYPASS_ON_POSITION',
             'SNEAKY_PIVOT_BUY_SIGNAL', 'SNEAKY_PIVOT_SELL_SIGNAL', 'SNEAKY_PIVOT_BYPASS_ON_POSITION',
-            'BB_DOUBLE_BEHAVIOR'
+            'BB_DOUBLE_BEHAVIOR',
+            'REVLIQ_BYBIT_MODE', 'REVLIQ_BINANCE_MODE', 'REVLIQ_OKX_MODE'
         ];
         advInputs.forEach(id => {
             const el = document.getElementById(id);
@@ -3571,7 +3572,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     SNEAKY_PIVOT_BUY_SIGNAL: 'buy',
                     SNEAKY_PIVOT_SELL_SIGNAL: 'sell',
                     SNEAKY_PIVOT_BYPASS_ON_POSITION: 'false',
-                    BB_DOUBLE_BEHAVIOR: 'original'
+                    BB_DOUBLE_BEHAVIOR: 'original',
+                    REVLIQ_BYBIT_MODE: 'flip',
+                    REVLIQ_BINANCE_MODE: 'flip',
+                    REVLIQ_OKX_MODE: 'flip'
                 };
                 for (const [id, value] of Object.entries(defaults)) {
                     const el = document.getElementById(id);
