@@ -729,7 +729,27 @@ function getPageStatistics(cutoff, isPaper = false) {
     
     const marginHistory = db.prepare(`SELECT margin_percent, position_count, open_symbols, timestamp FROM ${marginTable} WHERE timestamp >= ? ORDER BY timestamp ASC`).all(cutoffTimestamp);
     const isolationModeCount = db.prepare('SELECT COUNT(*) as count FROM bot_events WHERE event_type = \'ISOLATION_MODE_TRIGGER\' AND timestamp >= ?').get(cutoffTimestamp).count;
-    const dynamicThresholds = db.prepare('SELECT MAX(threshold) as max, MIN(threshold) as min FROM bot_events WHERE event_type = \'LIQUIDATION_MATCH\' AND strategy = \'DYNAMIC\' AND timestamp >= ?').get(cutoffTimestamp);
+    const thresholdRows = db.prepare(`
+        SELECT threshold 
+        FROM bot_events 
+        WHERE event_type = 'LIQUIDATION_MATCH' AND strategy = 'DYNAMIC' AND timestamp >= ? 
+        ORDER BY threshold ASC
+    `).all(cutoffTimestamp);
+
+    let min = 0, max = 0, avg = 0, median = 0;
+    if (thresholdRows.length > 0) {
+        min = Number(thresholdRows[0].threshold) || 0;
+        max = Number(thresholdRows[thresholdRows.length - 1].threshold) || 0;
+        const total = thresholdRows.reduce((sum, r) => sum + (Number(r.threshold) || 0), 0);
+        avg = total / thresholdRows.length;
+
+        const mid = Math.floor(thresholdRows.length / 2);
+        median = thresholdRows.length % 2 !== 0
+            ? (Number(thresholdRows[mid].threshold) || 0)
+            : ((Number(thresholdRows[mid - 1].threshold) || 0) + (Number(thresholdRows[mid].threshold) || 0)) / 2;
+    }
+
+    const dynamicThresholds = { min, max, avg, median };
     const closedPnls = db.prepare(`SELECT symbol, side, pnl FROM ${pnlTable} WHERE timestamp >= ?`).all(cutoffTimestamp);
     
     const drawdowns = db.prepare('SELECT symbol, max_drawdown FROM symbol_drawdowns WHERE timestamp >= ? ORDER BY max_drawdown ASC').all(cutoffTimestamp);

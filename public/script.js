@@ -3102,6 +3102,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.dynamicThresholds) {
                     document.getElementById('stats-dynamic-high').innerText = formatSelectedCurrency(data.dynamicThresholds.max || 0);
                     document.getElementById('stats-dynamic-low').innerText = formatSelectedCurrency(data.dynamicThresholds.min || 0);
+                    const avgEl = document.getElementById('stats-dynamic-avg');
+                    if (avgEl) avgEl.innerText = formatSelectedCurrency(data.dynamicThresholds.avg || 0);
+                    const medEl = document.getElementById('stats-dynamic-med');
+                    if (medEl) medEl.innerText = formatSelectedCurrency(data.dynamicThresholds.median || 0);
                 }
 
                 if (data.closedPnls) {
