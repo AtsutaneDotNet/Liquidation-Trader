@@ -1901,7 +1901,7 @@ class TradingBot {
         }
 
         if (cfg.BLOCK_TRADES_WHEN_TRADFI_CLOSED) {
-            const market = this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets ? this.tradeExchange.exchange.markets[symbol] : null;
+            const market = this.getMarket(symbol);
             const tradfiStatus = tradfi.getMarketStatus(symbol, market, new Date(), cfg.TRADFI_CUSTOM_SYMBOLS, cfg.TRADFI_EXCLUDE_SYMBOLS);
             if (tradfiStatus.isTradFi && !tradfiStatus.isOpen) {
                 logger.info(`[TradFi Safeguard] Market for ${symbol} is currently ${tradfiStatus.statusLabel} (${tradfiStatus.nextEventLabel}). Skipping trade evaluation.`);
@@ -2701,7 +2701,7 @@ class TradingBot {
     async executeTrade(symbol, side, entryPrice, cfg) {
         try {
             if (cfg.BLOCK_TRADES_WHEN_TRADFI_CLOSED) {
-                const market = this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets ? this.tradeExchange.exchange.markets[symbol] : null;
+                const market = this.getMarket(symbol);
                 const tradfiStatus = tradfi.getMarketStatus(symbol, market, new Date(), cfg.TRADFI_CUSTOM_SYMBOLS, cfg.TRADFI_EXCLUDE_SYMBOLS);
                 if (tradfiStatus.isTradFi && !tradfiStatus.isOpen) {
                     logger.info(`[TradFi Safeguard] Cannot execute trade for ${symbol}: market is currently ${tradfiStatus.statusLabel} (${tradfiStatus.nextEventLabel}). Skipping.`);
@@ -2977,6 +2977,56 @@ class TradingBot {
         
         return order;
     }
+
+    getMarket(symbol) {
+        if (!symbol) return null;
+        if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets) {
+            const markets = this.tradeExchange.exchange.markets;
+            if (markets[symbol]) return markets[symbol];
+            const clean = symbol.replace(/[^A-Z0-9]/g, '');
+            for (const [k, m] of Object.entries(markets)) {
+                if (k.replace(/[^A-Z0-9]/g, '') === clean) return m;
+            }
+        }
+        return null;
+    }
+
+    getTradFiMarkets() {
+        const result = {};
+        const cfg = this.config.get();
+        const customTradFi = cfg.TRADFI_CUSTOM_SYMBOLS || '';
+        const exclude = cfg.TRADFI_EXCLUDE_SYMBOLS || 'PAXG, XAUT';
+
+        if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets) {
+            const markets = this.tradeExchange.exchange.markets;
+            for (const [sym, market] of Object.entries(markets)) {
+                if (tradfi.isTradFi(sym, market, customTradFi, exclude)) {
+                    const base = market.base || tradfi.extractBaseAsset(sym, market);
+                    const category = tradfi.getAssetCategory(base, market);
+                    const assetName = tradfi.getAssetName(base);
+                    const entry = {
+                        isTradFi: true,
+                        category,
+                        assetName,
+                        base,
+                        info: {
+                            underlyingType: market.info && market.info.underlyingType,
+                            contractType: market.info && market.info.contractType,
+                            underlyingSubType: market.info && market.info.underlyingSubType,
+                            symbolType: market.info && market.info.symbolType
+                        }
+                    };
+                    result[sym] = entry;
+                    const stripped = sym.replace(/[^A-Z0-9]/g, '');
+                    if (stripped && !result[stripped]) {
+                        result[stripped] = entry;
+                    }
+                }
+            }
+        }
+        return result;
+    }
 }
+
 
 module.exports = TradingBot;

@@ -690,6 +690,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/status')
             .then(res => res.json())
             .then(data => {
+                if (data.tradfiMarkets) {
+                    window.TradFiMarkets = Object.assign(window.TradFiMarkets || {}, data.tradfiMarkets);
+                }
                 if (data.isRunning) {
                     botStatusDot.className = 'dot running';
                     botStatusText.textContent = 'Running';
@@ -1379,12 +1382,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ── TradFi Helper Utilities ────────────────────────────────
-    function getTradFiInfo(symbol) {
+    function getTradFiInfo(symbol, marketOverride = null) {
         if (!window.TradFiUtils) return { isTradFi: false, isOpen: true };
         const cfg = window.globalAppConfig || {};
+        let market = marketOverride;
+        if (!market && window.TradFiMarkets && symbol) {
+            market = window.TradFiMarkets[symbol] || window.TradFiMarkets[symbol.replace(/[^A-Z0-9]/g, '')] || null;
+            if (!market) {
+                const clean = symbol.replace(/[^A-Z0-9]/g, '');
+                for (const [k, v] of Object.entries(window.TradFiMarkets)) {
+                    if (k.replace(/[^A-Z0-9]/g, '') === clean) {
+                        market = v;
+                        break;
+                    }
+                }
+            }
+        }
         return window.TradFiUtils.getMarketStatus(
             symbol,
-            null,
+            market,
             new Date(),
             cfg.TRADFI_CUSTOM_SYMBOLS || '',
             cfg.TRADFI_EXCLUDE_SYMBOLS || 'PAXG, XAUT'
@@ -2022,6 +2038,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+        function fetchTradFiMarkets() {
+        fetch('/api/tradfi-markets')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.tradfiMarkets) {
+                    window.TradFiMarkets = Object.assign(window.TradFiMarkets || {}, data.tradfiMarkets);
+                }
+            })
+            .catch(() => {});
+    }
+    fetchTradFiMarkets();
+
     function fetchDynamicThresholdTable() {
         const pageActive = document.getElementById('dynamic-thresholds-page').classList.contains('active');
 
@@ -2031,6 +2059,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mapped = data.mapped || [];
                 globalDynamicThresholds = data.rawMap || {};
                 cachedDynamicThresholds = mapped;
+                if (data.tradfiMarkets) {
+                    window.TradFiMarkets = Object.assign(window.TradFiMarkets || {}, data.tradfiMarkets);
+                }
 
                 if (pageActive) {
                     renderDynamicThresholdTable();

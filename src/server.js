@@ -5,6 +5,7 @@ const fs = require('fs');
 const config = require('./config');
 const logger = require('./logger');
 const connectionStatus = require('./connectionStatus');
+const tradfi = require('./utils/tradfi');
 
 class WebServer {
     constructor(bot) {
@@ -165,8 +166,14 @@ class WebServer {
                 lastAccountUpdate: this.bot.lastAccountUpdate,
                 lastPositionsUpdate: this.bot.lastPositionsUpdate,
                 lastClosedPnlUpdate: this.bot.lastClosedPnlUpdate,
-                lastDynamicThresholdsUpdate: this.bot.lastDynamicThresholdsUpdate
+                lastDynamicThresholdsUpdate: this.bot.lastDynamicThresholdsUpdate,
+                tradfiMarkets: typeof this.bot.getTradFiMarkets === 'function' ? this.bot.getTradFiMarkets() : {}
             });
+        });
+
+                this.app.get('/api/tradfi-markets', (req, res) => {
+            const markets = typeof this.bot.getTradFiMarkets === 'function' ? this.bot.getTradFiMarkets() : {};
+            res.json({ success: true, tradfiMarkets: markets });
         });
 
         this.app.get('/api/account-history', (req, res) => {
@@ -415,15 +422,20 @@ class WebServer {
                     }
                 }
                 
+                const market = typeof this.bot.getMarket === 'function' ? this.bot.getMarket(sym) : null;
+                const isTradFi = tradfi.isTradFi(sym, market, currentConfig.TRADFI_CUSTOM_SYMBOLS, currentConfig.TRADFI_EXCLUDE_SYMBOLS);
+
                 result.push({
                     symbol: sym,
                     threshold: threshold,
-                    status: status
+                    status: status,
+                    isTradFi: isTradFi
                 });
             }
             res.json({
                 mapped: result,
-                rawMap: dynamicMap
+                rawMap: dynamicMap,
+                tradfiMarkets: typeof this.bot.getTradFiMarkets === 'function' ? this.bot.getTradFiMarkets() : {}
             });
         });
 

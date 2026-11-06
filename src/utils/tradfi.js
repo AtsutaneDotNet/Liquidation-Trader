@@ -11,10 +11,11 @@
     const COMMODITIES = new Set(['WTI', 'BRENT', 'OIL', 'NG', 'NATGAS', 'COPPER', 'HG', 'BZ']);
     const FOREX = new Set(['EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD', 'CNH', 'CNY', 'SGD', 'HKD', 'TRY']);
     const INDICES = new Set(['SPX', 'US500', 'SP500', 'NDX', 'US100', 'NAS100', 'DJI', 'US30', 'WS30', 'DAX', 'GER40', 'FTSE', 'UK100', 'NIKKEI', 'JP225', 'HK50']);
-    const STOCKS = new Set(['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'AMD', 'COIN', 'QQQ', 'SPY']);
-
-    // Standard exclusion list (Crypto tokens that should never be marked as TradFi)
-    const DEFAULT_EXCLUDE = new Set(['PAXG', 'XAUT']);
+    const STOCKS = new Set([
+        'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 
+        'AMD', 'COIN', 'QQQ', 'SPY', 'MU', 'INTC', 'PLTR', 'BABA', 'MSTR', 
+        'TSM', 'ARM', 'AVGO', 'SMCI', 'DIS', 'BA', 'JPM'
+    ]);
 
     /**
      * Clean and extract the base asset from a symbol
@@ -22,10 +23,10 @@
      */
     function extractBaseAsset(symbol, market) {
         if (market && market.base) {
-            return market.base.toUpperCase();
+            return String(market.base).toUpperCase();
         }
-        if (market && market.info && market.info.baseCoin) {
-            return market.info.baseCoin.toUpperCase();
+        if (market && market.info && (market.info.baseAsset || market.info.baseCoin)) {
+            return String(market.info.baseAsset || market.info.baseCoin).toUpperCase();
         }
         if (!symbol) return '';
 
@@ -48,7 +49,7 @@
      * Check if a symbol/market is a TradFi pair
      * Prioritizes market.info from exchange, falls back to recognized tickers
      */
-    function isTradFi(symbol, market, customTradFiStr = '', excludeStr = 'PAXG, XAUT') {
+    function isTradFi(symbol, market = null, customTradFiStr = '', excludeStr = 'PAXG, XAUT') {
         const base = extractBaseAsset(symbol, market);
         if (!base) return false;
 
@@ -72,17 +73,47 @@
             if (userCustom.has(base)) return true;
         }
 
-        // 3. Binance native check via market.info.underlyingType
-        if (market && market.info && market.info.underlyingType) {
-            const ut = market.info.underlyingType.toUpperCase();
-            if (ut === 'COIN') return false;
-            if (['COMMODITY', 'INDEX', 'EQUITY', 'HK_EQUITY'].includes(ut)) return true;
+        // 3. If market object is already classified by server
+        if (market && typeof market.isTradFi === 'boolean') {
+            return market.isTradFi;
         }
 
-        // 4. Bybit native check via market.info.symbolType
-        if (market && market.info && market.info.symbolType) {
-            const st = market.info.symbolType.toLowerCase();
-            if (['commodity', 'forex', 'stock', 'xstocks'].includes(st)) return true;
+        // 4. Exchange metadata inspection (CCXT market.info)
+        if (market && market.info) {
+            const info = market.info;
+
+            // Binance contractType check (e.g. "TRADIFI_PERPETUAL", "TRADFI_PERPETUAL")
+            if (info.contractType) {
+                const ct = String(info.contractType).toUpperCase();
+                if (ct.includes('TRADIFI') || ct.includes('TRADFI')) return true;
+            }
+
+            // Binance underlyingSubType check (e.g. ["TradFi"])
+            if (info.underlyingSubType) {
+                const subTypes = Array.isArray(info.underlyingSubType)
+                    ? info.underlyingSubType
+                    : [info.underlyingSubType];
+                if (subTypes.some(st => {
+                    const s = String(st).toUpperCase();
+                    return s === 'TRADFI' || s === 'TRADIFI';
+                })) {
+                    return true;
+                }
+            }
+
+            // Binance underlyingType check (e.g. "EQUITY", "COMMODITY", "INDEX", "HK_EQUITY", vs "COIN")
+            if (info.underlyingType) {
+                const ut = String(info.underlyingType).toUpperCase();
+                if (ut === 'COIN') return false; // Native crypto pair in Binance
+                if (['COMMODITY', 'INDEX', 'EQUITY', 'HK_EQUITY', 'STOCK', 'FOREX', 'METALS'].includes(ut)) return true;
+            }
+
+            // Bybit symbolType check (e.g. "commodity", "forex", "stock", "xstocks", vs "crypto")
+            if (info.symbolType) {
+                const st = String(info.symbolType).toLowerCase();
+                if (st === 'crypto') return false; // Native crypto pair in Bybit
+                if (['commodity', 'forex', 'stock', 'xstocks', 'equity', 'index'].includes(st)) return true;
+            }
         }
 
         // 5. Fallback asset category check
@@ -92,7 +123,34 @@
     /**
      * Get TradFi asset category name
      */
-    function getAssetCategory(base) {
+    function getAssetCategory(base, market = null) {
+        if (market) {
+            if (market.category && market.category !== 'TradFi') {
+                return market.category;
+            }
+            if (market.info) {
+                const info = market.info;
+                const ut = String(info.underlyingType || '').toUpperCase();
+                const st = String(info.symbolType || '').toLowerCase();
+                const ct = String(info.contractType || '').toUpperCase();
+
+                if (ut === 'EQUITY' || ut === 'HK_EQUITY' || ut === 'STOCK' || st === 'stock' || st === 'xstocks' || st === 'equity' || ct.includes('EQUITY')) {
+                    return 'Stock';
+                }
+                if (ut === 'INDEX' || st === 'index') {
+                    return 'Index';
+                }
+                if (ut === 'FOREX' || st === 'forex') {
+                    return 'Forex';
+                }
+                if (ut === 'COMMODITY' || st === 'commodity') {
+                    const b = (base || '').toUpperCase();
+                    if (METALS.has(b)) return 'Metals';
+                    return 'Commodity';
+                }
+            }
+        }
+
         const b = (base || '').toUpperCase();
         if (METALS.has(b)) return 'Metals';
         if (COMMODITIES.has(b)) return 'Commodity';
@@ -116,6 +174,7 @@
             'BRENT': 'Brent Oil',
             'OIL': 'Crude Oil',
             'NG': 'Natural Gas',
+            'COPPER': 'Copper',
             'EUR': 'Euro',
             'GBP': 'British Pound',
             'JPY': 'Japanese Yen',
@@ -131,7 +190,22 @@
             'DAX': 'DAX 40',
             'NVDA': 'NVIDIA',
             'TSLA': 'Tesla',
-            'AAPL': 'Apple'
+            'AAPL': 'Apple',
+            'MU': 'Micron Technology',
+            'INTC': 'Intel',
+            'PLTR': 'Palantir',
+            'BABA': 'Alibaba',
+            'MSTR': 'MicroStrategy',
+            'TSM': 'TSMC',
+            'MSFT': 'Microsoft',
+            'AMZN': 'Amazon',
+            'GOOGL': 'Alphabet',
+            'META': 'Meta',
+            'NFLX': 'Netflix',
+            'AMD': 'AMD',
+            'ARM': 'ARM Holdings',
+            'AVGO': 'Broadcom',
+            'SMCI': 'Super Micro'
         };
         return names[b] || b;
     }
@@ -142,6 +216,7 @@
      * - Metals & Commodities: Sun 23:00 - Fri 22:00 UTC (Daily break: 22:00-23:00 UTC)
      * - Forex: Sun 22:00 - Fri 22:00 UTC continuous (No daily break)
      * - Indices: Sun 23:00 - Fri 21:15 UTC (Daily break: 21:15-22:00 UTC)
+     * - Stocks: Mon-Fri 13:30 - 20:00 UTC (US Equities regular hours)
      *
      * @param {string} symbol - Trading symbol
      * @param {object} [market] - Optional CCXT market object
@@ -167,7 +242,7 @@
             };
         }
 
-        const category = getAssetCategory(base);
+        const category = getAssetCategory(base, market);
         const assetName = getAssetName(base);
 
         const d = nowDate instanceof Date ? nowDate : new Date(nowDate);
@@ -183,7 +258,56 @@
         let nextEventLabel = '';
         let minutesUntilNextEvent = 0;
 
-        if (category === 'Forex') {
+        if (category === 'Stock') {
+            scheduleSummary = 'Mon–Fri 13:30 – 20:00 UTC (US Equities)';
+            // US Equities: Regular Hours 13:30 to 20:00 UTC, Mon-Fri
+            const isWeekend = (day === 6) || // Saturday
+                (day === 0) || // Sunday
+                (day === 5 && totalMinDay >= 20 * 60) || // Friday after 20:00
+                (day === 1 && totalMinDay < 13 * 60 + 30); // Monday before 13:30
+
+            if (isWeekend) {
+                isOpen = false;
+                status = 'CLOSED';
+                statusLabel = 'Market Closed';
+                // Calculate minutes until Monday 13:30 UTC
+                let minUntilMon1330 = 0;
+                if (day === 5) {
+                    minUntilMon1330 = (24 * 60 - totalMinDay) + (2 * 24 * 60) + (13 * 60 + 30);
+                } else if (day === 6) {
+                    minUntilMon1330 = (24 * 60 - totalMinDay) + (24 * 60) + (13 * 60 + 30);
+                } else if (day === 0) {
+                    minUntilMon1330 = (24 * 60 - totalMinDay) + (13 * 60 + 30);
+                } else if (day === 1) {
+                    minUntilMon1330 = (13 * 60 + 30 - totalMinDay);
+                }
+                minutesUntilNextEvent = Math.max(0, minUntilMon1330);
+                nextEventLabel = `Reopens Mon 13:30 UTC (${formatMinutesHuman(minutesUntilNextEvent)})`;
+            } else if (day >= 1 && day <= 5 && (totalMinDay < 13 * 60 + 30 || totalMinDay >= 20 * 60)) {
+                // Weekday outside regular hours
+                isOpen = false;
+                status = 'CLOSED';
+                statusLabel = 'Market Closed';
+                let minUntilNextOpen = 0;
+                if (totalMinDay < 13 * 60 + 30) {
+                    minUntilNextOpen = (13 * 60 + 30 - totalMinDay);
+                    nextEventLabel = `Reopens today at 13:30 UTC (${formatMinutesHuman(minUntilNextOpen)})`;
+                } else {
+                    // After 20:00 on Mon-Thu -> opens tomorrow at 13:30 UTC
+                    minUntilNextOpen = (24 * 60 - totalMinDay) + (13 * 60 + 30);
+                    nextEventLabel = `Reopens tomorrow at 13:30 UTC (${formatMinutesHuman(minUntilNextOpen)})`;
+                }
+                minutesUntilNextEvent = Math.max(0, minUntilNextOpen);
+            } else {
+                // Active trading hours
+                isOpen = true;
+                status = 'OPERATING';
+                statusLabel = 'Operating';
+                const minUntilClose = (20 * 60) - totalMinDay;
+                minutesUntilNextEvent = Math.max(0, minUntilClose);
+                nextEventLabel = `Closes at 20:00 UTC (${formatMinutesHuman(minUntilClose)})`;
+            }
+        } else if (category === 'Forex') {
             scheduleSummary = 'Sun 22:00 – Fri 22:00 UTC (24/5 Continuous)';
             // Opens Sunday 22:00 UTC, Closes Friday 22:00 UTC. Continuous in between.
             const isWeekend = (day === 6) || // Saturday
