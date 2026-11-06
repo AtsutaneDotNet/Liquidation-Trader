@@ -2541,6 +2541,12 @@ canvas#pnl-chart {
     border: 1px solid rgba(59, 130, 246, 0.4);
 }
 
+.tag-tradfi {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
 .pos-item-pnl-box {
     display: flex;
     justify-content: space-between;

@@ -1251,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="conn-item-top">
                     <div class="conn-item-title-wrap">
                         <div class="conn-item-title-row">
-                            <span class="proto-tag tag-perp">PERP CONTRACT</span>
+                            ${getTradFiInfo(position.symbol).isTradFi ? `<span class="proto-tag tag-tradfi" title="TradFi Asset: ${escapeHtml(getTradFiInfo(position.symbol).assetName || position.symbol)} (${escapeHtml(getTradFiInfo(position.symbol).category || 'TradFi')})">TRADFI CONTRACT</span>` : '<span class="proto-tag tag-perp">PERP CONTRACT</span>'}
                             <span class="pos-detail-title">${escapeHtml(position.symbol)}</span>
                             ${renderTradFiStatusOnly(position.symbol)}
                         </div>
@@ -1382,16 +1382,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ── TradFi Helper Utilities ────────────────────────────────
-    function getTradFiInfo(symbol, marketOverride = null) {
+    function getTradFiInfo(symbol, marketOverride = null, statusOverride = null) {
+        if (statusOverride && typeof statusOverride.isTradFi === 'boolean') {
+            return statusOverride;
+        }
         if (!window.TradFiUtils) return { isTradFi: false, isOpen: true };
         const cfg = window.globalAppConfig || {};
         let market = marketOverride;
         if (!market && window.TradFiMarkets && symbol) {
-            market = window.TradFiMarkets[symbol] || window.TradFiMarkets[symbol.replace(/[^A-Z0-9]/g, '')] || null;
+            const clean = symbol.replace(/[^A-Z0-9]/g, '');
+            market = window.TradFiMarkets[symbol] || window.TradFiMarkets[clean] || null;
             if (!market) {
-                const clean = symbol.replace(/[^A-Z0-9]/g, '');
                 for (const [k, v] of Object.entries(window.TradFiMarkets)) {
-                    if (k.replace(/[^A-Z0-9]/g, '') === clean) {
+                    if (k === symbol || (v.id && v.id === clean) || k.replace(/[^A-Z0-9]/g, '') === clean) {
                         market = v;
                         break;
                     }
@@ -1407,9 +1410,9 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    function renderTradFiTableSymbol(symbol) {
+    function renderTradFiTableSymbol(symbol, statusOverride = null) {
         const safeSym = escapeHtml(symbol || '');
-        const tf = getTradFiInfo(symbol);
+        const tf = getTradFiInfo(symbol, null, statusOverride);
         if (!tf.isTradFi) {
             return `<strong>${safeSym}</strong>`;
         }
@@ -1417,7 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tooltip = escapeHtml(tf.tooltip);
         return `<div class="table-symbol-cell-wrap">
             <strong>${safeSym}</strong>
-            <span class="badge-tradfi-sm" title="TradFi Asset: ${escapeHtml(tf.assetName)} (${escapeHtml(tf.category)})">TradFi</span>
+            <span class="badge-tradfi-sm" title="TradFi Asset: ${escapeHtml(tf.assetName || safeSym)} (${escapeHtml(tf.category || 'TradFi')})">TradFi</span>
             <span class="tradfi-dot-sm ${dotClz}" title="${tooltip}"></span>
         </div>`;
     }
@@ -1444,9 +1447,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const dotClz = tf.isOpen ? 'dot-operating' : (tf.status === 'DAILY_BREAK' ? 'dot-break' : 'dot-closed');
         const tooltip = escapeHtml(tf.tooltip);
         return `
-            <span class="badge-tradfi" title="TradFi Asset: ${escapeHtml(tf.assetName)} (${escapeHtml(tf.category)})">
-                <span>🏛️</span> TradFi
-            </span>
             <span class="tradfi-status-pill ${pillClz}" title="${tooltip}">
                 <span class="tradfi-dot ${dotClz}"></span>
                 <span>${escapeHtml(tf.statusLabel)}</span>
@@ -1578,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="conn-item-top">
                                 <div class="conn-item-title-wrap">
                                     <div class="conn-item-title-row">
-                                        <span class="proto-tag tag-perp">PERP</span>
+                                        ${getTradFiInfo(p.symbol).isTradFi ? `<span class="proto-tag tag-tradfi" title="TradFi Asset: ${escapeHtml(getTradFiInfo(p.symbol).assetName || p.symbol)} (${escapeHtml(getTradFiInfo(p.symbol).category || 'TradFi')})">TRADFI</span>` : '<span class="proto-tag tag-perp">PERP</span>'}
                                         <span class="conn-item-name pos-item-name">${escapeHtml(p.symbol)}</span>
                                         ${renderTradFiStatusOnly(p.symbol)}
                                     </div>
@@ -2007,7 +2007,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isDynamic = item.status === 'Dynamic (API)';
                 const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
                 return `<tr>
-                    <td>${renderTradFiTableSymbol(item.symbol)}</td>
+                    <td>${renderTradFiTableSymbol(item.symbol, item.tradfiStatus)}</td>
                     <td>${formatSelectedCurrency(item.threshold)}</td>
                     <td><span style="color: ${statusColor}">${item.status}</span></td>
                 </tr>`;
@@ -2043,7 +2043,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if (data && data.tradfiMarkets) {
+                    const prevCount = Object.keys(window.TradFiMarkets || {}).length;
                     window.TradFiMarkets = Object.assign(window.TradFiMarkets || {}, data.tradfiMarkets);
+                    const newCount = Object.keys(window.TradFiMarkets).length;
+                    if (newCount !== prevCount) {
+                        const dtActive = document.getElementById('dynamic-thresholds-page')?.classList.contains('active');
+                        if (dtActive && typeof renderDynamicThresholdTable === 'function') {
+                            renderDynamicThresholdTable();
+                        }
+                    }
                 }
             })
             .catch(() => {});

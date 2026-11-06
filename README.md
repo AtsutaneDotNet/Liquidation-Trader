@@ -57,7 +57,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **24H Volume Filter**: Automatically exclude coins with a 24-hour trading volume below a specified USD threshold, avoiding low-liquidity assets.
   - **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
   - **Market Sentiment**: Integrate real-time market sentiment into decision-making and dashboard visibility.
-  - **TradFi Pair Differentiation & Operating Status Engine**: Differentiate Traditional Finance instruments (e.g. Gold `XAU`, Silver `XAG`, Forex `EUR`, `GBP`, Indices `SPX`, `US30`, Commodities `WTI`, and Equities/Stocks `MU`, `TSLA`, `NVDA`, `AAPL`) from standard crypto pairs using exchange protocol metadata (`underlyingType: "EQUITY"`, `underlyingSubType: ["TradFi"]`, `contractType: "TRADIFI_PERPETUAL"`, or `symbolType: "stock"`). Displays live visual indicators (`[TradFi] 🟢` for Operating, `[TradFi] 🔴` for Market Closed, `[TradFi] 🟡` for Daily Break) with rich hover tooltips and countdowns across all dashboard tables, open positions cards, and trade decision logs. Explicitly preserves tokenized assets like `PAXG` and `XAUT` as 24/7 continuous crypto tokens.
+  - **TradFi Pair Differentiation & Operating Status Engine**: Differentiate Traditional Finance instruments (e.g. Equities/Stocks `MU`, `TSLA`, `NVDA`, `DELL`, Commodities/Metals `XAU`, `XAG`, `WTI`, Indices, Forex) from standard crypto pairs purely using dynamic exchange protocol metadata (Binance: `contractType: "TRADIFI_PERPETUAL"` & `underlyingSubType: ["TradFi"]`; Bybit: `symbolType: "stock"` / `"xstocks"` / `"commodity"` / `"forex"` / `"etf"`). In the UI, position cards replace the default `[PERP]` contract tag with `[TRADFI]` and display live operating status pills (`[🟢 Operating]`, `[🔴 Market Closed]`, `[🟡 Daily Break]`) with countdowns across dashboard tables, cards, and trade decision logs. Tokenized assets like `PAXG` and `XAUT` are preserved as continuous 24/7 crypto tokens.
   - **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
   - **Value Threshold**: Filter liquidations by USD or BTC value.
 - **Robust Risk Management**:
@@ -77,7 +77,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **System-Wide Currency Support**: Seamlessly switch dashboard display currencies across USD, EUR, GBP, AUD, CAD, CNY, INR, IDR, and ETH with precise formatting.
   - **Share Statistics**: Export and share visual performance statistics via a built-in screenshot tool.
   - **Import/Export Settings**: Seamlessly backup and restore your strategy configurations without exposing sensitive API keys.
-  - **Real-time Dashboard**: Live liquidation feeds, active positions, and PnL tracking.
+  - **Real-time Dashboard**: Live liquidation feeds, active positions cards (with dedicated `[TRADFI]` and `[PERP]` contract tags alongside live market operating status pills), and PnL tracking.
   - **Position Metrics**: Real-time tracking of current vs max positions and used margin percentage.
   - **Trade Decisions Page**: A dedicated, dynamic log of every trade evaluation that intelligently hides disabled strategy columns, showing detailed indicators and values via interactive tooltips.
   - **Live Health & Connection Monitor**: Dedicated connection status page and sidebar health widget for real-time system telemetry.

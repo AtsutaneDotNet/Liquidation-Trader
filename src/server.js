@@ -387,7 +387,12 @@ class WebServer {
         this.app.get('/api/dynamic-thresholds', (req, res) => {
             const currentConfig = config.get();
             const result = [];
-            const symbols = Array.isArray(this.bot.symbols) ? this.bot.symbols : [];
+            let symbols = Array.isArray(this.bot.symbols) && this.bot.symbols.length > 0 ? this.bot.symbols : [];
+            if (symbols.length === 0 && this.bot.tradeExchange && this.bot.tradeExchange.exchange && this.bot.tradeExchange.exchange.markets) {
+                symbols = Object.values(this.bot.tradeExchange.exchange.markets)
+                    .filter(m => m.swap && m.active && m.quote === 'USDT')
+                    .map(m => m.symbol);
+            }
             const isDynamicEnabled = currentConfig.ENABLE_DYNAMIC_THRESHOLDS;
             const replaceBelowMin = currentConfig.REPLACE_BELOW_MIN_THRESHOLD;
             const btcPrice = this.bot.btcUsdPrice || 1;
@@ -425,11 +430,14 @@ class WebServer {
                 const market = typeof this.bot.getMarket === 'function' ? this.bot.getMarket(sym) : null;
                 const isTradFi = tradfi.isTradFi(sym, market, currentConfig.TRADFI_CUSTOM_SYMBOLS, currentConfig.TRADFI_EXCLUDE_SYMBOLS);
 
+                const tradfiStatus = isTradFi ? tradfi.getMarketStatus(sym, market, new Date(), currentConfig.TRADFI_CUSTOM_SYMBOLS, currentConfig.TRADFI_EXCLUDE_SYMBOLS) : null;
+
                 result.push({
                     symbol: sym,
                     threshold: threshold,
                     status: status,
-                    isTradFi: isTradFi
+                    isTradFi: isTradFi,
+                    tradfiStatus: tradfiStatus
                 });
             }
             res.json({

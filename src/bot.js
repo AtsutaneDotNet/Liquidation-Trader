@@ -58,6 +58,9 @@ class TradingBot {
         // Active Price WebSocket Stream Registries
         this.activePaperWebsockets = {};
         this.activeLiveWebsockets = {};
+
+        // Preload public market data asynchronously on startup
+        this.preloadMarkets();
         this.lastPaperRunaway = {};
         this.lastLiveRunaway = {};
 
@@ -2978,6 +2981,25 @@ class TradingBot {
         return order;
     }
 
+    async preloadMarkets() {
+        try {
+            const cfg = this.config.get();
+            if (!this.tradeExchange) {
+                if (cfg.TRADE_EXCHANGE === 'binance') {
+                    this.tradeExchange = new BinanceExchange(this.config);
+                } else if (cfg.TRADE_EXCHANGE === 'okx') {
+                    this.tradeExchange = new OkxExchange(this.config);
+                } else {
+                    this.tradeExchange = new BybitExchange(this.config);
+                }
+                await this.tradeExchange.init();
+                logger.info(`[Market Loader] Preloaded ${Object.keys(this.tradeExchange.exchange.markets || {}).length} markets for ${cfg.TRADE_EXCHANGE}.`);
+            }
+        } catch (e) {
+            logger.warn(`[Market Loader] Preload markets error: ${e.message}`);
+        }
+    }
+
     getMarket(symbol) {
         if (!symbol) return null;
         if (this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets) {
@@ -2985,7 +3007,9 @@ class TradingBot {
             if (markets[symbol]) return markets[symbol];
             const clean = symbol.replace(/[^A-Z0-9]/g, '');
             for (const [k, m] of Object.entries(markets)) {
-                if (k.replace(/[^A-Z0-9]/g, '') === clean) return m;
+                if (k === symbol || (m.id && m.id === clean) || (m.symbol && m.symbol === symbol) || k.replace(/[^A-Z0-9]/g, '') === clean) {
+                    return m;
+                }
             }
         }
         return null;
@@ -3010,13 +3034,16 @@ class TradingBot {
                         assetName,
                         base,
                         info: {
-                            underlyingType: market.info && market.info.underlyingType,
                             contractType: market.info && market.info.contractType,
+                            underlyingType: market.info && market.info.underlyingType,
                             underlyingSubType: market.info && market.info.underlyingSubType,
                             symbolType: market.info && market.info.symbolType
                         }
                     };
                     result[sym] = entry;
+                    if (market.id && !result[market.id]) {
+                        result[market.id] = entry;
+                    }
                     const stripped = sym.replace(/[^A-Z0-9]/g, '');
                     if (stripped && !result[stripped]) {
                         result[stripped] = entry;
@@ -3026,7 +3053,8 @@ class TradingBot {
         }
         return result;
     }
-}
 
+
+}
 
 module.exports = TradingBot;
