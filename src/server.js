@@ -70,7 +70,7 @@ class WebServer {
                 return next();
             }
 
-            if (req.path === '/login.html' || req.path === '/style.css' || req.path === '/script.js') {
+            if (req.path === '/login.html' || req.path === '/style.css' || req.path === '/script.js' || req.path === '/tradfi.js') {
                 return next();
             }
 

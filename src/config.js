@@ -123,7 +123,10 @@ function getConfig() {
         CB_PRICE_LOOKBACK: parseInt(dbConfig.CB_PRICE_LOOKBACK) || 10,
         CB_VOLUME_SMA_PERIOD: parseInt(dbConfig.CB_VOLUME_SMA_PERIOD) || 20,
         CB_VOLUME_MULTIPLIER: parseFloat(dbConfig.CB_VOLUME_MULTIPLIER) || 2.0,
-        CB_PRICE_MOVEMENT_PERCENT: dbConfig.CB_PRICE_MOVEMENT_PERCENT !== undefined ? parseFloat(dbConfig.CB_PRICE_MOVEMENT_PERCENT) : 10.0
+        CB_PRICE_MOVEMENT_PERCENT: dbConfig.CB_PRICE_MOVEMENT_PERCENT !== undefined ? parseFloat(dbConfig.CB_PRICE_MOVEMENT_PERCENT) : 10.0,
+        BLOCK_TRADES_WHEN_TRADFI_CLOSED: dbConfig.BLOCK_TRADES_WHEN_TRADFI_CLOSED !== undefined ? dbConfig.BLOCK_TRADES_WHEN_TRADFI_CLOSED === 'true' : true,
+        TRADFI_CUSTOM_SYMBOLS: dbConfig.TRADFI_CUSTOM_SYMBOLS || '',
+        TRADFI_EXCLUDE_SYMBOLS: dbConfig.TRADFI_EXCLUDE_SYMBOLS || 'PAXG, XAUT'
     };
 }
 

@@ -57,6 +57,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **24H Volume Filter**: Automatically exclude coins with a 24-hour trading volume below a specified USD threshold, avoiding low-liquidity assets.
   - **CMC Filter**: Automatically restrict trading to the Top N coins ranked by market cap via CoinMarketCap API.
   - **Market Sentiment**: Integrate real-time market sentiment into decision-making and dashboard visibility.
+  - **TradFi Pair Differentiation & Operating Status Engine**: Differentiate Traditional Finance instruments (e.g. Gold `XAU`, Silver `XAG`, Forex `EUR`, `GBP`, Indices `SPX`, `US30`, Commodities `WTI`) from standard crypto pairs using exchange protocol metadata (`market.info.underlyingType` / `symbolType` / `baseCoin`). Displays live visual indicators (`[TradFi] 🟢` for Operating, `[TradFi] 🔴` for Weekend Closed, `[TradFi] 🟡` for Daily Break) with rich hover tooltips and countdowns across all dashboard tables, open positions cards, and trade decision logs. Explicitly preserves tokenized assets like `PAXG` and `XAUT` as 24/7 continuous crypto tokens.
   - **Coin Blacklist**: Prevent the bot from trading on specific symbols (e.g., highly volatile or low-liquidity assets).
   - **Value Threshold**: Filter liquidations by USD or BTC value.
 - **Robust Risk Management**:
@@ -68,6 +69,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
   - **Max Leverage Safeguard**: Automatically checks the maximum allowed leverage on the exchange for the specific symbol (via market limit cache or `fetchLeverageTiers` API) and skips the trade if the configured `TRADE_LEVERAGE` exceeds it, preventing API errors and protecting account health.
   - **Max Positions Limit**: Control exposure by limiting the number of simultaneous trades.
   - **Isolation Trading System**: Automatically stop opening new positions when margin usage exceeds a safe threshold, reserving capital to manage current open positions. Optionally, automatically halve TP, trailing distance, and trailing activation values to quickly secure profits.
+  - **TradFi Market Closed Safeguard**: Prevent the bot from opening new positions on TradFi pairs when the underlying traditional market is closed or undergoing daily maintenance (`BLOCK_TRADES_WHEN_TRADFI_CLOSED`), protecting against illiquidity, wide spreads, and execution rejection while allowing open positions to be managed normally.
 - **Fund Management**:
   - **Automatic Internal Transfer**: Automatically takes profit by transferring a specified percentage of profit from the trading account to the funding account when the wallet value exceeds a predefined threshold.
 - **Premium Web UI**:
@@ -256,6 +258,9 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | `ENABLE_RUNAWAY_HELPER` | Rescue stale positions with deep negative PnL% via averaging. **<font color="red">(EXPERIMENTAL)</font>** | `false` |
 | `RUNAWAY_HELPER_THRESHOLD` | The unrealized PnL% threshold (negative) to trigger rescue. | `-10` |
 | `RUNAWAY_HELPER_TIMEOUT` | Timeout in seconds before Runaway Helper can trigger again for the same coin. | `70` |
+| `BLOCK_TRADES_WHEN_TRADFI_CLOSED` | Block opening new positions on TradFi pairs when their market is closed or on daily break. | `true` |
+| `TRADFI_CUSTOM_SYMBOLS` | Comma-separated list of additional symbols to classify as TradFi. | | 
+| `TRADFI_EXCLUDE_SYMBOLS` | Comma-separated list of symbols forced to native Crypto classification (e.g. `PAXG, XAUT`). | `PAXG, XAUT` |
 
 ### Fund Management
 | Variable | Description | Default |
@@ -272,6 +277,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 ├── assets/             # Saved screenshots and visual dashboard showcases
 ├── src/
 │   ├── exchanges/      # Unified exchange adapters (Bybit, Binance, OKX)
+│   ├── utils/          # TradFi classification & market schedule utilities
 │   ├── bot.js          # Core trading engine and strategy logic
 │   ├── server.js       # Express server and API routes
 │   ├── db.js           # SQLite management with encryption support
@@ -280,7 +286,7 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 │   ├── cmc.js          # CoinMarketCap API integration
 │   ├── logger.js       # Winston-based logging system
 │   └── index.js        # Main entry point
-├── public/             # Web UI assets (HTML, CSS, JS)
+├── public/             # Web UI assets (HTML, CSS, JS, tradfi.js)
 ├── bot_data.sqlite     # Local encrypted database
 └── package.json        # Dependencies and scripts
 ```

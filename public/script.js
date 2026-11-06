@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED', 'BLOCK_TRADES_WHEN_TRADFI_CLOSED'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true';
                         continue;
@@ -212,7 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         el.value = data[key] || '';
                     }
 
-                    if (key === 'LIQUIDATION_EXCHANGES' && data[key]) {
+                    const blockTradFiEl = document.getElementById('BLOCK_TRADES_WHEN_TRADFI_CLOSED');
+                if (blockTradFiEl && data.BLOCK_TRADES_WHEN_TRADFI_CLOSED === undefined) {
+                    blockTradFiEl.checked = true;
+                }
+
+                if (key === 'LIQUIDATION_EXCHANGES' && data[key]) {
                         const arr = data[key].split(',').map(s => s.trim());
                         document.querySelectorAll('.liq-exchange-cb').forEach(cb => {
                             cb.checked = arr.includes(cb.value);
@@ -1063,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('position-detail-page').classList.add('active');
 
-        document.getElementById('detail-symbol-name').textContent = symbol;
+        document.getElementById('detail-symbol-name').innerHTML = renderTradFiHeaderSymbol(symbol);
 
         renderPositionStats(symbol);
 
@@ -1116,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         let tvSymbol = `${exchangeName}:${cleanSymbol}.P`;
 
-        document.getElementById('tvPopupModalSymbol').textContent = symbol;
+        document.getElementById('tvPopupModalSymbol').innerHTML = renderTradFiHeaderSymbol(symbol);
         document.getElementById('tvPopupModal').style.display = 'flex';
 
         if (popupTvWidget) {
@@ -1242,6 +1247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="conn-item-title-row">
                             <span class="proto-tag tag-perp">PERP CONTRACT</span>
                             <span class="pos-detail-title">${escapeHtml(position.symbol)}</span>
+                            ${renderTradFiStatusOnly(position.symbol)}
                         </div>
                         <span class="conn-item-desc">Linear Perpetual &bull; Leverage: <strong>${leverage}x</strong> &bull; Size: <strong>${escapeHtml(String(position.size))}</strong></span>
                     </div>
@@ -1369,6 +1375,89 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     };
 
+    // ── TradFi Helper Utilities ────────────────────────────────
+    function getTradFiInfo(symbol) {
+        if (!window.TradFiUtils) return { isTradFi: false, isOpen: true };
+        const cfg = window.globalAppConfig || {};
+        return window.TradFiUtils.getMarketStatus(
+            symbol,
+            null,
+            new Date(),
+            cfg.TRADFI_CUSTOM_SYMBOLS || '',
+            cfg.TRADFI_EXCLUDE_SYMBOLS || 'PAXG, XAUT'
+        );
+    }
+
+    function renderTradFiTableSymbol(symbol) {
+        const safeSym = escapeHtml(symbol || '');
+        const tf = getTradFiInfo(symbol);
+        if (!tf.isTradFi) {
+            return `<strong>${safeSym}</strong>`;
+        }
+        const dotClz = tf.isOpen ? 'dot-operating' : (tf.status === 'DAILY_BREAK' ? 'dot-break' : 'dot-closed');
+        const tooltip = escapeHtml(tf.tooltip);
+        return `<div class="table-symbol-cell-wrap">
+            <strong>${safeSym}</strong>
+            <span class="badge-tradfi-sm" title="TradFi Asset: ${escapeHtml(tf.assetName)} (${escapeHtml(tf.category)})">TradFi</span>
+            <span class="tradfi-dot-sm ${dotClz}" title="${tooltip}"></span>
+        </div>`;
+    }
+
+    function renderTradFiDecisionSymbol(symbol) {
+        const safeSym = escapeHtml(symbol || '');
+        const tf = getTradFiInfo(symbol);
+        if (!tf.isTradFi) {
+            return `<strong style="color: var(--accent); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--accent)'">${safeSym}</strong>`;
+        }
+        const dotClz = tf.isOpen ? 'dot-operating' : (tf.status === 'DAILY_BREAK' ? 'dot-break' : 'dot-closed');
+        const tooltip = escapeHtml(tf.tooltip);
+        return `<div class="table-symbol-cell-wrap">
+            <strong style="color: var(--accent); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--accent)'">${safeSym}</strong>
+            <span class="badge-tradfi-sm" title="TradFi Asset: ${escapeHtml(tf.assetName)} (${escapeHtml(tf.category)})">TradFi</span>
+            <span class="tradfi-dot-sm ${dotClz}" title="${tooltip}"></span>
+        </div>`;
+    }
+
+    function renderTradFiStatusOnly(symbol) {
+        const tf = getTradFiInfo(symbol);
+        if (!tf.isTradFi) return '';
+        const pillClz = tf.isOpen ? 'status-operating' : (tf.status === 'DAILY_BREAK' ? 'status-break' : 'status-closed');
+        const dotClz = tf.isOpen ? 'dot-operating' : (tf.status === 'DAILY_BREAK' ? 'dot-break' : 'dot-closed');
+        const tooltip = escapeHtml(tf.tooltip);
+        return `
+            <span class="badge-tradfi" title="TradFi Asset: ${escapeHtml(tf.assetName)} (${escapeHtml(tf.category)})">
+                <span>🏛️</span> TradFi
+            </span>
+            <span class="tradfi-status-pill ${pillClz}" title="${tooltip}">
+                <span class="tradfi-dot ${dotClz}"></span>
+                <span>${escapeHtml(tf.statusLabel)}</span>
+            </span>
+        `;
+    }
+
+    function renderTradFiHeaderSymbol(symbol) {
+        const safeSym = escapeHtml(symbol || '');
+        const tf = getTradFiInfo(symbol);
+        if (!tf.isTradFi) {
+            return safeSym;
+        }
+        const pillClz = tf.isOpen ? 'status-operating' : (tf.status === 'DAILY_BREAK' ? 'status-break' : 'status-closed');
+        const dotClz = tf.isOpen ? 'dot-operating' : (tf.status === 'DAILY_BREAK' ? 'dot-break' : 'dot-closed');
+        const tooltip = escapeHtml(tf.tooltip);
+        return `
+            <div style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>${safeSym}</span>
+                <span class="badge-tradfi" title="TradFi Asset: ${escapeHtml(tf.assetName)} (${escapeHtml(tf.category)})">
+                    <span>🏛️</span> TradFi
+                </span>
+                <span class="tradfi-status-pill ${pillClz}" title="${tooltip}">
+                    <span class="tradfi-dot ${dotClz}"></span>
+                    <span>${escapeHtml(tf.statusLabel)}</span>
+                </span>
+            </div>
+        `;
+    }
+
     function escapeHtml(str) {
         if (str === null || str === undefined) return '';
         return String(str)
@@ -1472,6 +1561,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div class="conn-item-title-row">
                                         <span class="proto-tag tag-perp">PERP</span>
                                         <span class="conn-item-name pos-item-name">${escapeHtml(p.symbol)}</span>
+                                        ${renderTradFiStatusOnly(p.symbol)}
                                     </div>
                                     <span class="conn-item-desc">Linear Contract &bull; Size: <strong>${escapeHtml(String(p.size))}</strong></span>
                                 </div>
@@ -1652,7 +1742,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<tr class="${highlightClass}">
                     <td style="color: var(--text-muted);">${timeStr}</td>
                     <td style="text-transform: capitalize;">${liq.exchange}</td>
-                    <td><strong>${liq.symbol}</strong></td>
+                    <td>${renderTradFiTableSymbol(liq.symbol)}</td>
                     <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
                     <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
                     <td>${liq.amount}</td>
@@ -1749,7 +1839,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             return `<tr class="${highlightClass}">
                                 <td style="color: var(--text-muted);">${timeStr}</td>
                                 <td style="text-transform: capitalize;">${liq.exchange}</td>
-                                <td><strong>${liq.symbol}</strong></td>
+                                <td>${renderTradFiTableSymbol(liq.symbol)}</td>
                                 <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
                                 <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
                                 <td>${liq.amount}</td>
@@ -1809,7 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return `<tr>
                     <td style="color: var(--text-muted);">${timeStr}</td>
-                    <td><strong>${record.symbol}</strong></td>
+                    <td>${renderTradFiTableSymbol(record.symbol)}</td>
                     <td><span class="${sideClz}">${(record.side || '').toUpperCase()}</span></td>
                     <td>${sizeStr}</td>
                     <td>${entryStr}</td>
@@ -1898,7 +1988,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isDynamic = item.status === 'Dynamic (API)';
                 const statusColor = isDynamic ? 'var(--accent)' : 'var(--text-muted)';
                 return `<tr>
-                    <td><strong>${item.symbol}</strong></td>
+                    <td>${renderTradFiTableSymbol(item.symbol)}</td>
                     <td>${formatSelectedCurrency(item.threshold)}</td>
                     <td><span style="color: ${statusColor}">${item.status}</span></td>
                 </tr>`;
@@ -2120,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return `<tr>
             <td style="color: var(--text-muted);">${timeStr}</td>
-            <td style="cursor: pointer;" onclick="openTvPopupModal('${record.symbol}')"><strong style="color: var(--accent); transition: color 0.2s;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--accent)'">${record.symbol}</strong></td>
+            <td style="cursor: pointer;" onclick="openTvPopupModal('${record.symbol}')">${renderTradFiDecisionSymbol(record.symbol)}</td>
             <td>${priceFormatted}</td>
             <td class="col-strat-revliq">${formatStrategy(record.revLiq, 'Rev.Liq')}</td>
             <td class="col-strat-vwap">${formatStrategy(record.vwap, 'VWAP')}</td>
@@ -2366,7 +2456,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const html = `
-            <div class="toast-symbol">${order.symbol}</div>
+            <div class="toast-symbol">${renderTradFiTableSymbol(order.symbol)}</div>
             <div class="toast-details">
                 <div class="toast-detail-row"><span>Type</span><span>${order.type || 'MARKET'}</span></div>
                 <div class="toast-detail-row"><span>Side</span><span>${order.side}</span></div>

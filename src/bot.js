@@ -6,6 +6,7 @@ const logger = require('./logger');
 const db = require('./db');
 const cmc = require('./cmc');
 const connectionStatus = require('./connectionStatus');
+const tradfi = require('./utils/tradfi');
 
 class TradingBot {
     constructor() {
@@ -1899,6 +1900,16 @@ class TradingBot {
             }
         }
 
+        if (cfg.BLOCK_TRADES_WHEN_TRADFI_CLOSED) {
+            const market = this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets ? this.tradeExchange.exchange.markets[symbol] : null;
+            const tradfiStatus = tradfi.getMarketStatus(symbol, market, new Date(), cfg.TRADFI_CUSTOM_SYMBOLS, cfg.TRADFI_EXCLUDE_SYMBOLS);
+            if (tradfiStatus.isTradFi && !tradfiStatus.isOpen) {
+                logger.info(`[TradFi Safeguard] Market for ${symbol} is currently ${tradfiStatus.statusLabel} (${tradfiStatus.nextEventLabel}). Skipping trade evaluation.`);
+                pushDecision(`TradFi Market ${tradfiStatus.statusLabel}`);
+                return;
+            }
+        }
+
         try {
             const positions = cfg.ENABLE_PAPER_TRADING ? db.getPaperPositions() : db.getPositions();
             const openPosition = positions.find(p => p.symbol === symbol);
@@ -2689,6 +2700,15 @@ class TradingBot {
 
     async executeTrade(symbol, side, entryPrice, cfg) {
         try {
+            if (cfg.BLOCK_TRADES_WHEN_TRADFI_CLOSED) {
+                const market = this.tradeExchange && this.tradeExchange.exchange && this.tradeExchange.exchange.markets ? this.tradeExchange.exchange.markets[symbol] : null;
+                const tradfiStatus = tradfi.getMarketStatus(symbol, market, new Date(), cfg.TRADFI_CUSTOM_SYMBOLS, cfg.TRADFI_EXCLUDE_SYMBOLS);
+                if (tradfiStatus.isTradFi && !tradfiStatus.isOpen) {
+                    logger.info(`[TradFi Safeguard] Cannot execute trade for ${symbol}: market is currently ${tradfiStatus.statusLabel} (${tradfiStatus.nextEventLabel}). Skipping.`);
+                    return;
+                }
+            }
+
             const isLeverageAllowed = await this.tradeExchange.checkMaxLeverage(symbol, cfg.TRADE_LEVERAGE);
             if (!isLeverageAllowed) {
                 logger.info(`Max leverage for ${symbol} is lower than the configured TRADE_LEVERAGE (${cfg.TRADE_LEVERAGE}). Skipping order.`);
