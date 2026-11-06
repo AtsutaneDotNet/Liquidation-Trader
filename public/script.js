@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (const key in data) {
                     if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED', 'BLOCK_TRADES_WHEN_TRADFI_CLOSED'].includes(key)) {
                         const el = document.getElementById(key);
-                        if (el) el.checked = data[key] === true || data[key] === 'true';
+                        if (el) el.checked = data[key] === true || data[key] === 'true' || data[key] === 'on';
                         continue;
                     }
                     const el = document.getElementById(key);
@@ -212,12 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         el.value = data[key] || '';
                     }
 
-                    const blockTradFiEl = document.getElementById('BLOCK_TRADES_WHEN_TRADFI_CLOSED');
-                if (blockTradFiEl && data.BLOCK_TRADES_WHEN_TRADFI_CLOSED === undefined) {
-                    blockTradFiEl.checked = true;
-                }
-
-                if (key === 'LIQUIDATION_EXCHANGES' && data[key]) {
+                    if (key === 'LIQUIDATION_EXCHANGES' && data[key]) {
                         const arr = data[key].split(',').map(s => s.trim());
                         document.querySelectorAll('.liq-exchange-cb').forEach(cb => {
                             cb.checked = arr.includes(cb.value);
@@ -225,6 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const hiddenEl = document.getElementById('LIQUIDATION_EXCHANGES');
                         if (hiddenEl) hiddenEl.value = data[key];
                     }
+                }
+
+                const blockTradFiEl = document.getElementById('BLOCK_TRADES_WHEN_TRADFI_CLOSED');
+                if (blockTradFiEl && (data.BLOCK_TRADES_WHEN_TRADFI_CLOSED === undefined || data.BLOCK_TRADES_WHEN_TRADFI_CLOSED === '')) {
+                    blockTradFiEl.checked = true;
                 }
 
                 // Toggle DMI range field on load
@@ -461,6 +461,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const anonCb = document.getElementById('ENABLE_ANON_REPORTING');
         if (anonCb) formData.set('ENABLE_ANON_REPORTING', anonCb.checked ? 'true' : 'false');
+
+        const blockTradFiCb = document.getElementById('BLOCK_TRADES_WHEN_TRADFI_CLOSED');
+        if (blockTradFiCb) formData.set('BLOCK_TRADES_WHEN_TRADFI_CLOSED', blockTradFiCb.checked ? 'true' : 'false');
 
         const paperCb = document.getElementById('ENABLE_PAPER_TRADING');
         if (paperCb) formData.set('ENABLE_PAPER_TRADING', paperCb.checked ? 'true' : 'false');
