@@ -1446,9 +1446,14 @@ class TradingBot {
                         const dotIdx = priceStr.indexOf('.');
                         const decimals = dotIdx === -1 ? 0 : priceStr.length - dotIdx - 1;
 
+                        const amountStr = amount.toString();
+                        const amountDotIdx = amountStr.indexOf('.');
+                        const amountDecimals = amountDotIdx === -1 ? 0 : amountStr.length - amountDotIdx - 1;
+
                         this.consolidatedLiquidations.set(key, {
                             value: value,
                             amount: amount,
+                            amountDecimals: amountDecimals,
                             price: price,
                             decimals: decimals,
                             firstTimestamp: now,
@@ -1462,7 +1467,16 @@ class TradingBot {
                         if (elapsedMs <= consolidationWindowMs) {
                             // Within window: merge old value with new one
                             entry.value += value;
-                            entry.amount += amount;
+
+                            // Calculate new entry.amount, keeping decimal as original
+                            const currentAmountStr = amount.toString();
+                            const currentAmountDot = currentAmountStr.indexOf('.');
+                            const currentAmountDecimals = currentAmountDot === -1 ? 0 : currentAmountStr.length - currentAmountDot - 1;
+                            if (entry.amountDecimals === undefined || currentAmountDecimals > entry.amountDecimals) {
+                                entry.amountDecimals = currentAmountDecimals;
+                            }
+                            const rawAmount = entry.amount + amount;
+                            entry.amount = parseFloat(rawAmount.toFixed(entry.amountDecimals));
 
                             // Calculate new entry.price = value / amount, keeping decimal as original
                             if (entry.amount > 0) {
@@ -1506,9 +1520,14 @@ class TradingBot {
                             const dotIdx = priceStr.indexOf('.');
                             const decimals = dotIdx === -1 ? 0 : priceStr.length - dotIdx - 1;
 
+                            const amountStr = amount.toString();
+                            const amountDotIdx = amountStr.indexOf('.');
+                            const amountDecimals = amountDotIdx === -1 ? 0 : amountStr.length - amountDotIdx - 1;
+
                             this.consolidatedLiquidations.set(key, {
                                 value: value,
                                 amount: amount,
+                                amountDecimals: amountDecimals,
                                 price: price,
                                 decimals: decimals,
                                 firstTimestamp: now,
