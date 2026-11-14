@@ -38,6 +38,7 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 
 - **Full-Featured Paper Trading Engine**: Test strategies securely without risking real capital! The paper engine accurately simulates live trading logic including local Take-Profit, Stop-Loss, Trailing Stops, real-time market entries, Runaway Helper rescues, and true Realized/Unrealized PnL wallet balance isolation. Includes a one-click reset for paper trading history and balance.
 - **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, and **OKX** using the unified **CCXT Pro** engine.
+- **Liquidation Consolidation**: Captures multi-fill liquidation bursts that are broken into smaller sub-threshold orders across orderbooks. When enabled, liquidations matching the exact same exchange, symbol, and side (BUY or SELL) accumulate in memory within a configurable time window (`LIQUIDATION_CONSOLIDATION_SECONDS`, default: 5.0s). If the merged total valuation meets or exceeds the threshold, the bot executes trades at the volume-weighted average price (`value / amount`, preserving original decimals). In the Web UI, consolidated triggers are marked in the Global Liquidation Stream with a dedicated `[⚡ Nx Merged]` indicator badge showing merge counts and duration tooltips.
 - **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events. Includes a dynamic minimum safeguard configuration (`REPLACE_BELOW_MIN_THRESHOLD`).
 - **Advanced Strategies**:
   - **Circuit Breaker**: Detects extreme market volatility using ATR multiples, volume surges, and price movement percentage checks. Halts new trading entries during abnormal conditions to protect capital while allowing existing positions to be managed normally.
@@ -233,6 +234,8 @@ The bot is primarily configured through the **Web UI Settings** panel. Below are
 | :--- | :--- | :--- |
 | `LIQUIDATION_VALUE_THRESHOLD` | Min liquidation value to trigger trade. | `1000` |
 | `LIQUIDATION_VALUE_CURRENCY` | Currency for threshold (`USD` or `BTC`). | `USD` |
+| `ENABLE_LIQUIDATION_CONSOLIDATION` | Accumulate sub-threshold liquidations from same exchange, symbol, and side within a time window. | `false` |
+| `LIQUIDATION_CONSOLIDATION_SECONDS` | Time window (in seconds) to merge sub-threshold liquidations before replacing in memory. | `5.0` |
 | `ENABLE_DYNAMIC_THRESHOLDS` | Use API-driven [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) values. | `false` |
 | `REPLACE_BELOW_MIN_THRESHOLD` | Override dynamic thresholds if they are below the minimum static threshold. | `true` |
 | `RAPIDAPI_KEY` | Your [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) Key. | |
