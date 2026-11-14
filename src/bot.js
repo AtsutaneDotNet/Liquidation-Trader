@@ -59,6 +59,9 @@ class TradingBot {
         this.activePaperWebsockets = {};
         this.activeLiveWebsockets = {};
 
+        // In-memory store for consolidating sub-threshold liquidations
+        this.consolidatedLiquidations = new Map();
+
         // Preload public market data asynchronously on startup
         this.preloadMarkets();
         this.lastPaperRunaway = {};
@@ -251,6 +254,17 @@ class TradingBot {
                 this.checkAndRemoveStalePositions().catch(e => logger.error(`Cleanup error: ${e.message}`));
                 db.pruneLiquidations(500);
                 db.pruneBotEvents();
+
+                // Prune stale consolidated liquidations older than 30s
+                if (this.consolidatedLiquidations && this.consolidatedLiquidations.size > 0) {
+                    const now = Date.now();
+                    const maxAge = Math.max((this.config.get().LIQUIDATION_CONSOLIDATION_SECONDS || 5.0) * 2000, 30000);
+                    for (const [key, item] of this.consolidatedLiquidations.entries()) {
+                        if (now - item.firstTimestamp > maxAge) {
+                            this.consolidatedLiquidations.delete(key);
+                        }
+                    }
+                }
             }, 10000); // Every 10 secs
 
         } catch (error) {
@@ -271,6 +285,9 @@ class TradingBot {
         this.errorCount = 0;
         this.activePaperWebsockets = {};
         this.activeLiveWebsockets = {};
+        if (this.consolidatedLiquidations) {
+            this.consolidatedLiquidations.clear();
+        }
         clearTimeout(this.errorTimer);
         clearInterval(this.pnlInterval);
         clearInterval(this.cleanupInterval);
@@ -1405,21 +1422,130 @@ class TradingBot {
                 }
             }
 
-            if (value >= thresholdInUsd) {
+            const consolidationEnabled = cfg.ENABLE_LIQUIDATION_CONSOLIDATION;
+            const consolidationWindowMs = (cfg.LIQUIDATION_CONSOLIDATION_SECONDS || 5.0) * 1000;
+            const key = `${(exName || 'unknown').toLowerCase()}:${symbol}:${unifiedSide}`;
+            const now = Date.now();
+
+            let effectiveValue = value;
+            let effectivePrice = price;
+            let isConsolidatedMatch = false;
+            let consolidatedCount = 1;
+            let consolidatedDuration = 0;
+
+            if (consolidationEnabled && consolidationWindowMs > 0) {
+                if (value >= thresholdInUsd) {
+                    // Single liquidation already reached threshold; clear any pending sub-threshold cache
+                    this.consolidatedLiquidations.delete(key);
+                } else {
+                    // Liquidation is below threshold: check in-memory cache
+                    const entry = this.consolidatedLiquidations.get(key);
+
+                    if (!entry) {
+                        const priceStr = price.toString();
+                        const dotIdx = priceStr.indexOf('.');
+                        const decimals = dotIdx === -1 ? 0 : priceStr.length - dotIdx - 1;
+
+                        this.consolidatedLiquidations.set(key, {
+                            value: value,
+                            amount: amount,
+                            price: price,
+                            decimals: decimals,
+                            firstTimestamp: now,
+                            lastTimestamp: now,
+                            count: 1
+                        });
+                        return;
+                    } else {
+                        const elapsedMs = now - entry.firstTimestamp;
+
+                        if (elapsedMs <= consolidationWindowMs) {
+                            // Within window: merge old value with new one
+                            entry.value += value;
+                            entry.amount += amount;
+
+                            // Calculate new entry.price = value / amount, keeping decimal as original
+                            if (entry.amount > 0) {
+                                const rawAvg = entry.value / entry.amount;
+                                entry.price = parseFloat(rawAvg.toFixed(entry.decimals));
+                            } else {
+                                entry.price = price;
+                            }
+
+                            entry.lastTimestamp = now;
+                            entry.count += 1;
+
+                            if (entry.value >= thresholdInUsd) {
+                                effectiveValue = entry.value;
+                                effectivePrice = entry.price;
+                                isConsolidatedMatch = true;
+                                consolidatedCount = entry.count;
+                                consolidatedDuration = (now - entry.firstTimestamp) / 1000;
+
+                                // Add consolidated liquidation to SQLite for UI monitoring
+                                db.addLiquidation({
+                                    symbol: symbol,
+                                    exchange: exName || 'unknown',
+                                    side: unifiedSide,
+                                    price: effectivePrice,
+                                    amount: entry.amount,
+                                    value: effectiveValue,
+                                    timestamp: now,
+                                    is_consolidated: 1,
+                                    merged_count: consolidatedCount,
+                                    duration_seconds: consolidatedDuration
+                                });
+
+                                this.consolidatedLiquidations.delete(key);
+                            } else {
+                                return;
+                            }
+                        } else {
+                            // Over window: new value replaces old one in memory
+                            const priceStr = price.toString();
+                            const dotIdx = priceStr.indexOf('.');
+                            const decimals = dotIdx === -1 ? 0 : priceStr.length - dotIdx - 1;
+
+                            this.consolidatedLiquidations.set(key, {
+                                value: value,
+                                amount: amount,
+                                price: price,
+                                decimals: decimals,
+                                firstTimestamp: now,
+                                lastTimestamp: now,
+                                count: 1
+                            });
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if (effectiveValue >= thresholdInUsd) {
+                const stratType = isConsolidatedMatch
+                    ? (usingDynamic ? 'DYNAMIC_CONSOLIDATED' : 'STATIC_CONSOLIDATED')
+                    : (usingDynamic ? 'DYNAMIC' : 'STATIC');
+
                 db.logBotEvent({
                     event_type: 'LIQUIDATION_MATCH',
                     symbol: symbol,
-                    value: value,
-                    strategy: usingDynamic ? 'DYNAMIC' : 'STATIC',
+                    value: effectiveValue,
+                    strategy: stratType,
                     threshold: thresholdInUsd
                 });
-                logger.info(`--- Large Liquidation Detected ---`);
-                if (usingDynamic) {
-                    logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)} (Dynamic Threshold: $${thresholdInUsd.toFixed(2)})`);
-                } else if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
-                    logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)} (>= ${cfg.LIQUIDATION_VALUE_THRESHOLD} BTC ≈ $${thresholdInUsd.toFixed(2)})`);
+
+                if (isConsolidatedMatch) {
+                    logger.info(`--- Consolidated Large Liquidation Detected ---`);
+                    logger.info(`Symbol: ${symbol} (${exName} ${unifiedSide}) | Merged ${consolidatedCount} events in ${consolidatedDuration.toFixed(2)}s | Price: ${effectivePrice} | Total Value: $${effectiveValue.toFixed(2)} (Threshold: $${thresholdInUsd.toFixed(2)})`);
                 } else {
-                    logger.info(`Symbol: ${symbol} | Price: ${price} | Value: $${value.toFixed(2)}`);
+                    logger.info(`--- Large Liquidation Detected ---`);
+                    if (usingDynamic) {
+                        logger.info(`Symbol: ${symbol} | Price: ${effectivePrice} | Value: $${effectiveValue.toFixed(2)} (Dynamic Threshold: $${thresholdInUsd.toFixed(2)})`);
+                    } else if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
+                        logger.info(`Symbol: ${symbol} | Price: ${effectivePrice} | Value: $${effectiveValue.toFixed(2)} (>= ${cfg.LIQUIDATION_VALUE_THRESHOLD} BTC ≈ $${thresholdInUsd.toFixed(2)})`);
+                    } else {
+                        logger.info(`Symbol: ${symbol} | Price: ${effectivePrice} | Value: $${effectiveValue.toFixed(2)}`);
+                    }
                 }
 
                 // Reset Runaway Helper timeout for this symbol since a liquidation occurred
@@ -1429,7 +1555,7 @@ class TradingBot {
                 this.lastLiveRunaway[symbol] = Date.now();
 
                 this.isTrading = true;
-                await this.evaluateTrade(symbol, price, unifiedSide, exName);
+                await this.evaluateTrade(symbol, effectivePrice, unifiedSide, exName);
             }
         } catch (error) {
             this.handleError(`Error handling liquidation: ${error.message}`);

@@ -803,6 +803,22 @@ input:focus {
     border-radius: 4px;
     font-weight: 600;
 }
+.badge-consolidated {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
 
 /* ── Toast Notifications ─────────────────────────────── */
 #toast-container {

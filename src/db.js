@@ -47,7 +47,10 @@ db.exec(`
     price REAL,
     amount REAL,
     value REAL,
-    timestamp INTEGER
+    timestamp INTEGER,
+    is_consolidated INTEGER DEFAULT 0,
+    merged_count INTEGER DEFAULT 1,
+    duration_seconds REAL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS closed_pnl (
@@ -163,6 +166,9 @@ try { db.exec('ALTER TABLE margin_history ADD COLUMN open_symbols TEXT DEFAULT \
 try { db.exec('ALTER TABLE paper_margin_history ADD COLUMN open_symbols TEXT DEFAULT \'\';'); } catch(e) {}
 try { db.exec('ALTER TABLE positions ADD COLUMN atr_multiplier REAL DEFAULT 1.0;'); } catch(e) {}
 try { db.exec('ALTER TABLE paper_positions ADD COLUMN atr_multiplier REAL DEFAULT 1.0;'); } catch(e) {}
+try { db.exec('ALTER TABLE liquidations ADD COLUMN is_consolidated INTEGER DEFAULT 0;'); } catch(e) {}
+try { db.exec('ALTER TABLE liquidations ADD COLUMN merged_count INTEGER DEFAULT 1;'); } catch(e) {}
+try { db.exec('ALTER TABLE liquidations ADD COLUMN duration_seconds REAL DEFAULT 0;'); } catch(e) {}
 
 const ENCRYPTED_KEYS = ['API_KEY', 'API_SECRET', 'WEBUI_USERNAME', 'WEBUI_PASSWORD', 'CMC_API_KEY', 'RAPIDAPI_KEY'];
 
@@ -223,6 +229,8 @@ const defaults = {
     REVLIQ_OKX_MODE: 'flip',
     LIQUIDATION_VALUE_CURRENCY: 'USD',
     LIQUIDATION_VALUE_THRESHOLD: '1000',
+    ENABLE_LIQUIDATION_CONSOLIDATION: 'false',
+    LIQUIDATION_CONSOLIDATION_SECONDS: '5.0',
     OFFSET_LONG_PERCENTAGE: '0.5',
     OFFSET_SHORT_PERCENTAGE: '0.5',
     TAKE_PROFIT_PERCENTAGE: '1.0',
@@ -474,9 +482,20 @@ function getPositions() {
 
 function addLiquidation(data) {
     db.prepare(`
-        INSERT INTO liquidations (symbol, exchange, side, price, amount, value, timestamp)
-        VALUES (@symbol, @exchange, @side, @price, @amount, @value, @timestamp)
-    `).run(data);
+        INSERT INTO liquidations (symbol, exchange, side, price, amount, value, timestamp, is_consolidated, merged_count, duration_seconds)
+        VALUES (@symbol, @exchange, @side, @price, @amount, @value, @timestamp, @is_consolidated, @merged_count, @duration_seconds)
+    `).run({
+        symbol: data.symbol,
+        exchange: data.exchange,
+        side: data.side,
+        price: data.price,
+        amount: data.amount,
+        value: data.value,
+        timestamp: data.timestamp,
+        is_consolidated: data.is_consolidated ? 1 : 0,
+        merged_count: data.merged_count || 1,
+        duration_seconds: data.duration_seconds || 0
+    });
 }
 
 function getLiquidations(limit = 100) {

@@ -1010,6 +1010,25 @@
                                         </p>
                                     </div>
                                 </div>
+                                <div class="form-group row" style="margin-top: 1rem;">
+                                    <div class="col">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal; cursor: pointer;">
+                                            <input type="checkbox" id="ENABLE_LIQUIDATION_CONSOLIDATION"
+                                                name="ENABLE_LIQUIDATION_CONSOLIDATION" value="true"
+                                                style="width: auto; margin: 0;"> Enable Liquidation Consolidation
+                                        </label>
+                                        <p class="subtitle" style="margin-top: 4px; font-size: 11px;">
+                                            Accumulate and merge smaller liquidations matching the same exchange, symbol, and side within a defined window until threshold is reached.
+                                        </p>
+                                    </div>
+                                    <div class="col" id="consolidationWindowRow">
+                                        <label for="LIQUIDATION_CONSOLIDATION_SECONDS">Consolidation Window (Seconds)</label>
+                                        <input type="number" id="LIQUIDATION_CONSOLIDATION_SECONDS"
+                                            name="LIQUIDATION_CONSOLIDATION_SECONDS" step="0.1" min="0.1" max="60" value="5.0">
+                                        <p class="subtitle" style="font-size: 11px; margin-top: 4px;">Time window (in seconds) to accumulate sub-threshold liquidations before replacing in memory.</p>
+                                    </div>
+                                </div>
 
                                 <div class="page-subsection" style="margin-top: 1.5rem;">
                                     <h4>Paper Trading Mode</h4>

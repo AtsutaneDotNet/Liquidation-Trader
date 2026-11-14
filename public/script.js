@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 for (const key in data) {
-                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED', 'BLOCK_TRADES_WHEN_TRADFI_CLOSED'].includes(key)) {
+                    if (['WEBUI_AUTH_ENABLED', 'CMC_FILTER_ENABLED', 'ENABLE_CIRCUIT_BREAKER', 'ENABLE_REVERSE_LIQUIDATION_STRATEGY', 'ENABLE_VWAP_STRATEGY', 'ENABLE_RSI_STRATEGY', 'ENABLE_DMI_STRATEGY', 'ENABLE_MARKET_SENTIMENT_STRATEGY', 'ENABLE_SNEAKY_PIVOT_STRATEGY', 'ENABLE_BB_STRATEGY', 'SNEAKY_PIVOT_ENABLE_PDR_HIGH', 'SNEAKY_PIVOT_ENABLE_PDR_LOW', 'SNEAKY_PIVOT_ENABLE_PDS_HIGH', 'SNEAKY_PIVOT_ENABLE_PDS_LOW', 'ENABLE_TRAILING_PROFIT', 'ENABLE_DCA_MARTINGALE', 'ENABLE_DYNAMIC_THRESHOLDS', 'ENABLE_RUNAWAY_HELPER', 'REPLACE_BELOW_MIN_THRESHOLD', 'ENABLE_AUTO_TRANSFER', 'ENABLE_ISOLATION_MODE', 'REDUCE_TP_TRAILING_BY_HALF_IN_ISOLATION', 'ENABLE_ANON_REPORTING', 'ENABLE_24H_VOLUME_FILTER', 'ENABLE_PAPER_TRADING', 'ATR_TP_ENABLED', 'ATR_SL_ENABLED', 'BLOCK_TRADES_WHEN_TRADFI_CLOSED', 'ENABLE_LIQUIDATION_CONSOLIDATION'].includes(key)) {
                         const el = document.getElementById(key);
                         if (el) el.checked = data[key] === true || data[key] === 'true' || data[key] === 'on';
                         continue;
@@ -425,6 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const atrSlCb = document.getElementById('ATR_SL_ENABLED');
         if (atrSlCb) formData.set('ATR_SL_ENABLED', atrSlCb.checked ? 'true' : 'false');
+
+        const consolidationCb = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+        if (consolidationCb) formData.set('ENABLE_LIQUIDATION_CONSOLIDATION', consolidationCb.checked ? 'true' : 'false');
 
         const dynamicCb = document.getElementById('ENABLE_DYNAMIC_THRESHOLDS');
         if (dynamicCb) formData.set('ENABLE_DYNAMIC_THRESHOLDS', dynamicCb.checked ? 'true' : 'false');
@@ -1758,11 +1761,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isHighValue = liqValue >= currentThreshold;
                 const highlightClass = isHighValue ? (isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell') : '';
 
+                const isConsolidated = liq.is_consolidated === 1 || liq.is_consolidated === '1' || liq.is_consolidated === true;
+                const mergedCount = liq.merged_count || 2;
+                const durationSec = typeof liq.duration_seconds === 'number' ? liq.duration_seconds.toFixed(2) : (parseFloat(liq.duration_seconds || 0).toFixed(2));
+                const consolidatedBadge = isConsolidated ? `<span class="badge-consolidated" title="Consolidated from ${mergedCount} fills over ${durationSec}s">⚡ ${mergedCount}x Merged</span>` : '';
+
                 return `<tr class="${highlightClass}">
                     <td style="color: var(--text-muted);">${timeStr}</td>
                     <td style="text-transform: capitalize;">${liq.exchange}</td>
                     <td>${renderTradFiTableSymbol(liq.symbol)}</td>
-                    <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
+                    <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span>${consolidatedBadge}</td>
                     <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
                     <td>${liq.amount}</td>
                     <td>${formatSelectedCurrency(liq.value)}</td>
@@ -1855,11 +1863,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             const sideClz = isBuy ? 'side-buy' : 'side-sell';
                             const timeStr = new Date(liq.timestamp).toLocaleTimeString();
                             const highlightClass = isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell';
+
+                            const isConsolidated = liq.is_consolidated === 1 || liq.is_consolidated === '1' || liq.is_consolidated === true;
+                            const mergedCount = liq.merged_count || 2;
+                            const durationSec = typeof liq.duration_seconds === 'number' ? liq.duration_seconds.toFixed(2) : (parseFloat(liq.duration_seconds || 0).toFixed(2));
+                            const consolidatedBadge = isConsolidated ? `<span class="badge-consolidated" title="Consolidated from ${mergedCount} fills over ${durationSec}s">⚡ ${mergedCount}x Merged</span>` : '';
+
                             return `<tr class="${highlightClass}">
                                 <td style="color: var(--text-muted);">${timeStr}</td>
                                 <td style="text-transform: capitalize;">${liq.exchange}</td>
                                 <td>${renderTradFiTableSymbol(liq.symbol)}</td>
-                                <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span></td>
+                                <td><span class="${sideClz}">${(liq.side || 'unknown').toUpperCase()}</span>${consolidatedBadge}</td>
                                 <td>${parseFloat(liq.price || 0).toFixed(4)}</td>
                                 <td>${liq.amount}</td>
                                 <td>${formatSelectedCurrency(liq.value)}</td>
