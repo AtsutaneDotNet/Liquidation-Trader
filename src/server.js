@@ -299,6 +299,20 @@ class WebServer {
             res.json(db.getLiquidations(500) || []); // Fetch up to 500 liquidations for the UI
         });
 
+        this.app.get('/api/consolidations/active', (req, res) => {
+            const currentConfig = config.get();
+            const isEnabled = !!currentConfig.ENABLE_LIQUIDATION_CONSOLIDATION;
+            if (this.bot && typeof this.bot.getActiveConsolidations === 'function' && isEnabled) {
+                res.json(this.bot.getActiveConsolidations());
+            } else {
+                res.json({
+                    enabled: false,
+                    windowSeconds: parseFloat(currentConfig.LIQUIDATION_CONSOLIDATION_SECONDS) || 5.0,
+                    activeConsolidations: []
+                });
+            }
+        });
+
         this.app.get('/api/closed-pnl', (req, res) => {
             const db = require('./db');
             const currentConfig = config.get();

@@ -29,7 +29,7 @@ Wallet overview tracking Total Wallet Value, Margin Available/Used, alongside Da
 ![Account Performance](assets/account_performance.png)
 
 ### 5. Live Liquidation Stream
-Global real-time feed of raw WebSockets liquidation events from configured exchanges with color-coded side indicators.
+Global real-time feed of raw WebSockets liquidation events from configured exchanges with color-coded side indicators and an optional live in-memory consolidation buffer bar displaying active sub-threshold accumulations.
 ![Liquidation History](assets/liquidation_history.png)
 
 ---
@@ -38,7 +38,10 @@ Global real-time feed of raw WebSockets liquidation events from configured excha
 
 - **Full-Featured Paper Trading Engine**: Test strategies securely without risking real capital! The paper engine accurately simulates live trading logic including local Take-Profit, Stop-Loss, Trailing Stops, real-time market entries, Runaway Helper rescues, and true Realized/Unrealized PnL wallet balance isolation. Includes a one-click reset for paper trading history and balance.
 - **Multi-Exchange Support**: Real-time liquidation monitoring and trading on **Binance**, **Bybit**, and **OKX** using the unified **CCXT Pro** engine.
-- **Liquidation Consolidation**: Captures multi-fill liquidation bursts that are broken into smaller sub-threshold orders across orderbooks. When enabled, liquidations matching the exact same exchange, symbol, and side (BUY or SELL) accumulate in memory within a configurable time window (`LIQUIDATION_CONSOLIDATION_SECONDS`, default: 5.0s). If the merged total valuation meets or exceeds the threshold, the bot executes trades at the volume-weighted average price (`value / amount`, preserving original decimals). In the Web UI, consolidated triggers are marked in the Global Liquidation Stream with a dedicated `[⚡ Nx Merged]` indicator badge showing merge counts and duration tooltips.
+- **Liquidation Consolidation**: Captures multi-fill liquidation bursts that are broken into smaller sub-threshold orders across orderbooks.
+  - **In-Memory Accumulation**: When enabled, liquidations matching the exact same exchange, symbol, and side (BUY or SELL) accumulate in memory within a configurable time window (`LIQUIDATION_CONSOLIDATION_SECONDS`, default: 5.0s). If the merged total valuation meets or exceeds the threshold, the bot executes trades at the volume-weighted average price (`value / amount`, preserving original decimal places).
+  - **Live Memory Buffer Telemetry**: Features a dedicated real-time staging bar above the Global Liquidation Stream displaying active in-memory bursts with live countdown timers (`⏳ Xs remaining`), fill counts (`⚡ Nx fills`), and animated progress bars towards the trigger threshold.
+  - **Conditional Display**: The buffer bar, stream badges (`[⚡ Nx Merged]`), and the window configuration field only appear in the Web UI when Liquidation Consolidation is enabled in Settings, remaining completely hidden when disabled.
 - **Dynamic Liquidation Thresholds**: Integration with [RapidAPI](https://rapidapi.com/AtsutaneDotNet/api/liquidation-trader) to fetch per-pair mean liquidation values, allowing the bot to ignore noise and focus on high-impact events. Includes a dynamic minimum safeguard configuration (`REPLACE_BELOW_MIN_THRESHOLD`).
 - **Advanced Strategies**:
   - **Circuit Breaker**: Detects extreme market volatility using ATR multiples, volume surges, and price movement percentage checks. Halts new trading entries during abnormal conditions to protect capital while allowing existing positions to be managed normally.

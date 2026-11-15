@@ -1022,7 +1022,7 @@
                                             Accumulate and merge smaller liquidations matching the same exchange, symbol, and side within a defined window until threshold is reached.
                                         </p>
                                     </div>
-                                    <div class="col" id="consolidationWindowRow">
+                                    <div class="col" id="consolidationWindowRow" style="display: none;">
                                         <label for="LIQUIDATION_CONSOLIDATION_SECONDS">Consolidation Window (Seconds)</label>
                                         <input type="number" id="LIQUIDATION_CONSOLIDATION_SECONDS"
                                             name="LIQUIDATION_CONSOLIDATION_SECONDS" step="0.1" min="0.1" max="60" value="5.0">
@@ -2445,6 +2445,33 @@
                 </header>
 
                 <div class="page-section">
+                    <!-- In-Memory Liquidation Consolidation Buffer Bar (Telemetry) -->
+                    <div id="consolidation-buffer-wrapper" class="consolidation-buffer-wrapper" style="display: none;">
+                        <div class="consolidation-buffer-header">
+                            <div class="consolidation-buffer-left">
+                                <span class="buffer-pulse-dot"></span>
+                                <div class="buffer-title-block">
+                                    <span class="buffer-title-text">Active Consolidation Buffer</span>
+                                    <span class="buffer-window-badge" id="buffer-window-badge">5.0s window</span>
+                                </div>
+                            </div>
+                            <div class="buffer-hint-text">
+                                Live sub-threshold liquidations accumulating in memory before window expiration
+                            </div>
+                        </div>
+                        <div class="consolidation-buffer-body" id="consolidation-buffer-body">
+                            <div class="consolidation-buffer-items" id="consolidation-buffer-items">
+                                <!-- Active memory cards injected dynamically -->
+                            </div>
+                            <div class="consolidation-buffer-idle" id="consolidation-buffer-idle" style="display: none;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>No sub-threshold liquidations currently accumulating. Monitoring stream...</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="table-card-wrapper card">
                         <div class="table-card-header">
                             <div class="table-card-title">

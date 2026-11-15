@@ -1357,6 +1357,93 @@ class TradingBot {
         }
     }
 
+    getEffectiveThresholdInfo(symbol) {
+        const cfg = this.config.get();
+        let thresholdInUsd = parseFloat(cfg.LIQUIDATION_VALUE_THRESHOLD) || 0;
+        if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
+            if (this.btcUsdPrice) {
+                thresholdInUsd = thresholdInUsd * this.btcUsdPrice;
+            }
+        }
+
+        let usingDynamic = false;
+        if (cfg.ENABLE_DYNAMIC_THRESHOLDS && this.dynamicThresholds) {
+            const bases = Object.keys(this.dynamicThresholds).sort((a, b) => b.length - a.length);
+            const symUpper = (symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            for (const base of bases) {
+                if (symUpper.startsWith(base)) {
+                    const dynVal = this.dynamicThresholds[base];
+                    if (cfg.REPLACE_BELOW_MIN_THRESHOLD && dynVal < thresholdInUsd) {
+                        usingDynamic = false;
+                    } else {
+                        thresholdInUsd = dynVal;
+                        usingDynamic = true;
+                    }
+                    break;
+                }
+            }
+        }
+        return { thresholdInUsd, usingDynamic };
+    }
+
+    getEffectiveThreshold(symbol) {
+        return this.getEffectiveThresholdInfo(symbol).thresholdInUsd;
+    }
+
+    getActiveConsolidations() {
+        const cfg = this.config.get();
+        const enabled = !!cfg.ENABLE_LIQUIDATION_CONSOLIDATION;
+        const windowSeconds = parseFloat(cfg.LIQUIDATION_CONSOLIDATION_SECONDS) || 5.0;
+        const windowMs = windowSeconds * 1000;
+        const now = Date.now();
+
+        if (!enabled || !this.consolidatedLiquidations) {
+            return {
+                enabled: false,
+                windowSeconds,
+                activeConsolidations: []
+            };
+        }
+
+        const active = [];
+        for (const [key, entry] of this.consolidatedLiquidations.entries()) {
+            const elapsedMs = now - entry.firstTimestamp;
+            if (elapsedMs < windowMs) {
+                const threshold = this.getEffectiveThreshold(entry.symbol);
+                const remainingMs = Math.max(0, windowMs - elapsedMs);
+                const progressPercent = threshold > 0 ? Math.min(100, Math.round((entry.value / threshold) * 100)) : 0;
+
+                active.push({
+                    key: entry.key || key,
+                    exchange: entry.exchange || 'unknown',
+                    symbol: entry.symbol,
+                    side: entry.side || 'UNKNOWN',
+                    value: entry.value,
+                    amount: entry.amount,
+                    price: entry.price,
+                    count: entry.count,
+                    firstTimestamp: entry.firstTimestamp,
+                    lastTimestamp: entry.lastTimestamp,
+                    windowMs,
+                    remainingMs,
+                    threshold,
+                    progressPercent
+                });
+            } else {
+                this.consolidatedLiquidations.delete(key);
+            }
+        }
+
+        active.sort((a, b) => (b.count - a.count) || (b.value - a.value));
+
+        return {
+            enabled: true,
+            windowSeconds,
+            activeConsolidations: active
+        };
+    }
+
     async onLiquidation(liquidation, exName) {
         if (this.isTrading || !this.isRunning) return;
 
@@ -1393,34 +1480,11 @@ class TradingBot {
                 }
             }
 
-            let thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD;
-            if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC') {
-                if (!this.btcUsdPrice) {
-                    // Do not log warning on every liquidation as it could spam, just silently return until we have a price
-                    return;
-                }
-                thresholdInUsd = cfg.LIQUIDATION_VALUE_THRESHOLD * this.btcUsdPrice;
+            if (cfg.LIQUIDATION_VALUE_CURRENCY === 'BTC' && !this.btcUsdPrice) {
+                // Do not log warning on every liquidation as it could spam, just silently return until we have a price
+                return;
             }
-
-            let usingDynamic = false;
-            if (cfg.ENABLE_DYNAMIC_THRESHOLDS) {
-                const bases = Object.keys(this.dynamicThresholds).sort((a, b) => b.length - a.length);
-                const symUpper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-                for (const base of bases) {
-                    if (symUpper.startsWith(base)) {
-                        const dynVal = this.dynamicThresholds[base];
-                        if (cfg.REPLACE_BELOW_MIN_THRESHOLD && dynVal < thresholdInUsd) {
-                            // Do not use dynamic value since it is below minimum static threshold
-                            usingDynamic = false;
-                        } else {
-                            thresholdInUsd = dynVal;
-                            usingDynamic = true;
-                        }
-                        break;
-                    }
-                }
-            }
+            const { thresholdInUsd, usingDynamic } = this.getEffectiveThresholdInfo(symbol);
 
             const consolidationEnabled = cfg.ENABLE_LIQUIDATION_CONSOLIDATION;
             const consolidationWindowMs = (cfg.LIQUIDATION_CONSOLIDATION_SECONDS || 5.0) * 1000;
@@ -1451,6 +1515,10 @@ class TradingBot {
                         const amountDecimals = amountDotIdx === -1 ? 0 : amountStr.length - amountDotIdx - 1;
 
                         this.consolidatedLiquidations.set(key, {
+                            key: key,
+                            symbol: symbol,
+                            exchange: exName || 'unknown',
+                            side: unifiedSide,
                             value: value,
                             amount: amount,
                             amountDecimals: amountDecimals,
@@ -1525,6 +1593,10 @@ class TradingBot {
                             const amountDecimals = amountDotIdx === -1 ? 0 : amountStr.length - amountDotIdx - 1;
 
                             this.consolidatedLiquidations.set(key, {
+                                key: key,
+                                symbol: symbol,
+                                exchange: exName || 'unknown',
+                                side: unifiedSide,
                                 value: value,
                                 amount: amount,
                                 amountDecimals: amountDecimals,

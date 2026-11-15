@@ -4028,3 +4028,281 @@ canvas#pnl-chart {
     gap: 6px;
     vertical-align: middle;
 }
+
+/* ==========================================================================
+   Consolidation In-Memory Telemetry Buffer Bar
+   ========================================================================== */
+.consolidation-buffer-wrapper {
+    background: rgba(18, 21, 28, 0.85);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+.consolidation-buffer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.consolidation-buffer-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.buffer-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a78bfa;
+    box-shadow: 0 0 8px #a78bfa;
+    animation: bufferPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes bufferPulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 1;
+        box-shadow: 0 0 12px #a78bfa;
+    }
+    100% {
+        transform: scale(0.9);
+        opacity: 0.6;
+    }
+}
+
+.buffer-title-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.buffer-title-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f0f2f5;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.buffer-window-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.buffer-hint-text {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.consolidation-buffer-items {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.consolidation-buffer-idle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    border: 1px dashed var(--border-color);
+}
+
+.buffer-card {
+    background: rgba(24, 28, 38, 0.95);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 250px;
+    flex: 1 1 250px;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.2s ease, opacity 0.3s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.buffer-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+.buffer-card.side-buy {
+    border-left: 3px solid var(--accent);
+}
+
+.buffer-card.side-sell {
+    border-left: 3px solid var(--danger);
+}
+
+.buffer-card.buffer-card-expiring {
+    opacity: 0.45;
+}
+
+.buffer-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.buffer-card-pair {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.buffer-card-ex {
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.buffer-card-sym {
+    font-weight: 700;
+    color: #fff;
+}
+
+.buffer-card-badges {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.buffer-card-side {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.buffer-card-side.side-buy {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(0, 230, 118, 0.3);
+}
+
+.buffer-card-side.side-sell {
+    background: rgba(255, 59, 59, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+}
+
+.buffer-card-count {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.buffer-card-mid {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.buffer-card-values {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.buffer-val-current {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.buffer-val-threshold {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.buffer-val-pct {
+    font-size: 11px;
+    font-weight: 600;
+    color: #a78bfa;
+    margin-left: 2px;
+}
+
+.buffer-card-timer {
+    font-size: 11px;
+    font-weight: 600;
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.buffer-progress-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.buffer-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a78bfa, var(--accent));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.buffer-time-track {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 2px;
+}
+
+.buffer-time-fill {
+    height: 100%;
+    background: #f59e0b;
+    border-radius: 1px;
+    transition: width 0.1s linear;
+}
+
+.buffer-card-sub {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}

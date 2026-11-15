@@ -244,6 +244,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (periodCol) periodCol.style.display = type === 'session' ? 'none' : 'flex';
                 }
 
+                // Toggle Consolidation Window row on load
+                const consolidationEnableEl = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+                if (consolidationEnableEl) {
+                    const row = document.getElementById('consolidationWindowRow');
+                    if (row) row.style.display = consolidationEnableEl.checked ? 'block' : 'none';
+                }
+
                 // Toggle Paper Trading row on load
                 const paperEnableEl = document.getElementById('ENABLE_PAPER_TRADING');
                 if (paperEnableEl) {
@@ -366,6 +373,18 @@ document.addEventListener('DOMContentLoaded', () => {
         bbEnableEl.addEventListener('change', (e) => {
             const row = document.getElementById('bbSettingsRow');
             if (row) row.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+
+    const consolidationCb = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+    if (consolidationCb) {
+        consolidationCb.addEventListener('change', (e) => {
+            const row = document.getElementById('consolidationWindowRow');
+            if (row) row.style.display = e.target.checked ? 'block' : 'none';
+            const buffer = document.getElementById('consolidation-buffer-wrapper');
+            if (buffer && !e.target.checked) {
+                buffer.style.display = 'none';
+            }
         });
     }
 
@@ -1692,6 +1711,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Liquidations Live Stream
     const tbodyLiquidations = document.getElementById('liquidations-tbody');
     const tbodyDashboardLiquidations = document.getElementById('dashboard-liquidations-tbody');
+    const bufferWrapper = document.getElementById('consolidation-buffer-wrapper');
+    const bufferItems = document.getElementById('consolidation-buffer-items');
+    const bufferIdle = document.getElementById('consolidation-buffer-idle');
+    const bufferWindowBadge = document.getElementById('buffer-window-badge');
 
     // Cache parameters for dynamic thresholds inside liquidations rendering
     let lastEffectiveThreshold = 0;
@@ -1761,7 +1784,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isHighValue = liqValue >= currentThreshold;
                 const highlightClass = isHighValue ? (isBuy ? 'liq-highlight-buy' : 'liq-highlight-sell') : '';
 
-                const isConsolidated = liq.is_consolidated === 1 || liq.is_consolidated === '1' || liq.is_consolidated === true;
+                const consolidationCb = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+                const isConsolidationEnabled = consolidationCb ? consolidationCb.checked : false;
+
+                const isConsolidated = isConsolidationEnabled && (liq.is_consolidated === 1 || liq.is_consolidated === '1' || liq.is_consolidated === true);
                 const mergedCount = liq.merged_count || 2;
                 const durationSec = typeof liq.duration_seconds === 'number' ? liq.duration_seconds.toFixed(2) : (parseFloat(liq.duration_seconds || 0).toFixed(2));
                 const consolidatedBadge = isConsolidated ? `<span class="badge-consolidated" title="Consolidated from ${mergedCount} fills over ${durationSec}s">⚡ ${mergedCount}x Merged</span>` : '';
@@ -1777,6 +1803,117 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>`;
             }).join('');
         }
+    }
+
+    function renderActiveConsolidations(data) {
+        if (!bufferWrapper || !bufferItems) return;
+
+        const consolidationCb = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+        const isLocallyEnabled = consolidationCb ? consolidationCb.checked : false;
+
+        if (!data || !data.enabled || !isLocallyEnabled) {
+            bufferWrapper.style.display = 'none';
+            return;
+        }
+
+        bufferWrapper.style.display = 'block';
+        const winSec = typeof data.windowSeconds === 'number' ? data.windowSeconds : parseFloat(data.windowSeconds || 5.0);
+        if (bufferWindowBadge) {
+            bufferWindowBadge.textContent = `${winSec.toFixed(1)}s window`;
+        }
+
+        const activeList = Array.isArray(data.activeConsolidations) ? data.activeConsolidations : [];
+        if (activeList.length === 0) {
+            bufferItems.innerHTML = '';
+            if (bufferIdle) bufferIdle.style.display = 'flex';
+            return;
+        }
+
+        if (bufferIdle) bufferIdle.style.display = 'none';
+
+        bufferItems.innerHTML = activeList.map(item => {
+            const sideStr = (item.side || '').toLowerCase();
+            const isBuy = sideStr === 'buy' || sideStr === 'long';
+            const sideClass = isBuy ? 'side-buy' : 'side-sell';
+            const exName = item.exchange || 'unknown';
+            const symDisplay = typeof renderTradFiTableSymbol === 'function' ? renderTradFiTableSymbol(item.symbol) : item.symbol;
+            const remainingSec = Math.max(0, (item.remainingMs || 0) / 1000).toFixed(1);
+            const timePct = item.windowMs > 0 ? Math.max(0, Math.min(100, (item.remainingMs / item.windowMs) * 100)) : 0;
+            const progressPct = Math.min(100, Math.max(0, item.progressPercent || 0));
+
+            return `<div class="buffer-card ${sideClass}" data-first-ts="${item.firstTimestamp}" data-window-ms="${item.windowMs}">
+                <div class="buffer-card-top">
+                    <div class="buffer-card-pair">
+                        <span class="buffer-card-ex">${exName}</span>
+                        <span class="buffer-card-sym">${symDisplay}</span>
+                    </div>
+                    <div class="buffer-card-badges">
+                        <span class="buffer-card-side ${sideClass}">${(item.side || 'unknown').toUpperCase()}</span>
+                        <span class="buffer-card-count">⚡ ${item.count} ${item.count === 1 ? 'fill' : 'fills'}</span>
+                    </div>
+                </div>
+                <div class="buffer-card-mid">
+                    <div class="buffer-card-values">
+                        <span class="buffer-val-current">${formatSelectedCurrency(item.value)}</span>
+                        <span class="buffer-val-threshold">/ ${formatSelectedCurrency(item.threshold)}</span>
+                        <span class="buffer-val-pct">(${progressPct}%)</span>
+                    </div>
+                    <div class="buffer-card-timer">
+                        <span class="timer-icon">⏳</span>
+                        <span class="timer-countdown-val">${remainingSec}s</span>
+                    </div>
+                </div>
+                <div class="buffer-progress-track" title="${progressPct}% to threshold">
+                    <div class="buffer-progress-fill" style="width: ${progressPct}%;"></div>
+                </div>
+                <div class="buffer-time-track" title="Window countdown">
+                    <div class="buffer-time-fill" style="width: ${timePct}%;"></div>
+                </div>
+                <div class="buffer-card-sub">
+                    <span>Avg Price: ${parseFloat(item.price || 0).toFixed(4)}</span>
+                    <span>Total Vol: ${item.amount}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function updateActiveConsolidationTimers() {
+        const liqPage = document.getElementById('liquidations-page');
+        if (!liqPage || !liqPage.classList.contains('active')) return;
+        if (!bufferItems) return;
+
+        const consolidationCb = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+        if (consolidationCb && !consolidationCb.checked) {
+            if (bufferWrapper) bufferWrapper.style.display = 'none';
+            return;
+        }
+
+        const cards = bufferItems.querySelectorAll('.buffer-card');
+        if (cards.length === 0) return;
+
+        const now = Date.now();
+        cards.forEach(card => {
+            const firstTs = parseInt(card.getAttribute('data-first-ts'), 10) || now;
+            const windowMs = parseInt(card.getAttribute('data-window-ms'), 10) || 5000;
+            const remainingMs = Math.max(0, firstTs + windowMs - now);
+
+            const timerVal = card.querySelector('.timer-countdown-val');
+            if (timerVal) {
+                timerVal.textContent = `${(remainingMs / 1000).toFixed(1)}s`;
+            }
+
+            const timeFill = card.querySelector('.buffer-time-fill');
+            if (timeFill) {
+                const pct = windowMs > 0 ? Math.max(0, Math.min(100, (remainingMs / windowMs) * 100)) : 0;
+                timeFill.style.width = `${pct}%`;
+            }
+
+            if (remainingMs <= 0) {
+                card.classList.add('buffer-card-expiring');
+            } else {
+                card.classList.remove('buffer-card-expiring');
+            }
+        });
     }
 
     const btnPrevLiq = document.getElementById('btn-prev-liquidations');
@@ -1851,6 +1988,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Render page content
                 renderLiquidations();
 
+                // Fetch active consolidation buffer if on liquidations page
+                if (liqPageActive) {
+                    const consolidationCb = document.getElementById('ENABLE_LIQUIDATION_CONSOLIDATION');
+                    const isConsolidationEnabled = consolidationCb ? consolidationCb.checked : false;
+
+                    if (!isConsolidationEnabled) {
+                        if (bufferWrapper) bufferWrapper.style.display = 'none';
+                    } else {
+                        fetch('/api/consolidations/active')
+                            .then(res => res.json())
+                            .then(data => {
+                                renderActiveConsolidations(data);
+                            })
+                            .catch(err => console.warn('Failed to fetch active consolidations:', err));
+                    }
+                }
+
                 // Render dashboard high value stream
                 if (tbodyDashboardLiquidations && dashPageActive) {
                     const highValueLiqs = cachedLiquidations.filter(liq => parseFloat(liq.value || 0) >= getThresholdForLiq(liq)).slice(0, 10);
@@ -1885,6 +2039,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setInterval(fetchLiquidations, 1500); // slightly faster polling for live feeling
+    setInterval(updateActiveConsolidationTimers, 100); // 100ms smooth client countdown
     fetchLiquidations();
 
     // Closed PnL Live Stream
