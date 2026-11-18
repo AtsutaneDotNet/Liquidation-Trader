@@ -11,7 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^13.2.0",
     "ccxt": "^4.5.92",
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
